@@ -7,7 +7,6 @@ import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
-from plotly.subplots import make_subplots
 import numpy as np
 import math
 from utils.data_loader import (
@@ -198,104 +197,57 @@ for proc in PROCESOS:
     nst_l .append(sum(int(df[f"cl_{i}"].eq("nostart").sum())for i in idxs))
     na_l  .append(sum(int(df[f"cl_{i}"].eq("na").sum()) + int(df[f"cl_{i}"].eq("info").sum()) for i in idxs))
 
-proc_short = [
-    "Gest. Académica", "Gest. Financiera", "Aseg. Calidad", "Ger. Planeación",
-    "Prod. Contenidos", "Convenios", "Banner", "Pág. Web",
-]
-
-fig_proc = make_subplots(
-    rows=2, cols=4,
-    specs=[[{"type": "domain"}] * 4] * 2,
-    subplot_titles=proc_short,
-    horizontal_spacing=0.04,
-    vertical_spacing=0.14,
-)
-
-for idx, proc in enumerate(PROCESOS):
-    r, c = idx // 4 + 1, idx % 4 + 1
-    color = PROCESO_COLOR[proc]
-    d, i_, ns, na = done_l[idx], inp_l[idx], nst_l[idx], na_l[idx]
-    fig_proc.add_trace(
-        go.Pie(
-            values=[max(d, 0.001), max(i_, 0.001), max(ns, 0.001), max(na, 0.001)],
-            hole=0.68,
-            marker_colors=["#A6CE38", "#1FB2DE", "#EC0677", "#c8d8e0"],
-            showlegend=False,
-            textinfo="none",
-            hovertemplate=f"<b>{proc}</b><br>%{{label}}: %{{value}}<extra></extra>",
-            sort=False,
-            name=proc,
-        ),
-        row=r, col=c,
+# ── Helper: tarjeta SVG donut + stats integrados ──────────────────────────────
+def _donut_card(proc, pct, done, inp, nst, na_val, color, size=128, r=44, sw=13):
+    circ  = 2 * math.pi * r
+    cx    = size // 2
+    total = max(done + inp + nst + na_val, 1)
+    segs  = [(done, "#A6CE38"), (inp, "#1FB2DE"), (nst, "#EC0677"), (na_val, "#c8d8e0")]
+    arcs  = f'<circle cx="{cx}" cy="{cx}" r="{r}" fill="none" stroke="#edf1f5" stroke-width="{sw}"/>'
+    off   = 0.0
+    for cnt, sc in segs:
+        if cnt == 0:
+            continue
+        dash = circ * cnt / total
+        arcs += (
+            f'<circle cx="{cx}" cy="{cx}" r="{r}" fill="none" stroke="{sc}" '
+            f'stroke-width="{sw}" stroke-dasharray="{dash:.3f} {circ:.3f}" '
+            f'stroke-dashoffset="-{off:.3f}" transform="rotate(-90 {cx} {cx})"/>'
+        )
+        off += dash
+    arcs += (
+        f'<text x="{cx}" y="{cx}" text-anchor="middle" dominant-baseline="central" '
+        f'font-size="17" font-weight="bold" font-family="Segoe UI,sans-serif" fill="{color}">{pct}%</text>'
+    )
+    svg   = f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">{arcs}</svg>'
+    label = proc_short_map.get(proc, proc)
+    return (
+        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,.10);'
+        f'border-top:3px solid {color};border-radius:10px;'
+        f'padding:10px 8px 8px;box-shadow:0 2px 8px rgba(15,56,90,.06);text-align:center">'
+        f'<div style="font-size:10px;font-weight:700;color:{color};text-transform:uppercase;'
+        f'letter-spacing:.4px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;'
+        f'white-space:nowrap" title="{proc}">{label}</div>'
+        f'<div style="display:flex;justify-content:center;margin:0">{svg}</div>'
+        f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px;margin-top:5px">'
+        f'<div style="font-size:9px;color:#5a7a2e;background:#f0f8e8;padding:2px 4px;border-radius:3px;text-align:center"><b>{done}</b> Fin.</div>'
+        f'<div style="font-size:9px;color:#0a6a8e;background:#e8f6fc;padding:2px 4px;border-radius:3px;text-align:center"><b>{inp}</b> Proc.</div>'
+        f'<div style="font-size:9px;color:#9a0050;background:#fce8f2;padding:2px 4px;border-radius:3px;text-align:center"><b>{nst}</b> Sin ini.</div>'
+        f'<div style="font-size:9px;color:#6a8a9e;background:#f0f4f8;padding:2px 4px;border-radius:3px;text-align:center"><b>{na_val}</b> N/A</div>'
+        f'</div></div>'
     )
 
-# Estilar los títulos de cada subplot (aparecen antes de las anotaciones de %)
-fig_proc.update_annotations(font=dict(size=10, color="#4a6a7e"))
-
-# Agregar anotaciones de % DESPUÉS de update_annotations para no sobreescribirlas
-for idx in range(len(PROCESOS)):
-    tr = fig_proc.data[idx]
-    xc = (tr.domain.x[0] + tr.domain.x[1]) / 2
-    yc = (tr.domain.y[0] + tr.domain.y[1]) / 2
-    color = PROCESO_COLOR[PROCESOS[idx]]
-    fig_proc.add_annotation(
-        x=xc, y=yc, xref="paper", yref="paper",
-        text=f"<b>{pct_avgs[idx]}%</b>",
-        font=dict(size=15, color=color, family="Segoe UI"),
-        showarrow=False,
-    )
-
-fig_proc.update_layout(
-    height=320,
-    margin=dict(l=10, r=10, t=30, b=10),
-    paper_bgcolor="rgba(0,0,0,0)",
-    font=dict(family="Segoe UI", color="#4a6a7e"),
-    showlegend=False,
-)
-st.plotly_chart(fig_proc, use_container_width=True, config={"displayModeBar": False})
-
-# Leyenda de colores
-st.markdown(
-    '<div style="display:flex;gap:20px;justify-content:center;margin:-4px 0 12px">'
-    '<span style="font-size:11px;color:#6a8a9e;display:flex;align-items:center;gap:4px">'
-    '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#A6CE38"></span> Finalizado</span>'
-    '<span style="font-size:11px;color:#6a8a9e;display:flex;align-items:center;gap:4px">'
-    '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1FB2DE"></span> En proceso</span>'
-    '<span style="font-size:11px;color:#6a8a9e;display:flex;align-items:center;gap:4px">'
-    '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#EC0677"></span> Sin iniciar</span>'
-    '<span style="font-size:11px;color:#6a8a9e;display:flex;align-items:center;gap:4px">'
-    '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#c8d8e0"></span> No aplica</span>'
-    '</div>',
-    unsafe_allow_html=True,
-)
-
-# Detalle numérico por proceso en 4 + 4 columnas — con etiquetas claras
-sc1 = st.columns(4)
-sc2 = st.columns(4)
+# ── Renderizar 8 tarjetas en 2 filas de 4 ─────────────────────────────────────
+row1_cols = st.columns(4)
+row2_cols = st.columns(4)
 for idx, proc in enumerate(PROCESOS):
-    col = (sc1 + sc2)[idx]
-    color = PROCESO_COLOR[proc]
-    d, i_, ns, na = done_l[idx], inp_l[idx], nst_l[idx], na_l[idx]
-    proc_short = proc_short_map.get(proc, proc)
+    col = (row1_cols + row2_cols)[idx]
     with col:
         st.markdown(
-            f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,.10);'
-            f'border-top:3px solid {color};border-radius:0 0 10px 10px;'
-            f'padding:8px 10px;box-shadow:0 2px 6px rgba(15,56,90,.05)">'
-            f'<div style="font-size:9px;color:#4a6a7e;font-weight:600;margin-bottom:5px;'
-            f'text-overflow:ellipsis;overflow:hidden;white-space:nowrap" title="{proc}">{proc_short}</div>'
-            f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px">'
-            f'<div style="font-size:9px;color:#5a7a2e;background:#f0f8e8;padding:2px 5px;border-radius:3px;text-align:center">'
-            f'<b>{d}</b> Fin.</div>'
-            f'<div style="font-size:9px;color:#0a6a8e;background:#e8f6fc;padding:2px 5px;border-radius:3px;text-align:center">'
-            f'<b>{i_}</b> Proc.</div>'
-            f'<div style="font-size:9px;color:#9a0050;background:#fce8f2;padding:2px 5px;border-radius:3px;text-align:center">'
-            f'<b>{ns}</b> Sin ini.</div>'
-            + (f'<div style="font-size:9px;color:#6a8a9e;background:#f0f4f8;padding:2px 5px;border-radius:3px;text-align:center">'
-               f'<b>{na}</b> N/A</div>' if na else '<div></div>')
-            + '</div></div>',
+            _donut_card(proc, pct_avgs[idx], done_l[idx], inp_l[idx], nst_l[idx], na_l[idx], PROCESO_COLOR[proc]),
             unsafe_allow_html=True,
         )
+
 
 st.divider()
 
