@@ -339,6 +339,58 @@ CLASIF_COLORS = {
     "En curso":       ("#A6CE38", "#f0f8e8"),
 }
 
+# ── Ventana emergente: definición de estados ────────────────────────────────────
+@st.experimental_dialog("Clasificación de programas · Criterios de prioridad", width="large")
+def _dialog_estados():
+    st.markdown(
+        "Los programas se clasifican automáticamente en **4 niveles de prioridad** "
+        "combinando el **periodo de implementación** y el **% de avance general**. "
+        "Esta clasificación determina el nivel de atención requerido."
+    )
+    clasificaciones = [
+        ("Urgente",        "#EC0677", "#fce8f2",
+         "Periodo 2026-2 o ya en oferta", "Avance general < 70 %",
+         "El programa debe implementarse en el próximo semestre (2026-2) pero "
+         "aún no alcanza el avance mínimo requerido. Requiere intervención inmediata "
+         "de todas las áreas involucradas para evitar incumplimiento."),
+        ("Prioritario",    "#F47B20", "#fdf0e8",
+         "Periodo 2027-1", "Avance general < 40 %",
+         "El programa implementa en 2027-1 pero registra un avance muy bajo. "
+         "Necesita un plan de aceleración antes de que cierre el semestre actual "
+         "para no pasar a estado Urgente."),
+        ("En seguimiento", "#FBAF17", "#fef9e8",
+         "Cualquier periodo", "Avance general < 70 %",
+         "El avance es insuficiente para garantizar la implementación a tiempo, "
+         "pero el plazo aún permite corrección. Requiere monitoreo activo y reporte "
+         "periódico de avance."),
+        ("En curso",       "#A6CE38", "#f0f8e8",
+         "Cualquier periodo", "Avance general ≥ 70 %",
+         "El programa registra un avance sólido en todos los procesos. Se considera "
+         "que avanza al ritmo esperado y no presenta riesgo de incumplimiento en "
+         "el corto plazo."),
+    ]
+    for nombre, fg, bg, periodo, avance, desc in clasificaciones:
+        st.markdown(
+            f'<div style="background:{bg};border-left:5px solid {fg};border-radius:8px;'
+            f'padding:12px 16px;margin-bottom:10px">'
+            f'<div style="display:flex;align-items:center;gap:10px;margin-bottom:6px">'
+            f'<span style="background:{fg};color:white;font-weight:700;font-size:12px;'
+            f'padding:3px 12px;border-radius:12px">{nombre}</span>'
+            f'<span style="font-size:11px;color:#4a6a7e">📅 {periodo} &nbsp;·&nbsp; 📊 {avance}</span>'
+            f'</div>'
+            f'<div style="font-size:12px;color:#2a4a5e;line-height:1.5">{desc}</div></div>',
+            unsafe_allow_html=True,
+        )
+    st.markdown(
+        '<div style="background:#f0f4f8;border-radius:8px;padding:10px 14px;margin-top:4px">'
+        '<span style="font-size:11px;color:#4a6a7e">ℹ️ La clasificación se recalcula '
+        'automáticamente al aplicar los filtros de modalidad, facultad o periodo.</span></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
+    if st.button("Cerrar", use_container_width=True, type="secondary"):
+        st.rerun()
+
 def _style_clasif_cell(val):
     """CSS para celda de clasificación."""
     if val in CLASIF_COLORS:
@@ -433,12 +485,16 @@ def _excel_bytes(df_export):
     return buf.getvalue()
 
 # ── Tabs principales ────────────────────────────────────────────────────────────
-tab1, tab2, tab3 = st.tabs(["📊 Resumen General", "🏛️ Por Facultad y Programa", "📋 Tabla Resumen"])
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Resumen General", "🏛️ Por Facultad y Programa", "📋 Tabla Resumen", "📖 Metodología"])
 
 # ── Tab 1: Resumen General ─────────────────────────────────────────────────────
 with tab1:
     # KPI fila 1
-    st.caption(f"Mostrando **{n}** de {len(df_raw)} programas")
+    _cap_col, _btn_col = st.columns([5, 1])
+    _cap_col.caption(f"Mostrando **{n}** de {len(df_raw)} programas")
+    with _btn_col:
+        if st.button("📋 Ver estados", use_container_width=True, help="Consulta los criterios de clasificación de prioridad de los programas"):
+            _dialog_estados()
     c1, c2, c3, c4 = st.columns(4)
     c1.markdown(_kpi("Programas en reforma",  n,          f"de {len(df_raw)} en total",                    "#0F385A", None, "📚",
         tooltip="Total de programas académicos que están dentro del proceso de reforma curricular, aplicando los filtros activos."), unsafe_allow_html=True)
@@ -1027,3 +1083,150 @@ with tab3:
             mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
             use_container_width=True,
         )
+
+# ── Tab 4: Metodología ─────────────────────────────────────────────────────────
+with tab4:
+    def _card(title, color, body_html):
+        return (
+            f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);'
+            f'border-top:4px solid {color};border-radius:10px;padding:16px 20px 14px;'
+            f'box-shadow:0 2px 8px rgba(15,56,90,0.06);margin-bottom:14px">'
+            f'<div style="font-size:13px;font-weight:700;color:{color};'
+            f'text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">{title}</div>'
+            f'{body_html}</div>'
+        )
+
+    def _row(label, value, desc, color="#0F385A"):
+        return (
+            f'<div style="display:grid;grid-template-columns:140px 80px 1fr;'
+            f'gap:8px;align-items:start;padding:6px 0;border-bottom:1px solid #f0f4f8">'
+            f'<span style="font-size:12px;font-weight:600;color:{color}">{label}</span>'
+            f'<span style="font-size:12px;font-weight:700;color:{color};'
+            f'background:rgba(15,56,90,0.07);border-radius:4px;padding:1px 6px;text-align:center">{value}</span>'
+            f'<span style="font-size:11px;color:#4a6a7e">{desc}</span></div>'
+        )
+
+    st.markdown(
+        '<div style="background:linear-gradient(135deg,#0F385A 0%,#1A5276 60%,#1FB2DE 100%);'
+        'border-radius:10px;padding:18px 22px;margin-bottom:18px">'
+        '<div style="font-size:16px;font-weight:700;color:#FFFFFF">Nota metodológica</div>'
+        '<div style="font-size:12px;color:rgba(255,255,255,0.75);margin-top:4px;line-height:1.6">'
+        'Este tablero consolida el seguimiento de la Reforma Curricular de Programas Académicos de POLI. '
+        'El avance se calcula a partir del estado registrado en cada etapa del proceso, '
+        'agrupado por proceso y luego promediado para obtener el avance general de cada programa.</div></div>',
+        unsafe_allow_html=True,
+    )
+
+    col_a, col_b = st.columns(2)
+
+    with col_a:
+        # ── Bloque 1: Estado de etapa ──────────────────────────────────────────
+        body1 = (
+            '<div style="font-size:11px;color:#4a6a7e;margin-bottom:8px">'
+            'Cada etapa se clasifica según el tipo de dato que registra en el archivo Excel:</div>'
+            + _row("Finalizado",  "100 pts", "La actividad está completada (estado=Finalizado, valor=Sí, % = 100, número > 0).", "#A6CE38")
+            + _row("En proceso",  " 50 pts", "La actividad está iniciada pero no concluida (estado=En proceso, pendiente, elaboración…, 0 % < % < 100 %).", "#1FB2DE")
+            + _row("Sin iniciar", "  0 pts", "No se ha registrado avance (estado=Sin iniciar / No, % = 0).", "#EC0677")
+            + _row("No aplica",   "Excluido", "El campo No aplica o está vacío para ese programa — no entra al cálculo.", "#9aabb5")
+            + _row("Informativo", "Excluido", "Campos de tipo informativo (Tipo de trámite, Periodo, Fecha) — sólo para contexto, sin peso en el avance.", "#FBAF17")
+        )
+        st.markdown(_card("1 · Estado de cada etapa", "#1FB2DE", body1), unsafe_allow_html=True)
+
+        # ── Bloque 2: Avance por proceso ──────────────────────────────────────
+        body2 = (
+            '<div style="font-size:11px;color:#4a6a7e;margin-bottom:8px">'
+            'Se promedian los puntos de todas las etapas <b>aplicables</b> del proceso '
+            '(excluyendo No aplica e Informativos):</div>'
+            '<div style="background:#f8fafc;border-radius:8px;padding:10px 14px;'
+            'font-family:monospace;font-size:12px;color:#0F385A;margin-bottom:8px">'
+            'Avance<sub>proceso</sub> =<br>'
+            '&nbsp;&nbsp;Σ(puntos de etapas aplicables)<br>'
+            '&nbsp;&nbsp;─────────────────────────────<br>'
+            '&nbsp;&nbsp;N° etapas aplicables</div>'
+            '<div style="font-size:11px;color:#4a6a7e">'
+            '<b>Ejemplo:</b> un proceso con 3 etapas: Finalizado (100), En proceso (50), No aplica (excluida) '
+            '→ avance = (100 + 50) / 2 = <b>75 %</b></div>'
+        )
+        st.markdown(_card("2 · Avance por proceso", "#0F385A", body2), unsafe_allow_html=True)
+
+    with col_b:
+        # ── Bloque 3: Avance general ───────────────────────────────────────────
+        body3 = (
+            '<div style="font-size:11px;color:#4a6a7e;margin-bottom:8px">'
+            'El avance general del programa es el promedio de los avances de cada proceso, '
+            'considerando solo los procesos que tienen al menos una etapa aplicable:</div>'
+            '<div style="background:#f8fafc;border-radius:8px;padding:10px 14px;'
+            'font-family:monospace;font-size:12px;color:#0F385A;margin-bottom:8px">'
+            'Avance<sub>general</sub> =<br>'
+            '&nbsp;&nbsp;Σ(Avance<sub>proceso i</sub>)<br>'
+            '&nbsp;&nbsp;───────────────────────<br>'
+            '&nbsp;&nbsp;N° procesos con datos</div>'
+            '<div style="font-size:11px;color:#4a6a7e;line-height:1.6">'
+            f'Hay <b>{len(PROCESOS)} procesos</b> definidos: '
+            + ", ".join(f"<span style='color:{PROCESO_COLOR[p]};font-weight:600'>{p}</span>" for p in PROCESOS)
+            + '.</div>'
+        )
+        st.markdown(_card("3 · Avance general del programa", "#A6CE38", body3), unsafe_allow_html=True)
+
+        # ── Bloque 4: Clasificación de prioridad ──────────────────────────────
+        body4 = (
+            '<div style="font-size:11px;color:#4a6a7e;margin-bottom:8px">'
+            'Con el avance general y el periodo de implementación se asigna un nivel de prioridad:</div>'
+        )
+        clasif_rows = [
+            ("Urgente",        "#EC0677", "#fce8f2", "2026-2 o ya en oferta", "< 70 %"),
+            ("Prioritario",    "#F47B20", "#fdf0e8", "2027-1",               "< 40 %"),
+            ("En seguimiento", "#FBAF17", "#fef9e8", "Cualquier periodo",     "< 70 %"),
+            ("En curso",       "#A6CE38", "#f0f8e8", "Cualquier periodo",     "≥ 70 %"),
+        ]
+        for nombre, fg, bg, periodo, avance in clasif_rows:
+            body4 += (
+                f'<div style="display:flex;align-items:center;gap:10px;'
+                f'padding:5px 8px;background:{bg};border-radius:6px;margin-bottom:5px">'
+                f'<span style="background:{fg};color:white;font-size:11px;font-weight:700;'
+                f'padding:2px 10px;border-radius:10px;white-space:nowrap">{nombre}</span>'
+                f'<span style="font-size:11px;color:#4a6a7e">Periodo: <b>{periodo}</b></span>'
+                f'<span style="font-size:11px;color:{fg};font-weight:700;margin-left:auto">{avance}</span>'
+                f'</div>'
+            )
+        st.markdown(_card("4 · Clasificación de prioridad", "#EC0677", body4), unsafe_allow_html=True)
+
+    # ── Bloque 5: Procesos y etapas ─────────────────────────────────────────────
+    st.markdown(
+        '<div style="font-size:14px;font-weight:700;color:#0F385A;margin:4px 0 10px">',
+        unsafe_allow_html=True,
+    )
+    st.markdown("##### Detalle de procesos y etapas")
+    proc_cols = st.columns(4)
+    for pi, proc in enumerate(PROCESOS):
+        col = proc_cols[pi % 4]
+        etapas_proc = [(em[1], em[3]) for em in ETAPAS_MAP if em[0] == proc]
+        color = PROCESO_COLOR[proc]
+        tipo_icon = {"status": "🔘", "pct": "📊", "num": "🔢", "info": "ℹ️", "date": "📅", "estado_tramite": "🔘"}
+        etapa_html = "".join(
+            f'<div style="display:flex;align-items:center;gap:6px;padding:3px 0;'
+            f'border-bottom:1px solid rgba(15,56,90,0.06)">'
+            f'<span style="font-size:11px">{tipo_icon.get(tipo, "·")}</span>'
+            f'<span style="font-size:11px;color:#2a4a5e">{etapa}</span></div>'
+            for etapa, tipo in etapas_proc
+        )
+        col.markdown(
+            f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);'
+            f'border-top:3px solid {color};border-radius:8px;padding:10px 12px;'
+            f'box-shadow:0 1px 4px rgba(15,56,90,0.06)">'
+            f'<div style="font-size:11px;font-weight:700;color:{color};'
+            f'text-transform:uppercase;letter-spacing:.4px;margin-bottom:6px">{proc}</div>'
+            f'{etapa_html}</div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown(
+        '<div style="background:#f0f4f8;border-radius:8px;padding:10px 16px;margin-top:14px">'
+        '<span style="font-size:11px;color:#4a6a7e">'
+        '🔘 Estado (Sí/No/Finalizado/En proceso) &nbsp;·&nbsp; '
+        '📊 Porcentaje (0–100%) &nbsp;·&nbsp; '
+        '🔢 Numérico (> 0 = Finalizado) &nbsp;·&nbsp; '
+        'ℹ️ Informativo (contexto, no suma al avance) &nbsp;·&nbsp; '
+        '📅 Fecha (informativo)</span></div>',
+        unsafe_allow_html=True,
+    )
