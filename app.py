@@ -273,11 +273,11 @@ with tab1:
                  if em[0] == proc and _etapa_has_data(i)]
         if not items:
             continue
-        if etapa_names:  # spacer entre grupos (solo si ya hay filas previas)
-            sp_key = f"__sp_{proc}__"
-            etapa_names.append(sp_key)
-            etapa_idxs.append(None)
-            etapa_proc.append(None)
+        # Spacer SIEMPRE antes de cada grupo → sirve como fila de encabezado del proceso
+        sp_key = f"__sp_{proc}__"
+        etapa_names.append(sp_key)
+        etapa_idxs.append(None)
+        etapa_proc.append(None)
         for i, name in items:
             etapa_names.append(name)
             etapa_idxs.append(i)
@@ -325,15 +325,15 @@ with tab1:
                 fillcolor=color, opacity=0.06,
                 line_color=color, line_width=0.8,
             )
-            # Etiqueta sobre la primera barra del grupo (en la franja del spacer)
-            # yanchor="bottom" → el label crece hacia arriba desde el borde de la 1ª barra
+            # Etiqueta centrada en el spacer que precede al grupo (nunca superpuesto a las barras)
+            sp_idx = grp_idxs[0] - 1  # el spacer siempre está justo antes del grupo
             fig_bar.add_annotation(
-                x=2, y=grp_idxs[0],
+                x=2, y=sp_idx,
                 xref="x", yref="y",
                 text=f"<b>{proc_short_map.get(proc, proc)}</b>",
                 showarrow=False,
-                font=dict(size=8, color=color, family="Segoe UI"),
-                xanchor="left", yanchor="bottom",
+                font=dict(size=9, color=color, family="Segoe UI"),
+                xanchor="left", yanchor="middle",
                 bgcolor="rgba(255,255,255,0.0)",
             )
 
