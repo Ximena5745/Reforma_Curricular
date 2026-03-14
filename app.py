@@ -757,6 +757,7 @@ with tab2:
             textposition="outside",
             textfont=dict(size=9, color="#4a6a7e"),
             hovertext=hover_prg, hoverinfo="text",
+            showlegend=False,
         ))
         # Leyenda de facultades
         for fac_name, fac_color in FAC_PALETTE.items():

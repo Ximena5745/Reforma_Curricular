@@ -15,28 +15,69 @@ st.set_page_config(
     page_title="Detalle por Etapa · Reforma Curricular",
     page_icon="📋",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] { background: #F0F4F8; }
-[data-testid="stSidebar"]          { background: #e8edf2; border-right: 1px solid rgba(15,56,90,0.10); }
-[data-testid="stHeader"]           { background: #F0F4F8 !important; }
-h1,h2,h3,h4,h5 { font-family: 'Segoe UI', sans-serif; color: #0F385A; }
-p, li, span { color: #0F385A; }
-div[data-baseweb="select"] > div   { background: #FFFFFF !important; border-color: rgba(15,56,90,0.20) !important; color: #0F385A !important; }
+[data-testid="stAppViewContainer"] { background: #EEF3F8; }
+[data-testid="stHeader"] {
+    background: linear-gradient(135deg, #0F385A 0%, #1A5276 50%, #1FB2DE 100%) !important;
+    border-bottom: 3px solid #42F2F2 !important;
+}
+h1,h2,h3,h4,h5                     { font-family: 'Segoe UI', sans-serif; color: #0F385A !important; }
+p, li, label, caption               { color: #2a4a5e; }
+[data-testid="stCaption"]           { color: #6a8a9e !important; }
+.block-container { padding-top: 3.5rem !important; padding-bottom: 2rem; }
+div[data-baseweb="select"] > div {
+    background: #E3F4FB !important;
+    border-color: rgba(31,178,222,0.45) !important;
+    color: #0F385A !important;
+    border-radius: 8px !important;
+}
 div[data-baseweb="select"] span    { color: #0F385A !important; }
 [data-testid="stSelectbox"] label  { font-size: 12px; color: #4a6a7e; }
-ul[data-baseweb="menu"]            { background: #FFFFFF !important; border: 1px solid rgba(15,56,90,0.15) !important; box-shadow: 0 4px 16px rgba(15,56,90,0.12) !important; }
+ul[data-baseweb="menu"]            { background: #FFFFFF !important; border: 1px solid rgba(31,178,222,0.30) !important; box-shadow: 0 6px 20px rgba(15,56,90,0.14) !important; border-radius: 8px !important; }
 ul[data-baseweb="menu"] li         { color: #0F385A !important; background: #FFFFFF !important; }
-ul[data-baseweb="menu"] li:hover   { background: #F0F4F8 !important; }
-li[aria-selected="true"]           { background: #e8f0f7 !important; }
-[data-testid="stDataFrame"]        { border-radius: 10px; overflow: hidden; }
+ul[data-baseweb="menu"] li:hover   { background: #E3F4FB !important; }
+li[aria-selected="true"]           { background: #d0ecf8 !important; font-weight: 600 !important; }
+button[data-baseweb="tab"]         { color: #6a8a9e !important; background: transparent !important; font-size: 13px !important; font-weight: 500 !important; }
+button[data-baseweb="tab"][aria-selected="true"] { color: #0F385A !important; border-bottom-color: #1FB2DE !important; font-weight: 700 !important; }
+[data-testid="stDataFrame"]        { border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(15,56,90,0.08); }
+hr                                  { border-color: rgba(15,56,90,0.10) !important; }
 footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
-.block-container { padding-top: 1rem; padding-bottom: 2rem; }
-[data-testid="stMarkdownContainer"] p { color: #0F385A; }
+[data-testid="stExpander"]         { background: #FFFFFF; border: 1px solid rgba(15,56,90,0.10); border-radius: 10px; }
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0F385A 0%, #1A5276 45%, #1FB2DE 100%) !important;
+    border-right: none !important;
+}
+[data-testid="stSidebarNav"] { display: none !important; }
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label  { color: rgba(255,255,255,0.80) !important; }
+[data-testid="stSidebar"] hr     { border-color: rgba(255,255,255,0.20) !important; }
+[data-testid="stSidebar"] [data-testid="stPageLink"] a {
+    color: rgba(255,255,255,0.82) !important;
+    background: rgba(255,255,255,0.08) !important;
+    border-radius: 8px !important;
+    padding: 8px 12px 8px 10px !important;
+    margin-bottom: 3px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    transition: background .15s;
+}
+[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {
+    background: rgba(255,255,255,0.18) !important;
+    color: #FFFFFF !important;
+}
+[data-testid="stSidebar"] [data-testid="stPageLink"][aria-current="page"] a,
+[data-testid="stSidebar"] [data-testid="stPageLink"] a[aria-current="page"] {
+    background: rgba(255,255,255,0.22) !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    border-left: 3px solid #42F2F2 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -50,12 +91,40 @@ fac_labels = {
 }
 fac_inv = {v: k for k, v in fac_labels.items()}
 
-# ── Header ─────────────────────────────────────────────────────────────────────
+# ── Sidebar ─────────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown(
+        '<div style="padding:18px 6px 6px;text-align:center">'
+        '<div style="font-size:11px;font-weight:800;color:rgba(255,255,255,0.55);'
+        'letter-spacing:2px;text-transform:uppercase">Vicerrectoría Académica</div>'
+        '<div style="font-size:16px;font-weight:700;color:#FFFFFF;margin-top:4px;line-height:1.3">'
+        'Reforma Curricular</div></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
+    st.page_link("app.py",                          label="Resumen General",     icon="📊")
+    st.page_link("pages/1_Detalle_por_Etapa.py",    label="Detalle por Etapa",   icon="📋")
+    st.page_link("pages/2_Programa.py",             label="Ficha de Programa",   icon="🔍")
+    st.markdown(
+        '<div style="padding:12px 6px;font-size:10px;color:rgba(255,255,255,0.40);text-align:center">'
+        'POLI · 2025–2026</div>',
+        unsafe_allow_html=True,
+    )
+
+# ── Header banner ───────────────────────────────────────────────────────────────
 st.markdown(
-    "<h2 style='margin-bottom:2px;color:#0F385A'>📋 Detalle por Etapa</h2>",
+    '<div style="'
+    'background:linear-gradient(135deg,#0F385A 0%,#1A5276 50%,#1FB2DE 100%);'
+    'padding:18px 24px 14px;'
+    'border-radius:0 0 12px 12px;'
+    'border-bottom:3px solid #42F2F2;">'
+    '<div style="font-size:21px;font-weight:700;color:#FFFFFF;letter-spacing:-.3px">'
+    'Detalle por Etapa</div>'
+    '<div style="font-size:12px;color:rgba(255,255,255,0.70);margin-top:5px">'
+    'Estado consolidado de etapas con conteo de programas por estado</div>'
+    '</div>',
     unsafe_allow_html=True,
 )
-st.caption("Estado consolidado de etapas con conteo de programas por estado")
 
 # ── Filtros inline ─────────────────────────────────────────────────────────────
 f1, f2, f3, f4 = st.columns(4)
@@ -294,50 +363,3 @@ st.dataframe(
 )
 st.caption(f"{n} programas · {len(etapas_show)} etapas mostradas")
 
-st.divider()
-
-# ══════════════════════════════════════════════════════════════════════════════
-# SECCIÓN 4 — Mapa de calor (colapsado)
-# ══════════════════════════════════════════════════════════════════════════════
-with st.expander("🗺️ Ver Mapa de Calor — Programa × Etapa"):
-    cl_to_num = {"done": 1.0, "inprog": 0.6, "nostart": 0.2, "info": 0.8, "na": 0.0}
-    etapas_labels = [em[1][:25] + ("…" if len(em[1]) > 25 else "") for _, em in etapas_show]
-    prog_labels   = df["NOMBRE DEL PROGRAMA"].apply(
-        lambda x: x[:28] + ("…" if len(x) > 28 else "")
-    ).tolist()
-
-    z, hover = [], []
-    for _, row in df.iterrows():
-        rz, rh = [], []
-        for i, em in etapas_show:
-            cl  = row[f"cl_{i}"]
-            val = row[f"val_{i}"]
-            rz.append(cl_to_num.get(cl, 0))
-            rh.append(
-                f"<b>{row['NOMBRE DEL PROGRAMA']}</b><br>"
-                f"{em[1]}<br>{STATUS_LABEL.get(cl, '—')}: {val}"
-            )
-        z.append(rz); hover.append(rh)
-
-    colorscale = [
-        [0.0,  "#f0f4f8"], [0.19, "#f0f4f8"],
-        [0.2,  "#EC0677"], [0.59, "#EC0677"],
-        [0.6,  "#1FB2DE"], [0.79, "#1FB2DE"],
-        [0.8,  "#FBAF17"], [0.99, "#FBAF17"],
-        [1.0,  "#A6CE38"],
-    ]
-    fig_heat = go.Figure(go.Heatmap(
-        z=z, x=etapas_labels, y=prog_labels,
-        colorscale=colorscale, showscale=False,
-        hoverinfo="text", text=hover, xgap=2, ygap=1,
-    ))
-    fig_heat.update_layout(
-        height=max(300, n * 18 + 80),
-        margin=dict(l=0, r=0, t=10, b=60),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(tickfont=dict(size=9, color="#4a6a7e"), tickangle=-40, side="bottom"),
-        yaxis=dict(tickfont=dict(size=9, color="#4a6a7e"), autorange="reversed"),
-        font=dict(family="Segoe UI"),
-    )
-    st.plotly_chart(fig_heat, use_container_width=True)

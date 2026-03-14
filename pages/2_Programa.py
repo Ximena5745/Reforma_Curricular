@@ -13,39 +13,76 @@ from utils.data_loader import (
 
 st.set_page_config(
     page_title="Programas · Reforma Curricular",
-    page_icon="📄",
+    page_icon="🔍",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] { background: #F0F4F8; }
-[data-testid="stSidebar"]          { background: #FFFFFF; border-right: 1px solid rgba(15,56,90,0.10); }
-[data-testid="stHeader"]           { background: #F0F4F8 !important; }
+[data-testid="stAppViewContainer"] { background: #EEF3F8; }
+[data-testid="stHeader"] {
+    background: linear-gradient(135deg, #0F385A 0%, #1A5276 50%, #1FB2DE 100%) !important;
+    border-bottom: 3px solid #42F2F2 !important;
+}
 h1,h2,h3,h4,h5                     { font-family: 'Segoe UI', sans-serif; color: #0F385A !important; }
 p, li, label, caption               { color: #2a4a5e; }
 [data-testid="stCaption"]           { color: #6a8a9e !important; }
-div[data-baseweb="select"] > div   { background: #FFFFFF !important; border-color: rgba(15,56,90,0.20) !important; color: #0F385A !important; }
+.block-container { padding-top: 3.5rem !important; padding-bottom: 2rem; }
+div[data-baseweb="select"] > div {
+    background: #E3F4FB !important;
+    border-color: rgba(31,178,222,0.45) !important;
+    color: #0F385A !important;
+    border-radius: 8px !important;
+}
 div[data-baseweb="select"] span    { color: #0F385A !important; }
 [data-testid="stSelectbox"] label  { font-size: 12px; color: #4a6a7e; }
-ul[data-baseweb="menu"]            { background: #FFFFFF !important; border: 1px solid rgba(15,56,90,0.15) !important; box-shadow: 0 4px 16px rgba(15,56,90,0.12) !important; }
+ul[data-baseweb="menu"]            { background: #FFFFFF !important; border: 1px solid rgba(31,178,222,0.30) !important; box-shadow: 0 6px 20px rgba(15,56,90,0.14) !important; border-radius: 8px !important; }
 ul[data-baseweb="menu"] li         { color: #0F385A !important; background: #FFFFFF !important; }
-ul[data-baseweb="menu"] li:hover   { background: #F0F4F8 !important; }
-li[aria-selected="true"]           { background: #e8f0f7 !important; }
+ul[data-baseweb="menu"] li:hover   { background: #E3F4FB !important; }
+li[aria-selected="true"]           { background: #d0ecf8 !important; font-weight: 600 !important; }
 [data-testid="stMetric"]           { background: #FFFFFF; border: 1px solid rgba(15,56,90,0.10);
                                      border-radius: 10px; padding: 12px 14px;
                                      box-shadow: 0 2px 6px rgba(15,56,90,0.06); }
 [data-testid="stMetric"] > div:first-child { color: #6a8a9e !important; font-size: 11px !important; text-transform: uppercase; }
 [data-testid="stMetricValue"]      { font-size: 20px !important; font-weight: 700 !important; color: #0F385A !important; }
 [data-testid="stDataFrame"]        { border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(15,56,90,0.08); }
-button[data-baseweb="tab"]         { color: #6a8a9e !important; background: transparent !important; font-size: 12px !important; font-weight: 500 !important; }
+button[data-baseweb="tab"]         { color: #6a8a9e !important; background: transparent !important; font-size: 13px !important; font-weight: 500 !important; }
 button[data-baseweb="tab"][aria-selected="true"] { color: #0F385A !important; border-bottom-color: #1FB2DE !important; font-weight: 700 !important; }
 hr  { border-color: rgba(15,56,90,0.10) !important; }
 [data-testid="stExpander"] { background: #FFFFFF; border: 1px solid rgba(15,56,90,0.10); border-radius: 10px; }
 footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
-.block-container { padding-top: 1rem; padding-bottom: 2rem; }
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0F385A 0%, #1A5276 45%, #1FB2DE 100%) !important;
+    border-right: none !important;
+}
+[data-testid="stSidebarNav"] { display: none !important; }
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label  { color: rgba(255,255,255,0.80) !important; }
+[data-testid="stSidebar"] hr     { border-color: rgba(255,255,255,0.20) !important; }
+[data-testid="stSidebar"] [data-testid="stPageLink"] a {
+    color: rgba(255,255,255,0.82) !important;
+    background: rgba(255,255,255,0.08) !important;
+    border-radius: 8px !important;
+    padding: 8px 12px 8px 10px !important;
+    margin-bottom: 3px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    transition: background .15s;
+}
+[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {
+    background: rgba(255,255,255,0.18) !important;
+    color: #FFFFFF !important;
+}
+[data-testid="stSidebar"] [data-testid="stPageLink"][aria-current="page"] a,
+[data-testid="stSidebar"] [data-testid="stPageLink"] a[aria-current="page"] {
+    background: rgba(255,255,255,0.22) !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    border-left: 3px solid #42F2F2 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -72,10 +109,40 @@ PROC_SHORT = {
 
 N_ETAPAS = len(ETAPAS_MAP)
 
-# ── Header ─────────────────────────────────────────────────────────────────────
-st.markdown("<h2 style='margin-bottom:2px'>📄 Programas en Reforma Curricular</h2>",
-            unsafe_allow_html=True)
-st.caption(f"Vista general con conteo de etapas completadas · {len(df_raw)} programas totales")
+# ── Sidebar ─────────────────────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown(
+        '<div style="padding:18px 6px 6px;text-align:center">'
+        '<div style="font-size:11px;font-weight:800;color:rgba(255,255,255,0.55);'
+        'letter-spacing:2px;text-transform:uppercase">Vicerrectoría Académica</div>'
+        '<div style="font-size:16px;font-weight:700;color:#FFFFFF;margin-top:4px;line-height:1.3">'
+        'Reforma Curricular</div></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
+    st.page_link("app.py",                          label="Resumen General",     icon="📊")
+    st.page_link("pages/1_Detalle_por_Etapa.py",    label="Detalle por Etapa",   icon="📋")
+    st.page_link("pages/2_Programa.py",             label="Ficha de Programa",   icon="🔍")
+    st.markdown(
+        '<div style="padding:12px 6px;font-size:10px;color:rgba(255,255,255,0.40);text-align:center">'
+        'POLI · 2025–2026</div>',
+        unsafe_allow_html=True,
+    )
+
+# ── Header banner ───────────────────────────────────────────────────────────────
+st.markdown(
+    '<div style="'
+    'background:linear-gradient(135deg,#0F385A 0%,#1A5276 50%,#1FB2DE 100%);'
+    'padding:18px 24px 14px;'
+    'border-radius:0 0 12px 12px;'
+    'border-bottom:3px solid #42F2F2;">'
+    '<div style="font-size:21px;font-weight:700;color:#FFFFFF;letter-spacing:-.3px">'
+    'Ficha de Programa</div>'
+    f'<div style="font-size:12px;color:rgba(255,255,255,0.70);margin-top:5px">'
+    f'Vista general con conteo de etapas completadas · {len(df_raw)} programas totales</div>'
+    '</div>',
+    unsafe_allow_html=True,
+)
 
 # ── Filtros inline ─────────────────────────────────────────────────────────────
 f1, f2, f3 = st.columns(3)
