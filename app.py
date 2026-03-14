@@ -262,13 +262,19 @@ with tab1:
     cat_colors = ["#A6CE38", "#1FB2DE", "#EC0677", "#c8d8e0"]
 
     # Construir lista de etapas agrupadas por proceso, con spacers entre grupos
+    # Solo incluir etapas con al menos un programa con datos
+    def _etapa_has_data(j):
+        return sum(int(df[f"cl_{j}"].eq(c).sum()) for c in ["done", "inprog", "nostart", "na", "info"]) > 0
+
     etapa_names, etapa_idxs, etapa_proc = [], [], []
-    for proc_i, proc in enumerate(PROCESOS):
-        items = [(i, em[1]) for i, em in enumerate(ETAPAS_MAP) if em[0] == proc]
+    for proc in PROCESOS:
+        items = [(i, em[1]) for i, em in enumerate(ETAPAS_MAP)
+                 if em[0] == proc and _etapa_has_data(i)]
         if not items:
             continue
-        if proc_i > 0:
-            etapa_names.append(f"__sp{proc_i}__")
+        if etapa_names:  # spacer entre grupos (solo si ya hay filas previas)
+            sp_key = f"__sp_{proc}__"
+            etapa_names.append(sp_key)
             etapa_idxs.append(None)
             etapa_proc.append(None)
         for i, name in items:
@@ -304,30 +310,34 @@ with tab1:
                 showlegend=False,
             ))
 
-        # Fondo de color suave + etiqueta por grupo de proceso
+        # Fondo de color suave + etiqueta centrada por grupo de proceso
         for proc in PROCESOS:
-            color  = PROCESO_COLOR[proc]
-            grp    = [n for n, p in zip(etapa_names, etapa_proc) if p == proc]
-            if not grp:
+            color     = PROCESO_COLOR[proc]
+            grp_idxs  = [k for k, p in enumerate(etapa_proc) if p == proc]
+            if not grp_idxs:
                 continue
+            mid_idx   = (grp_idxs[0] + grp_idxs[-1]) / 2   # posición central del grupo
             fig_bar.add_shape(
                 type="rect", layer="below",
-                x0=0, x1=100, y0=grp[0], y1=grp[-1],
+                x0=0, x1=100,
+                y0=etapa_names[grp_idxs[0]], y1=etapa_names[grp_idxs[-1]],
                 yref="y", xref="x",
                 fillcolor=color, opacity=0.06,
                 line_color=color, line_width=0.8,
             )
             fig_bar.add_annotation(
-                x=100, y=grp[0],
+                x=50, y=mid_idx,
                 xref="x", yref="y",
                 text=f"<b>{proc_short_map.get(proc, proc)}</b>",
                 showarrow=False,
-                font=dict(size=8, color=color, family="Segoe UI"),
-                xanchor="right", yanchor="bottom",
-                bgcolor="rgba(255,255,255,0.7)",
+                font=dict(size=9, color=color, family="Segoe UI"),
+                xanchor="center", yanchor="middle",
+                bgcolor="rgba(255,255,255,0.80)",
+                bordercolor=color, borderwidth=1, borderpad=3,
+                opacity=0.9,
             )
 
-        tick_text = ["" if n.startswith("__sp") else n for n in etapa_names]
+        tick_text = ["" if nm.startswith("__sp") else nm for nm in etapa_names]
         fig_bar.update_layout(
             barmode="stack", height=520,
             margin=dict(l=190, r=10, t=6, b=10),
