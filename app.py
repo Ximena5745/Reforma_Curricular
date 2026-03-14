@@ -171,13 +171,13 @@ st.markdown(
 f1, f2, f3, f4 = st.columns([2, 2, 2, 1])
 with f1:
     modalidades = ["Todas las modalidades"] + sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
-    sel_mod = st.selectbox("Modalidad", modalidades)
+    sel_mod = st.selectbox("Modalidad", modalidades, help="Filtra los programas por su modalidad de oferta (presencial, virtual, distancia, etc.)")
 with f2:
     fac_ops = [fac_labels.get(f, f) for f in sorted(df_raw["FACULTAD"].dropna().unique())]
-    sel_fac = st.selectbox("Facultad", ["Todas las facultades"] + fac_ops)
+    sel_fac = st.selectbox("Facultad", ["Todas las facultades"] + fac_ops, help="Filtra los programas por facultad. Hay tres facultades: Sociedad Cultura y Creatividad, Ingeniería Diseño e Innovación, y Negocios Gestión y Sostenibilidad.")
 with f3:
     periodos = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
-    sel_per  = st.selectbox("Periodo de implementación", ["Todos los periodos"] + periodos)
+    sel_per  = st.selectbox("Periodo de implementación", ["Todos los periodos"] + periodos, help="Filtra por el semestre objetivo de implementación del programa. Los periodos 2026 son los más urgentes.")
 with f4:
     st.caption(f"📊 Total: **{len(df_raw)}** programas")
     st.caption("📂 Excel · Hoja: Maestro")
@@ -267,16 +267,17 @@ def _arc(pct, color, r=22, sz=56):
         f'</svg>'
     )
 
-def _kpi(label, val, sub, color, pct=None, icon="◈"):
+def _kpi(label, val, sub, color, pct=None, icon="◈", tooltip=""):
     arc = _arc(pct, color) if pct is not None else (
         f'<div style="width:56px;height:56px;display:flex;align-items:center;'
         f'justify-content:center;font-size:28px">{icon}</div>'
     )
+    tip = f' title="{tooltip}"' if tooltip else ""
     return (
-        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);'
+        f'<div{tip} style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);'
         f'border-left:4px solid {color};border-radius:12px;'
         f'padding:14px 16px;display:flex;align-items:center;gap:12px;min-height:84px;'
-        f'box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
+        f'box-shadow:0 2px 8px rgba(15,56,90,0.07);cursor:help">'
         f'<div style="flex-shrink:0">{arc}</div>'
         f'<div style="flex:1;min-width:0">'
         f'<div style="font-size:10px;color:#6a8a9e;text-transform:uppercase;'
@@ -291,6 +292,10 @@ def _donut_card(proc, pct, done, inp, nst, na_val, color, size=128, r=44, sw=13)
     circ  = 2 * math.pi * r
     cx    = size // 2
     total = max(done + inp + nst + na_val, 1)
+    _tip  = (f"Proceso: {proc} · Avance promedio: {pct}% | "
+             f"De {done+inp+nst+na_val} registros de etapas: "
+             f"{done} Finalizadas · {inp} En Proceso · {nst} Sin iniciar · {na_val} N/A. "
+             f"El % es el promedio del avance de este proceso en todos los programas filtrados.")
     segs  = [(done, "#A6CE38"), (inp, "#1FB2DE"), (nst, "#EC0677"), (na_val, "#c8d8e0")]
     arcs  = f'<circle cx="{cx}" cy="{cx}" r="{r}" fill="none" stroke="#edf1f5" stroke-width="{sw}"/>'
     off   = 0.0
@@ -311,9 +316,9 @@ def _donut_card(proc, pct, done, inp, nst, na_val, color, size=128, r=44, sw=13)
     svg   = f'<svg width="{size}" height="{size}" viewBox="0 0 {size} {size}">{arcs}</svg>'
     label = proc_short_map.get(proc, proc)
     return (
-        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,.10);'
+        f'<div title="{_tip}" style="background:#FFFFFF;border:1px solid rgba(15,56,90,.10);'
         f'border-top:3px solid {color};border-radius:10px;'
-        f'padding:10px 8px 8px;box-shadow:0 2px 8px rgba(15,56,90,.06);text-align:center">'
+        f'padding:10px 8px 8px;box-shadow:0 2px 8px rgba(15,56,90,.06);text-align:center;cursor:help">'
         f'<div style="font-size:10px;font-weight:700;color:{color};text-transform:uppercase;'
         f'letter-spacing:.4px;margin-bottom:4px;overflow:hidden;text-overflow:ellipsis;'
         f'white-space:nowrap" title="{proc}">{label}</div>'
@@ -435,21 +440,36 @@ with tab1:
     # KPI fila 1
     st.caption(f"Mostrando **{n}** de {len(df_raw)} programas")
     c1, c2, c3, c4 = st.columns(4)
-    c1.markdown(_kpi("Programas en reforma",  n,          f"de {len(df_raw)} en total",                    "#0F385A", None, "📚"), unsafe_allow_html=True)
-    c2.markdown(_kpi("Avance promedio",        f"{avg_av}%", "sobre todos los procesos",                   "#A6CE38", avg_av),       unsafe_allow_html=True)
-    c3.markdown(_kpi("Avanzados ≥ 70%",        cnt_adv,    f"de {n} programas",                            "#1FB2DE", round(cnt_adv/n*100) if n else 0), unsafe_allow_html=True)
-    c4.markdown(_kpi("Urgentes / Prioritarios",  cnt_crit,   f"{cnt_urgente} urgentes · {cnt_prioritario} prioritarios", "#EC0677", round(cnt_crit/n*100) if n else 0), unsafe_allow_html=True)
+    c1.markdown(_kpi("Programas en reforma",  n,          f"de {len(df_raw)} en total",                    "#0F385A", None, "📚",
+        tooltip="Total de programas académicos que están dentro del proceso de reforma curricular, aplicando los filtros activos."), unsafe_allow_html=True)
+    c2.markdown(_kpi("Avance promedio",        f"{avg_av}%", "sobre todos los procesos",                   "#A6CE38", avg_av,
+        tooltip=f"Promedio del avance general de los {n} programas filtrados. Se calcula como la media de todos los procesos de reforma de cada programa."), unsafe_allow_html=True)
+    c3.markdown(_kpi("Avanzados ≥ 70%",        cnt_adv,    f"de {n} programas",                            "#1FB2DE", round(cnt_adv/n*100) if n else 0,
+        tooltip="Programas cuyo avance general supera el 70% en todos los procesos. Se consideran 'En curso' y con menor riesgo de incumplimiento."), unsafe_allow_html=True)
+    c4.markdown(_kpi("Urgentes / Prioritarios",  cnt_crit,   f"{cnt_urgente} urgentes · {cnt_prioritario} prioritarios", "#EC0677", round(cnt_crit/n*100) if n else 0,
+        tooltip="Urgente: periodo 2026 con avance <70%. Prioritario: periodo 2027-1 con avance <40%. Estos programas requieren atención inmediata para cumplir los plazos de implementación."), unsafe_allow_html=True)
 
     st.markdown("<div style='margin:6px 0'></div>", unsafe_allow_html=True)
 
     # KPI fila 2
     c5, c6, c7, c8 = st.columns(4)
-    c5.markdown(_kpi("Periodo 2026-2",       cnt_2026,       "programas más urgentes",       "#F47B20", round(cnt_2026/n*100)   if n else 0), unsafe_allow_html=True)
-    c6.markdown(_kpi("Periodo 2027-1",       cnt_2027_1,     "programas próximo semestre",   "#FBAF17", round(cnt_2027_1/n*100) if n else 0), unsafe_allow_html=True)
-    c7.markdown(_kpi("Proceso rezagado",     f"{proc_min_pct}%", proc_short_map.get(proc_min, proc_min), "#EC0677", proc_min_pct), unsafe_allow_html=True)
-    c8.markdown(_kpi("Proceso más avanzado", f"{proc_max_pct}%", proc_short_map.get(proc_max, proc_max), "#A6CE38", proc_max_pct), unsafe_allow_html=True)
+    c5.markdown(_kpi("Periodo 2026-2",       cnt_2026,       "programas más urgentes",       "#F47B20", round(cnt_2026/n*100)   if n else 0,
+        tooltip="Programas cuyo periodo de implementación es 2026-2. Son los de mayor urgencia porque su fecha límite es el próximo semestre."), unsafe_allow_html=True)
+    c6.markdown(_kpi("Periodo 2027-1",       cnt_2027_1,     "programas próximo semestre",   "#FBAF17", round(cnt_2027_1/n*100) if n else 0,
+        tooltip="Programas con periodo de implementación 2027-1. Deben completar al menos el 40% del proceso para no considerarse prioritarios."), unsafe_allow_html=True)
+    c7.markdown(_kpi("Proceso rezagado",     f"{proc_min_pct}%", proc_short_map.get(proc_min, proc_min), "#EC0677", proc_min_pct,
+        tooltip=f"Proceso con el avance promedio más bajo entre todos los programas filtrados. Proceso: {proc_min} ({proc_min_pct}%). Indica el cuello de botella global de la reforma."), unsafe_allow_html=True)
+    c8.markdown(_kpi("Proceso más avanzado", f"{proc_max_pct}%", proc_short_map.get(proc_max, proc_max), "#A6CE38", proc_max_pct,
+        tooltip=f"Proceso con el avance promedio más alto entre todos los programas filtrados. Proceso: {proc_max} ({proc_max_pct}%)."), unsafe_allow_html=True)
 
-    st.markdown("#### Avance Consolidado por Proceso")
+    st.markdown(
+        '#### Avance Consolidado por Proceso '
+        '<span title="Cada donut muestra el avance promedio de un proceso en todos los programas filtrados. '
+        'Los segmentos representan: verde=Finalizado, azul=En Proceso, rosa=Sin iniciar, gris=N/A. '
+        'El % central es el promedio ponderado del proceso." '
+        'style="cursor:help;color:#6a8a9e;font-size:14px">ⓘ</span>',
+        unsafe_allow_html=True,
+    )
 
     # Donuts — 2 filas de 4
     row1_cols = st.columns(4)
@@ -462,7 +482,14 @@ with tab1:
                 unsafe_allow_html=True,
             )
 
-    st.markdown("#### Estado por Etapa")
+    st.markdown(
+        '#### Estado por Etapa '
+        '<span title="Gráfica de barras apiladas al 100%. Cada barra es una etapa del proceso de reforma. '
+        'Muestra qué proporción de programas está Finalizada, En Proceso, Sin iniciar o No aplica en esa etapa. '
+        'Haga clic en una barra para ver el listado de programas en ese estado." '
+        'style="cursor:help;color:#6a8a9e;font-size:14px">ⓘ</span>',
+        unsafe_allow_html=True,
+    )
 
     cats       = ["done", "inprog", "nostart", "na"]
     cat_labels = ["Finalizado", "En proceso", "Sin iniciar", "No aplica"]
@@ -622,7 +649,15 @@ with tab2:
     col_l, col_r = st.columns(2)
 
     with col_l:
-        st.markdown("##### Programas por nivel de prioridad y facultad")
+        st.markdown(
+            '##### Programas por nivel de prioridad y facultad '
+            '<span title="Cantidad de programas por facultad clasificados por nivel de prioridad. '
+            'Urgente=periodo 2026 con avance &lt;70%; Prioritario=2027-1 con avance &lt;40%; '
+            'En seguimiento=avance &lt;70%; En curso=avance ≥70%. '
+            'Haga clic en una barra para ver el detalle de programas." '
+            'style="cursor:help;color:#6a8a9e;font-size:13px">ⓘ</span>',
+            unsafe_allow_html=True,
+        )
         df_fac = df[["FACULTAD", "avance_general", "PERIODO DE IMPLEMENTACIÓN", "_clasif"]].copy()
         df_fac["Facultad"] = df_fac["FACULTAD"].map(fac_labels).fillna(df_fac["FACULTAD"])
         df_fac["Rango"]    = df_fac["_clasif"]
@@ -678,7 +713,14 @@ with tab2:
         )
 
         # Avance promedio por facultad — color propio de cada facultad
-        st.markdown("##### Avance promedio por facultad")
+        st.markdown(
+            '##### Avance promedio por facultad '
+            '<span title="Promedio del avance general de todos los programas de cada facultad. '
+            'El avance general de un programa es la media de sus avances por proceso. '
+            'El color de cada barra identifica la facultad según la paleta institucional." '
+            'style="cursor:help;color:#6a8a9e;font-size:13px">ⓘ</span>',
+            unsafe_allow_html=True,
+        )
         fac_avg = df_fac.groupby("Facultad")["avance_general"].agg(["mean", "count"]).reset_index()
         fac_avg.columns = ["Facultad", "avance", "total"]
         fac_avg = fac_avg.sort_values("avance")
@@ -715,7 +757,15 @@ with tab2:
         st.plotly_chart(fig_favg, use_container_width=True, config={"displayModeBar": False})
 
     with col_r:
-        st.markdown("##### Ranking de programas por avance")
+        st.markdown(
+            '##### Ranking de programas por avance '
+            '<span title="Programas ordenados por avance general (menor a mayor). '
+            'El color de cada barra identifica la facultad a la que pertenece el programa. '
+            'Use el filtro para ver los 15 más rezagados, los 15 más avanzados o todos. '
+            'Haga clic en una barra para ver el detalle del programa por proceso." '
+            'style="cursor:help;color:#6a8a9e;font-size:13px">ⓘ</span>',
+            unsafe_allow_html=True,
+        )
         df_s = df[["NOMBRE DEL PROGRAMA", "avance_general", "FACULTAD", "_clasif",
                    "PERIODO DE IMPLEMENTACIÓN"]].copy()
         df_s["FacCorta"] = df_s["FACULTAD"].map(fac_labels).fillna(df_s["FACULTAD"])
