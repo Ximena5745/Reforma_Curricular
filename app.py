@@ -298,7 +298,7 @@ with tab1:
                 name=lbl, y=etapa_names, x=pcts, orientation="h",
                 marker_color=clr, marker_line_width=0,
                 text=txt, textposition="inside", insidetextanchor="middle",
-                constraintext="none",
+                constraintext="none", textangle=0,
                 textfont=dict(size=10, color="white", family="Segoe UI"),
                 hovertext=htxt, hoverinfo="text",
                 showlegend=False,
@@ -330,14 +330,17 @@ with tab1:
         tick_text = ["" if n.startswith("__sp") else n for n in etapa_names]
         fig_bar.update_layout(
             barmode="stack", height=520,
-            margin=dict(l=0, r=10, t=6, b=10),
+            margin=dict(l=190, r=10, t=6, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
+            uniformtext=dict(minsize=8, mode="hide"),
             xaxis=dict(range=[0, 100], ticksuffix="%", showgrid=True,
                        gridcolor="rgba(15,56,90,.07)", color="#6a8a9e", tickfont=dict(size=10)),
             yaxis=dict(
                 color="#4a6a7e", tickfont=dict(size=9.5), autorange="reversed",
                 tickvals=etapa_names, ticktext=tick_text,
+                side="left", automargin=False, ticklabelposition="outside left",
+                ticklen=0,
             ),
             font=dict(family="Segoe UI"),
             bargap=0.28,

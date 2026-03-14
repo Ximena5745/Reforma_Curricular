@@ -208,20 +208,24 @@ with col_g1:
             name=lbl, y=proc_names_f, x=pcts, orientation="h",
             marker_color=clr, marker_line_width=0,
             text=txt, textposition="inside", insidetextanchor="middle",
-            constraintext="none",
+            constraintext="none", textangle=0,
             textfont=dict(size=10, color="white", family="Segoe UI"),
             hovertext=htxt, hoverinfo="text",
         ))
+    # max label length to set left margin
+    max_lbl = max((len(p) for p in proc_names_f), default=10)
     fig_sp.update_layout(
         barmode="stack", height=max(200, len(proc_names_f) * 38 + 60),
-        margin=dict(l=0, r=10, t=10, b=10),
+        margin=dict(l=max_lbl * 6, r=10, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
+        uniformtext=dict(minsize=8, mode="hide"),
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
                     font=dict(size=10, color="#4a6a7e"), bgcolor="rgba(0,0,0,0)"),
         xaxis=dict(range=[0, 100], ticksuffix="%", showgrid=True,
                    gridcolor="rgba(15,56,90,0.07)", color="#4a6a7e", tickfont=dict(size=10)),
-        yaxis=dict(color="#0F385A", tickfont=dict(size=10), autorange="reversed"),
+        yaxis=dict(color="#0F385A", tickfont=dict(size=10), autorange="reversed",
+                   side="left", automargin=False, ticklabelposition="outside left", ticklen=0),
         font=dict(family="Segoe UI"),
         bargap=0.28,
     )
