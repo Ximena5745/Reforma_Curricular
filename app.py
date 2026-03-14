@@ -340,7 +340,7 @@ CLASIF_COLORS = {
 }
 
 # ── Ventana emergente: definición de estados ────────────────────────────────────
-@st.experimental_dialog("Clasificación de programas · Criterios de prioridad", width="large")
+@st.dialog("Clasificación de programas · Criterios de prioridad", width="large")
 def _dialog_estados():
     st.markdown(
         "Los programas se clasifican automáticamente en **4 niveles de prioridad** "
