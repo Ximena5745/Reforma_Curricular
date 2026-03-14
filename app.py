@@ -31,8 +31,16 @@ st.markdown("""
 h1,h2,h3,h4,h5                     { font-family: 'Segoe UI', sans-serif; color: #0F385A !important; }
 p, li, label, caption               { color: #2a4a5e; }
 [data-testid="stCaption"]           { color: #6a8a9e !important; }
+/* Selectbox control */
 div[data-baseweb="select"] > div   { background: #FFFFFF !important; border-color: rgba(15,56,90,0.20) !important; color: #0F385A !important; }
+div[data-baseweb="select"] span    { color: #0F385A !important; }
 [data-testid="stSelectbox"] label  { font-size: 12px; color: #4a6a7e; }
+/* Dropdown list options */
+ul[data-baseweb="menu"]            { background: #FFFFFF !important; border: 1px solid rgba(15,56,90,0.15) !important; box-shadow: 0 4px 16px rgba(15,56,90,0.12) !important; }
+ul[data-baseweb="menu"] li         { color: #0F385A !important; background: #FFFFFF !important; }
+ul[data-baseweb="menu"] li:hover   { background: #F0F4F8 !important; }
+li[aria-selected="true"]           { background: #e8f0f7 !important; }
+/* Tabs */
 button[data-baseweb="tab"]         { color: #6a8a9e !important; background: transparent !important; font-size: 13px !important; font-weight: 500 !important; }
 button[data-baseweb="tab"][aria-selected="true"] { color: #0F385A !important; border-bottom-color: #1FB2DE !important; font-weight: 700 !important; }
 [data-testid="stDataFrame"]        { border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(15,56,90,0.08); }
@@ -41,6 +49,11 @@ footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
 .block-container { padding-top: 1.2rem; padding-bottom: 2rem; }
 [data-testid="stExpander"]         { background: #FFFFFF; border: 1px solid rgba(15,56,90,0.10); border-radius: 10px; }
+/* Sidebar nav links */
+[data-testid="stSidebarNav"] a     { color: #0F385A !important; }
+[data-testid="stSidebarNav"] a:hover { color: #1FB2DE !important; }
+/* Info box */
+[data-testid="stNotification"]     { background: #e8f6fc !important; color: #0F385A !important; border-color: #1FB2DE !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -56,7 +69,7 @@ fac_inv = {v: k for k, v in fac_labels.items()}
 
 # ── Header ─────────────────────────────────────────────────────────────────────
 st.markdown(
-    "<h2 style='margin-bottom:2px;color:#e6edf3'>🎓 Control Maestro · Reforma Curricular</h2>",
+    "<h2 style='margin-bottom:2px;color:#0F385A'>🎓 Control Maestro · Reforma Curricular</h2>",
     unsafe_allow_html=True,
 )
 st.caption("Vicerrectoría Académica · Seguimiento de avance por proceso y etapa")
@@ -206,7 +219,7 @@ for idx, proc in enumerate(PROCESOS):
         go.Pie(
             values=[max(d, 0.001), max(i_, 0.001), max(ns, 0.001), max(na, 0.001)],
             hole=0.68,
-            marker_colors=["#3ecf8e", "#4f8ef7", "#ef4444", "#374151"],
+            marker_colors=["#A6CE38", "#1FB2DE", "#EC0677", "#c8d8e0"],
             showlegend=False,
             textinfo="none",
             hovertemplate=f"<b>{proc}</b><br>%{{label}}: %{{value}}<extra></extra>",
@@ -339,7 +352,7 @@ with tab2:
             fig_tree = px.treemap(
                 df_t, path=["Facultad", "Programa"], values="Avance",
                 color="Avance",
-                color_continuous_scale=[[0, "#ef4444"], [0.3, "#f97316"], [0.7, "#4f8ef7"], [1, "#3ecf8e"]],
+                color_continuous_scale=[[0, "#EC0677"], [0.3, "#FBAF17"], [0.7, "#1FB2DE"], [1, "#A6CE38"]],
                 range_color=[0, 100],
             )
             fig_tree.update_traces(textfont=dict(size=11, family="Segoe UI"))
@@ -347,10 +360,10 @@ with tab2:
                 height=430,
                 margin=dict(l=0, r=0, t=10, b=0),
                 paper_bgcolor="rgba(0,0,0,0)",
-                font=dict(family="Segoe UI", color="#e6edf3"),
+                font=dict(family="Segoe UI", color="#0F385A"),
                 coloraxis_colorbar=dict(
-                    tickfont=dict(color="#8b9fc0"),
-                    title=dict(text="%", font=dict(color="#8b9fc0")),
+                    tickfont=dict(color="#4a6a7e"),
+                    title=dict(text="%", font=dict(color="#4a6a7e")),
                 ),
             )
             st.plotly_chart(fig_tree, use_container_width=True)
@@ -394,12 +407,12 @@ with tab3:
             mode="gauge+number",
             value=avg_av,
             domain={"x": [0, 1], "y": [0, 1]},
-            number={"suffix": "%", "font": {"size": 42, "color": "#e6edf3", "family": "Segoe UI"}},
+            number={"suffix": "%", "font": {"size": 42, "color": "#0F385A", "family": "Segoe UI"}},
             gauge={
                 "axis": {
                     "range": [0, 100],
-                    "tickfont": {"color": "#8b9fc0", "size": 10},
-                    "tickcolor": "rgba(255,255,255,0.2)",
+                    "tickfont": {"color": "#4a6a7e", "size": 10},
+                    "tickcolor": "rgba(15,56,90,0.2)",
                 },
                 "bar": {"color": color_for_pct(avg_av), "thickness": 0.3},
                 "bgcolor": "rgba(0,0,0,0)",

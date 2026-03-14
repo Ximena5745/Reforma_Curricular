@@ -26,7 +26,12 @@ st.markdown("""
 h1,h2,h3,h4,h5 { font-family: 'Segoe UI', sans-serif; color: #0F385A; }
 p, li, span { color: #0F385A; }
 div[data-baseweb="select"] > div   { background: #FFFFFF !important; border-color: rgba(15,56,90,0.20) !important; color: #0F385A !important; }
+div[data-baseweb="select"] span    { color: #0F385A !important; }
 [data-testid="stSelectbox"] label  { font-size: 12px; color: #4a6a7e; }
+ul[data-baseweb="menu"]            { background: #FFFFFF !important; border: 1px solid rgba(15,56,90,0.15) !important; box-shadow: 0 4px 16px rgba(15,56,90,0.12) !important; }
+ul[data-baseweb="menu"] li         { color: #0F385A !important; background: #FFFFFF !important; }
+ul[data-baseweb="menu"] li:hover   { background: #F0F4F8 !important; }
+li[aria-selected="true"]           { background: #e8f0f7 !important; }
 [data-testid="stDataFrame"]        { border-radius: 10px; overflow: hidden; }
 footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
