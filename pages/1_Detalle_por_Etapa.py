@@ -188,37 +188,44 @@ for proc in PROCESOS:
     p_done_f.append(d); p_inp_f.append(i_); p_nst_f.append(ns)
     p_na_f.append(na);  p_pct_f.append(pct)
 
-col_g1, col_g2 = st.columns([3, 2])
+col_g1, col_g2 = st.columns([2, 2])
 
 with col_g1:
     st.markdown("##### Distribución de estados por proceso (etapas × programas)")
     fig_sp = go.Figure()
-    for vals_lst, lbl, clr in [
-        (p_done_f, "Finalizado",   "#A6CE38"),
-        (p_inp_f,  "En proceso",   "#1FB2DE"),
-        (p_nst_f,  "Sin iniciar",  "#EC0677"),
-        (p_na_f,   "No aplica",    "#ccd5dc"),
-    ]:
+    all_data = [
+        (p_done_f, "Finalizado",  "#A6CE38"),
+        (p_inp_f,  "En proceso",  "#1FB2DE"),
+        (p_nst_f,  "Sin iniciar", "#EC0677"),
+        (p_na_f,   "No aplica",   "#ccd5dc"),
+    ]
+    proc_totals = [sum(lst[k] for lst, _, _ in all_data) for k in range(len(proc_names_f))]
+    for vals_lst, lbl, clr in all_data:
+        pcts = [round(vals_lst[k] / max(proc_totals[k], 1) * 100, 1) for k in range(len(proc_names_f))]
+        htxt = [f"<b>{proc_names_f[k]}</b><br>{lbl}: {vals_lst[k]} ({pcts[k]}%)" for k in range(len(proc_names_f))]
+        txt  = [str(vals_lst[k]) if pcts[k] >= 9 else "" for k in range(len(proc_names_f))]
         fig_sp.add_trace(go.Bar(
-            name=lbl, y=proc_names_f, x=vals_lst, orientation="h",
-            marker_color=clr,
-            text=[str(v) if v > 0 else "" for v in vals_lst],
-            textposition="inside", insidetextanchor="middle",
-            textfont=dict(size=9, color="white"),
+            name=lbl, y=proc_names_f, x=pcts, orientation="h",
+            marker_color=clr, marker_line_width=0,
+            text=txt, textposition="inside", insidetextanchor="middle",
+            constraintext="none",
+            textfont=dict(size=10, color="white", family="Segoe UI"),
+            hovertext=htxt, hoverinfo="text",
         ))
     fig_sp.update_layout(
-        barmode="stack", height=max(250, len(proc_names_f) * 52 + 60),
+        barmode="stack", height=max(200, len(proc_names_f) * 38 + 60),
         margin=dict(l=0, r=10, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
                     font=dict(size=10, color="#4a6a7e"), bgcolor="rgba(0,0,0,0)"),
-        xaxis=dict(showgrid=True, gridcolor="rgba(15,56,90,0.07)", color="#4a6a7e",
-                   tickfont=dict(size=10)),
+        xaxis=dict(range=[0, 100], ticksuffix="%", showgrid=True,
+                   gridcolor="rgba(15,56,90,0.07)", color="#4a6a7e", tickfont=dict(size=10)),
         yaxis=dict(color="#0F385A", tickfont=dict(size=10), autorange="reversed"),
         font=dict(family="Segoe UI"),
+        bargap=0.55,
     )
-    st.plotly_chart(fig_sp, use_container_width=True)
+    st.plotly_chart(fig_sp, use_container_width=True, config={"displayModeBar": False})
 
 with col_g2:
     st.markdown("##### Avance promedio por proceso (%)")

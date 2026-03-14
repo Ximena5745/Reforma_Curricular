@@ -257,34 +257,67 @@ tab1, tab2, tab3 = st.tabs(["📊 Estado por Etapa", "🏛️ Por Facultad y Pro
 
 # ── Tab 1: Estado por etapa ────────────────────────────────────────────────────
 with tab1:
-    etapa_names = [em[1] for em in ETAPAS_MAP]
     cats       = ["done", "inprog", "nostart", "na"]
     cat_labels = ["Finalizado", "En proceso", "Sin iniciar", "No aplica"]
     cat_colors = ["#A6CE38", "#1FB2DE", "#EC0677", "#c8d8e0"]
 
-    fig_bar = go.Figure()
-    for cat, lbl, clr in zip(cats, cat_labels, cat_colors):
-        counts = [int(df[f"cl_{i}"].eq(cat).sum()) for i in range(len(ETAPAS_MAP))]
-        fig_bar.add_trace(go.Bar(
-            name=lbl, y=etapa_names, x=counts, orientation="h",
-            marker_color=clr,
-            text=[str(c) if c > 0 else "" for c in counts],
-            textposition="inside", insidetextanchor="middle",
-            textfont=dict(size=9, color="white"),
-        ))
+    # Etapas agrupadas por proceso para separación visual
+    etapa_names, etapa_procs, etapa_idxs = [], [], []
+    for proc in PROCESOS:
+        for i, (p, name, _, _) in enumerate(ETAPAS_MAP):
+            if p == proc:
+                etapa_names.append(name)
+                etapa_procs.append(proc)
+                etapa_idxs.append(i)
 
-    fig_bar.update_layout(
-        barmode="stack", height=500,
-        margin=dict(l=0, r=10, t=10, b=10),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
-                    font=dict(size=10, color="#4a6a7e"), bgcolor="rgba(0,0,0,0)"),
-        xaxis=dict(showgrid=True, gridcolor="rgba(15,56,90,.07)", color="#6a8a9e", tickfont=dict(size=10)),
-        yaxis=dict(color="#4a6a7e", tickfont=dict(size=10), autorange="reversed"),
-        font=dict(family="Segoe UI"),
-    )
-    st.plotly_chart(fig_bar, use_container_width=True)
+    # Calcular conteos y porcentajes por etapa
+    all_counts = {}
+    for cat in cats:
+        all_counts[cat] = [int(df[f"cl_{j}"].eq(cat).sum()) for j in etapa_idxs]
+
+    totals = [sum(all_counts[cat][k] for cat in cats) for k in range(len(etapa_idxs))]
+
+    col_chart, col_legend = st.columns([3, 2])
+    with col_chart:
+        fig_bar = go.Figure()
+        for cat, lbl, clr in zip(cats, cat_labels, cat_colors):
+            pcts  = [round(all_counts[cat][k] / max(totals[k], 1) * 100, 1) for k in range(len(etapa_idxs))]
+            cnts  = all_counts[cat]
+            htxt  = [f"<b>{etapa_names[k]}</b><br>{lbl}: {cnts[k]} programas ({pcts[k]}%)" for k in range(len(etapa_idxs))]
+            # Mostrar conteo solo cuando el segmento es suficientemente ancho
+            txt   = [str(cnts[k]) if pcts[k] >= 9 else "" for k in range(len(etapa_idxs))]
+            fig_bar.add_trace(go.Bar(
+                name=lbl, y=etapa_names, x=pcts, orientation="h",
+                marker_color=clr, marker_line_width=0,
+                text=txt, textposition="inside", insidetextanchor="middle",
+                constraintext="none",
+                textfont=dict(size=10, color="white", family="Segoe UI"),
+                hovertext=htxt, hoverinfo="text",
+                showlegend=False,
+            ))
+
+        fig_bar.update_layout(
+            barmode="stack", height=420,
+            margin=dict(l=0, r=10, t=6, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            xaxis=dict(range=[0, 100], ticksuffix="%", showgrid=True,
+                       gridcolor="rgba(15,56,90,.07)", color="#6a8a9e", tickfont=dict(size=10)),
+            yaxis=dict(color="#4a6a7e", tickfont=dict(size=10), autorange="reversed"),
+            font=dict(family="Segoe UI"),
+            bargap=0.55,
+        )
+        st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False})
+
+    with col_legend:
+        st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
+        for lbl, clr in zip(cat_labels, cat_colors):
+            st.markdown(
+                f'<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
+                f'<div style="width:12px;height:12px;border-radius:3px;background:{clr};flex-shrink:0"></div>'
+                f'<span style="font-size:11px;color:#4a6a7e">{lbl}</span></div>',
+                unsafe_allow_html=True,
+            )
 
 # ── Tab 2: Por facultad ────────────────────────────────────────────────────────
 with tab2:
