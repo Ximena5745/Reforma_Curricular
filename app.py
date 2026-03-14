@@ -253,7 +253,7 @@ st.divider()
 
 # ── Visualizaciones ────────────────────────────────────────────────────────────
 st.markdown("### Análisis y Visualizaciones")
-tab1, tab2, tab3 = st.tabs(["📊 Estado por Etapa", "🏛️ Por Facultad y Programa", "📈 Distribución"])
+tab1, tab2, tab3, tab4 = st.tabs(["📊 Estado por Etapa", "🏛️ Por Facultad y Programa", "📈 Distribución", "📋 Tabla Resumen"])
 
 # ── Tab 1: Estado por etapa ────────────────────────────────────────────────────
 with tab1:
@@ -498,38 +498,74 @@ with tab3:
         )
         st.plotly_chart(fig_hist, use_container_width=True)
 
-st.divider()
+# ── Tab 4: Tabla resumen ───────────────────────────────────────────────────────
+with tab4:
+    st.caption(f"{n} programas · avance por proceso")
 
-# ── Tabla resumen ──────────────────────────────────────────────────────────────
-st.markdown("### Programas — Avance Detallado por Proceso")
+    display_cols = {
+        "NOMBRE DEL PROGRAMA":       "Programa",
+        "FACULTAD":                  "Facultad",
+        "MODALIDAD":                 "Modalidad",
+        "NIVEL":                     "Nivel",
+        "PERIODO DE IMPLEMENTACIÓN": "Periodo",
+        "avance_general":            "Avance %",
+    }
+    for proc in PROCESOS:
+        display_cols[f"proc_{proc}"] = proc
 
-display_cols = {
-    "NOMBRE DEL PROGRAMA":     "Programa",
-    "FACULTAD":                "Facultad",
-    "MODALIDAD":               "Modalidad",
-    "NIVEL":                   "Nivel",
-    "PERIODO DE IMPLEMENTACIÓN": "Periodo",
-    "avance_general":          "Avance %",
-}
-for proc in PROCESOS:
-    display_cols[f"proc_{proc}"] = proc
+    df_show = df[list(display_cols.keys())].copy().rename(columns=display_cols)
+    df_show["Facultad"] = df_show["Facultad"].map(fac_labels).fillna(df_show["Facultad"])
+    df_show["Avance %"] = df_show["Avance %"].apply(lambda x: f"{int(x)}%" if pd.notna(x) else "—")
+    for proc in PROCESOS:
+        df_show[proc] = df_show[proc].apply(
+            lambda x: f"{int(x)}%" if pd.notna(x) and x == x else "N/A"
+        )
 
-df_show = df[list(display_cols.keys())].copy().rename(columns=display_cols)
-df_show["Facultad"] = df_show["Facultad"].map(fac_labels).fillna(df_show["Facultad"])
-df_show["Avance %"] = df_show["Avance %"].apply(lambda x: f"{int(x)}%" if pd.notna(x) else "—")
-for proc in PROCESOS:
-    df_show[proc] = df_show[proc].apply(
-        lambda x: f"{int(x)}%" if pd.notna(x) and x == x else "N/A"
+    # Colorear columnas de proceso con su color institucional
+    def _style_proc(df_s):
+        result = pd.DataFrame("", index=df_s.index, columns=df_s.columns)
+        for proc in PROCESOS:
+            if proc not in df_s.columns:
+                continue
+            color = PROCESO_COLOR[proc]
+            r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+            result[proc] = (
+                f"background-color: rgba({r},{g},{b},0.10); "
+                f"color: {color}; font-weight: 600; text-align: center"
+            )
+        return result
+
+    header_styles = []
+    for proc in PROCESOS:
+        if proc in df_show.columns:
+            col_idx = list(df_show.columns).index(proc)
+            color   = PROCESO_COLOR[proc]
+            header_styles.append({
+                "selector": f"th.col_heading.col{col_idx}",
+                "props": [
+                    ("background-color", color),
+                    ("color", "white"),
+                    ("font-weight", "bold"),
+                    ("font-size", "11px"),
+                    ("text-align", "center"),
+                ],
+            })
+
+    styled = df_show.style.apply(_style_proc, axis=None).set_table_styles(
+        header_styles, overwrite=False
     )
 
-st.dataframe(
-    df_show,
-    use_container_width=True,
-    height=380,
-    hide_index=True,
-    column_config={
-        "Programa":  st.column_config.TextColumn(width="large"),
-        "Facultad":  st.column_config.TextColumn(width="medium"),
-        "Avance %":  st.column_config.TextColumn(width="small"),
-    },
-)
+    st.dataframe(
+        styled,
+        use_container_width=True,
+        height=460,
+        hide_index=True,
+        column_config={
+            "Programa":  st.column_config.TextColumn(width="large"),
+            "Facultad":  st.column_config.TextColumn(width="medium"),
+            "Avance %":  st.column_config.TextColumn(width="small"),
+            "Modalidad": st.column_config.TextColumn(width="small"),
+            "Nivel":     st.column_config.TextColumn(width="small"),
+            "Periodo":   st.column_config.TextColumn(width="small"),
+        },
+    )
