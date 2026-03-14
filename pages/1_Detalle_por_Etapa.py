@@ -223,7 +223,7 @@ with col_g1:
                    gridcolor="rgba(15,56,90,0.07)", color="#4a6a7e", tickfont=dict(size=10)),
         yaxis=dict(color="#0F385A", tickfont=dict(size=10), autorange="reversed"),
         font=dict(family="Segoe UI"),
-        bargap=0.55,
+        bargap=0.28,
     )
     st.plotly_chart(fig_sp, use_container_width=True, config={"displayModeBar": False})
 

@@ -261,31 +261,39 @@ with tab1:
     cat_labels = ["Finalizado", "En proceso", "Sin iniciar", "No aplica"]
     cat_colors = ["#A6CE38", "#1FB2DE", "#EC0677", "#c8d8e0"]
 
-    # Etapas agrupadas por proceso para separación visual
-    etapa_names, etapa_procs, etapa_idxs = [], [], []
-    for proc in PROCESOS:
-        for i, (p, name, _, _) in enumerate(ETAPAS_MAP):
-            if p == proc:
-                etapa_names.append(name)
-                etapa_procs.append(proc)
-                etapa_idxs.append(i)
+    # Construir lista de etapas agrupadas por proceso, con spacers entre grupos
+    etapa_names, etapa_idxs, etapa_proc = [], [], []
+    for proc_i, proc in enumerate(PROCESOS):
+        items = [(i, em[1]) for i, em in enumerate(ETAPAS_MAP) if em[0] == proc]
+        if not items:
+            continue
+        if proc_i > 0:
+            etapa_names.append(f"__sp{proc_i}__")
+            etapa_idxs.append(None)
+            etapa_proc.append(None)
+        for i, name in items:
+            etapa_names.append(name)
+            etapa_idxs.append(i)
+            etapa_proc.append(proc)
 
-    # Calcular conteos y porcentajes por etapa
-    all_counts = {}
-    for cat in cats:
-        all_counts[cat] = [int(df[f"cl_{j}"].eq(cat).sum()) for j in etapa_idxs]
-
-    totals = [sum(all_counts[cat][k] for cat in cats) for k in range(len(etapa_idxs))]
+    N = len(etapa_names)
+    totals = [
+        max(sum(int(df[f"cl_{j}"].eq(c).sum()) for c in cats) if j is not None else 1, 1)
+        for j in etapa_idxs
+    ]
 
     col_chart, col_legend = st.columns([3, 2])
     with col_chart:
         fig_bar = go.Figure()
         for cat, lbl, clr in zip(cats, cat_labels, cat_colors):
-            pcts  = [round(all_counts[cat][k] / max(totals[k], 1) * 100, 1) for k in range(len(etapa_idxs))]
-            cnts  = all_counts[cat]
-            htxt  = [f"<b>{etapa_names[k]}</b><br>{lbl}: {cnts[k]} programas ({pcts[k]}%)" for k in range(len(etapa_idxs))]
-            # Mostrar conteo solo cuando el segmento es suficientemente ancho
-            txt   = [str(cnts[k]) if pcts[k] >= 9 else "" for k in range(len(etapa_idxs))]
+            cnts = [int(df[f"cl_{j}"].eq(cat).sum()) if j is not None else 0 for j in etapa_idxs]
+            pcts = [round(cnts[k] / totals[k] * 100, 1) for k in range(N)]
+            htxt = [
+                f"<b>{etapa_names[k]}</b><br>{lbl}: {cnts[k]} ({pcts[k]}%)"
+                if etapa_idxs[k] is not None else ""
+                for k in range(N)
+            ]
+            txt = [str(cnts[k]) if pcts[k] >= 9 and etapa_idxs[k] is not None else "" for k in range(N)]
             fig_bar.add_trace(go.Bar(
                 name=lbl, y=etapa_names, x=pcts, orientation="h",
                 marker_color=clr, marker_line_width=0,
@@ -296,16 +304,43 @@ with tab1:
                 showlegend=False,
             ))
 
+        # Fondo de color suave + etiqueta por grupo de proceso
+        for proc in PROCESOS:
+            color  = PROCESO_COLOR[proc]
+            grp    = [n for n, p in zip(etapa_names, etapa_proc) if p == proc]
+            if not grp:
+                continue
+            fig_bar.add_shape(
+                type="rect", layer="below",
+                x0=0, x1=100, y0=grp[0], y1=grp[-1],
+                yref="y", xref="x",
+                fillcolor=color, opacity=0.06,
+                line_color=color, line_width=0.8,
+            )
+            fig_bar.add_annotation(
+                x=100, y=grp[0],
+                xref="x", yref="y",
+                text=f"<b>{proc_short_map.get(proc, proc)}</b>",
+                showarrow=False,
+                font=dict(size=8, color=color, family="Segoe UI"),
+                xanchor="right", yanchor="bottom",
+                bgcolor="rgba(255,255,255,0.7)",
+            )
+
+        tick_text = ["" if n.startswith("__sp") else n for n in etapa_names]
         fig_bar.update_layout(
-            barmode="stack", height=420,
+            barmode="stack", height=520,
             margin=dict(l=0, r=10, t=6, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             xaxis=dict(range=[0, 100], ticksuffix="%", showgrid=True,
                        gridcolor="rgba(15,56,90,.07)", color="#6a8a9e", tickfont=dict(size=10)),
-            yaxis=dict(color="#4a6a7e", tickfont=dict(size=10), autorange="reversed"),
+            yaxis=dict(
+                color="#4a6a7e", tickfont=dict(size=9.5), autorange="reversed",
+                tickvals=etapa_names, ticktext=tick_text,
+            ),
             font=dict(family="Segoe UI"),
-            bargap=0.55,
+            bargap=0.28,
         )
         st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False})
 
