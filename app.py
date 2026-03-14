@@ -34,8 +34,8 @@ st.markdown("""
 h1,h2,h3,h4,h5                     { font-family: 'Segoe UI', sans-serif; color: #0F385A !important; }
 p, li, label, caption               { color: #2a4a5e; }
 [data-testid="stCaption"]           { color: #6a8a9e !important; }
-/* ── Block container: sin padding top para que el banner toque el borde ── */
-.block-container { padding-top: 0 !important; padding-bottom: 2rem; }
+/* ── Block container ── */
+.block-container { padding-top: 0.6rem !important; padding-bottom: 2rem; }
 /* ── Selectbox — fondo diferenciado azul muy claro ── */
 div[data-baseweb="select"] > div {
     background: #E3F4FB !important;
@@ -144,12 +144,15 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-# ── Header banner full-width ────────────────────────────────────────────────────
+# ── Header banner ───────────────────────────────────────────────────────────────
+# El stHeader (barra de Streamlit) ya tiene el degradado y cubre todo el ancho.
+# Este banner es la continuación dentro del contenido principal.
 st.markdown(
     '<div style="'
     'background:linear-gradient(135deg,#0F385A 0%,#1A5276 50%,#1FB2DE 100%);'
-    'margin:0 -6rem 0 -6rem;'          # sale del container para cubrir todo el ancho
-    'padding:22px 6rem 18px;'
+    'padding:18px 24px 14px;'
+    'margin:0 0 0 0;'
+    'border-radius:0 0 12px 12px;'
     'border-bottom:3px solid #42F2F2;">'
     '<div style="font-size:21px;font-weight:700;color:#FFFFFF;letter-spacing:-.3px">'
     'Reforma Curricular de Programas Académicos Poli</div>'
@@ -161,10 +164,10 @@ st.markdown(
 
 # ── Filtros inline ─────────────────────────────────────────────────────────────
 st.markdown(
-    '<div style="background:#FFFFFF;border-radius:0 0 12px 12px;'
-    'margin:0 -6rem 12px -6rem;padding:14px 6rem 14px;'
-    'border-bottom:1px solid rgba(15,56,90,0.10);'
-    'box-shadow:0 2px 8px rgba(15,56,90,0.07)">',
+    '<div style="background:#FFFFFF;border-radius:10px;'
+    'margin:8px 0 10px;padding:12px 16px 10px;'
+    'border:1px solid rgba(15,56,90,0.10);'
+    'box-shadow:0 2px 8px rgba(15,56,90,0.06)">',
     unsafe_allow_html=True,
 )
 f1, f2, f3, f4 = st.columns([2, 2, 2, 1])
