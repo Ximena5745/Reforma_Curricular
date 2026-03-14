@@ -360,34 +360,76 @@ with tab2:
     col_l, col_r = st.columns(2)
 
     with col_l:
-        st.markdown("##### Treemap — Avance por Facultad y Programa")
-        rows_t = []
-        for _, row in df.iterrows():
-            rows_t.append({
-                "Facultad": fac_labels.get(row["FACULTAD"], row["FACULTAD"]),
-                "Programa": row["NOMBRE DEL PROGRAMA"][:38],
-                "Avance":   max(float(row["avance_general"]), 1),
-            })
-        if rows_t:
-            df_t = pd.DataFrame(rows_t)
-            fig_tree = px.treemap(
-                df_t, path=["Facultad", "Programa"], values="Avance",
-                color="Avance",
-                color_continuous_scale=[[0, "#EC0677"], [0.3, "#FBAF17"], [0.7, "#1FB2DE"], [1, "#A6CE38"]],
-                range_color=[0, 100],
-            )
-            fig_tree.update_traces(textfont=dict(size=11, family="Segoe UI"))
-            fig_tree.update_layout(
-                height=430,
-                margin=dict(l=0, r=0, t=10, b=0),
-                paper_bgcolor="rgba(0,0,0,0)",
-                font=dict(family="Segoe UI", color="#0F385A"),
-                coloraxis_colorbar=dict(
-                    tickfont=dict(color="#4a6a7e"),
-                    title=dict(text="%", font=dict(color="#4a6a7e")),
-                ),
-            )
-            st.plotly_chart(fig_tree, use_container_width=True)
+        st.markdown("##### Programas por rango de avance y facultad")
+        # Clasificar cada programa en un rango
+        df_fac = df[["FACULTAD", "avance_general"]].copy()
+        df_fac["Facultad"] = df_fac["FACULTAD"].map(fac_labels).fillna(df_fac["FACULTAD"])
+        df_fac["Rango"] = pd.cut(
+            df_fac["avance_general"],
+            bins=[-1, 29, 69, 100],
+            labels=["Crítico  (<30%)", "En progreso  (30–69%)", "Avanzado  (≥70%)"],
+        )
+        fac_rango = df_fac.groupby(["Facultad", "Rango"], observed=True).size().reset_index(name="n")
+        faculties  = sorted(df_fac["Facultad"].unique())
+        rangos     = ["Crítico  (<30%)", "En progreso  (30–69%)", "Avanzado  (≥70%)"]
+        rango_colors = ["#EC0677", "#FBAF17", "#A6CE38"]
+
+        fig_fac = go.Figure()
+        for rng, clr in zip(rangos, rango_colors):
+            sub = fac_rango[fac_rango["Rango"] == rng]
+            counts = [int(sub[sub["Facultad"] == f]["n"].sum()) for f in faculties]
+            fig_fac.add_trace(go.Bar(
+                name=rng, y=faculties, x=counts, orientation="h",
+                marker_color=clr, marker_line_width=0,
+                text=[str(c) if c > 0 else "" for c in counts],
+                textposition="inside", insidetextanchor="middle",
+                textangle=0, textfont=dict(size=11, color="white", family="Segoe UI"),
+            ))
+        fig_fac.update_layout(
+            barmode="stack",
+            height=260,
+            margin=dict(l=0, r=10, t=10, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
+                        font=dict(size=10, color="#4a6a7e"), bgcolor="rgba(0,0,0,0)"),
+            xaxis=dict(showgrid=True, gridcolor="rgba(15,56,90,.07)",
+                       color="#6a8a9e", tickfont=dict(size=10), dtick=5),
+            yaxis=dict(color="#0F385A", tickfont=dict(size=10), autorange="reversed",
+                       automargin=True),
+            font=dict(family="Segoe UI"),
+            bargap=0.35,
+        )
+        st.plotly_chart(fig_fac, use_container_width=True, config={"displayModeBar": False})
+
+        # Resumen por facultad: avance promedio + total programas
+        st.markdown("##### Avance promedio por facultad")
+        fac_avg = df_fac.groupby("Facultad")["avance_general"].mean().reset_index()
+        fac_avg = fac_avg.sort_values("avance_general")
+        fac_avg_colors = [color_for_pct(v) for v in fac_avg["avance_general"]]
+        fig_favg = go.Figure(go.Bar(
+            x=fac_avg["avance_general"].tolist(),
+            y=fac_avg["Facultad"].tolist(),
+            orientation="h",
+            marker_color=fac_avg_colors,
+            text=[f"{int(v)}%" for v in fac_avg["avance_general"]],
+            textposition="outside",
+            textfont=dict(size=11, color="#4a6a7e"),
+        ))
+        fig_favg.update_layout(
+            height=180,
+            margin=dict(l=0, r=50, t=6, b=10),
+            paper_bgcolor="rgba(0,0,0,0)",
+            plot_bgcolor="rgba(0,0,0,0)",
+            xaxis=dict(range=[0, 118], showgrid=True, gridcolor="rgba(15,56,90,.07)",
+                       color="#6a8a9e", tickfont=dict(size=10)),
+            yaxis=dict(color="#0F385A", tickfont=dict(size=10), autorange="reversed",
+                       automargin=True),
+            font=dict(family="Segoe UI"),
+            showlegend=False,
+            bargap=0.45,
+        )
+        st.plotly_chart(fig_favg, use_container_width=True, config={"displayModeBar": False})
 
     with col_r:
         st.markdown("##### Ranking de programas por avance")
