@@ -24,28 +24,39 @@ st.set_page_config(
 # ── CSS modo claro · colores institucionales ───────────────────────────────────
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] { background: #F0F4F8; }
-[data-testid="stHeader"]           { background: #F0F4F8 !important; }
+/* ── Fondos generales ── */
+[data-testid="stAppViewContainer"] { background: #EEF3F8; }
+/* Header de Streamlit (barra superior delgada) coincide con el degradado */
+[data-testid="stHeader"] {
+    background: linear-gradient(135deg, #0F385A 0%, #1A5276 50%, #1FB2DE 100%) !important;
+    border-bottom: 3px solid #42F2F2 !important;
+}
 h1,h2,h3,h4,h5                     { font-family: 'Segoe UI', sans-serif; color: #0F385A !important; }
 p, li, label, caption               { color: #2a4a5e; }
 [data-testid="stCaption"]           { color: #6a8a9e !important; }
-/* Selectbox control */
-div[data-baseweb="select"] > div   { background: #FFFFFF !important; border-color: rgba(15,56,90,0.20) !important; color: #0F385A !important; }
+/* ── Block container: sin padding top para que el banner toque el borde ── */
+.block-container { padding-top: 0 !important; padding-bottom: 2rem; }
+/* ── Selectbox — fondo diferenciado azul muy claro ── */
+div[data-baseweb="select"] > div {
+    background: #E3F4FB !important;
+    border-color: rgba(31,178,222,0.45) !important;
+    color: #0F385A !important;
+    border-radius: 8px !important;
+}
 div[data-baseweb="select"] span    { color: #0F385A !important; }
 [data-testid="stSelectbox"] label  { font-size: 12px; color: #4a6a7e; }
-/* Dropdown list options */
-ul[data-baseweb="menu"]            { background: #FFFFFF !important; border: 1px solid rgba(15,56,90,0.15) !important; box-shadow: 0 4px 16px rgba(15,56,90,0.12) !important; }
+/* ── Dropdown list (options) ── */
+ul[data-baseweb="menu"]            { background: #FFFFFF !important; border: 1px solid rgba(31,178,222,0.30) !important; box-shadow: 0 6px 20px rgba(15,56,90,0.14) !important; border-radius: 8px !important; }
 ul[data-baseweb="menu"] li         { color: #0F385A !important; background: #FFFFFF !important; }
-ul[data-baseweb="menu"] li:hover   { background: #F0F4F8 !important; }
-li[aria-selected="true"]           { background: #e8f0f7 !important; }
-/* Tabs */
+ul[data-baseweb="menu"] li:hover   { background: #E3F4FB !important; }
+li[aria-selected="true"]           { background: #d0ecf8 !important; font-weight: 600 !important; }
+/* ── Tabs ── */
 button[data-baseweb="tab"]         { color: #6a8a9e !important; background: transparent !important; font-size: 13px !important; font-weight: 500 !important; }
 button[data-baseweb="tab"][aria-selected="true"] { color: #0F385A !important; border-bottom-color: #1FB2DE !important; font-weight: 700 !important; }
 [data-testid="stDataFrame"]        { border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(15,56,90,0.08); }
 hr                                  { border-color: rgba(15,56,90,0.10) !important; }
 footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
-.block-container { padding-top: 1.2rem; padding-bottom: 2rem; }
 [data-testid="stExpander"]         { background: #FFFFFF; border: 1px solid rgba(15,56,90,0.10); border-radius: 10px; }
 /* Info box */
 [data-testid="stNotification"]     { background: #e8f6fc !important; color: #0F385A !important; border-color: #1FB2DE !important; }
@@ -133,21 +144,29 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
 
-# ── Header ─────────────────────────────────────────────────────────────────────
+# ── Header banner full-width ────────────────────────────────────────────────────
 st.markdown(
-    '<div style="background:linear-gradient(135deg,#0F385A 0%,#1A5276 55%,#1FB2DE 100%);'
-    'border-radius:12px;padding:16px 22px;margin-bottom:10px;'
-    'box-shadow:0 3px 12px rgba(15,56,90,0.18)">'
-    '<div style="font-size:20px;font-weight:700;color:#FFFFFF;letter-spacing:-.2px">'
+    '<div style="'
+    'background:linear-gradient(135deg,#0F385A 0%,#1A5276 50%,#1FB2DE 100%);'
+    'margin:0 -6rem 0 -6rem;'          # sale del container para cubrir todo el ancho
+    'padding:22px 6rem 18px;'
+    'border-bottom:3px solid #42F2F2;">'
+    '<div style="font-size:21px;font-weight:700;color:#FFFFFF;letter-spacing:-.3px">'
     'Reforma Curricular de Programas Académicos Poli</div>'
-    '<div style="font-size:12px;color:rgba(255,255,255,0.72);margin-top:4px">'
+    '<div style="font-size:12px;color:rgba(255,255,255,0.70);margin-top:5px">'
     'Seguimiento de avance por proceso y etapa</div>'
     '</div>',
     unsafe_allow_html=True,
 )
 
 # ── Filtros inline ─────────────────────────────────────────────────────────────
-st.markdown("<div style='margin:10px 0 4px'></div>", unsafe_allow_html=True)
+st.markdown(
+    '<div style="background:#FFFFFF;border-radius:0 0 12px 12px;'
+    'margin:0 -6rem 12px -6rem;padding:14px 6rem 14px;'
+    'border-bottom:1px solid rgba(15,56,90,0.10);'
+    'box-shadow:0 2px 8px rgba(15,56,90,0.07)">',
+    unsafe_allow_html=True,
+)
 f1, f2, f3, f4 = st.columns([2, 2, 2, 1])
 with f1:
     modalidades = ["Todas las modalidades"] + sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
@@ -161,6 +180,8 @@ with f3:
 with f4:
     st.caption(f"📊 Total: **{len(df_raw)}** programas")
     st.caption("📂 Excel · Hoja: Maestro")
+
+st.markdown("</div>", unsafe_allow_html=True)   # cierre wrapper filtros
 
 modalidad_f = "" if sel_mod == "Todas las modalidades" else sel_mod
 facultad_f  = "" if sel_fac == "Todas las facultades" else fac_inv.get(sel_fac, sel_fac)
