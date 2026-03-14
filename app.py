@@ -15,17 +15,16 @@ from utils.data_loader import (
 )
 
 st.set_page_config(
-    page_title="Control Maestro · Reforma Curricular",
+    page_title="Reforma Curricular · POLI",
     page_icon="🎓",
     layout="wide",
-    initial_sidebar_state="collapsed",
+    initial_sidebar_state="expanded",
 )
 
 # ── CSS modo claro · colores institucionales ───────────────────────────────────
 st.markdown("""
 <style>
 [data-testid="stAppViewContainer"] { background: #F0F4F8; }
-[data-testid="stSidebar"]          { background: #FFFFFF; border-right: 1px solid rgba(15,56,90,0.10); }
 [data-testid="stHeader"]           { background: #F0F4F8 !important; }
 h1,h2,h3,h4,h5                     { font-family: 'Segoe UI', sans-serif; color: #0F385A !important; }
 p, li, label, caption               { color: #2a4a5e; }
@@ -48,11 +47,52 @@ footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
 .block-container { padding-top: 1.2rem; padding-bottom: 2rem; }
 [data-testid="stExpander"]         { background: #FFFFFF; border: 1px solid rgba(15,56,90,0.10); border-radius: 10px; }
-/* Sidebar nav links */
-[data-testid="stSidebarNav"] a     { color: #0F385A !important; }
-[data-testid="stSidebarNav"] a:hover { color: #1FB2DE !important; }
 /* Info box */
 [data-testid="stNotification"]     { background: #e8f6fc !important; color: #0F385A !important; border-color: #1FB2DE !important; }
+/* ── Sidebar con degradado ── */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #0F385A 0%, #1A5276 45%, #1FB2DE 100%) !important;
+    border-right: none !important;
+}
+[data-testid="stSidebarNav"] { display: none !important; }
+/* Sidebar text */
+[data-testid="stSidebar"] p,
+[data-testid="stSidebar"] span,
+[data-testid="stSidebar"] label  { color: rgba(255,255,255,0.80) !important; }
+[data-testid="stSidebar"] hr     { border-color: rgba(255,255,255,0.20) !important; }
+/* Page link buttons en sidebar */
+[data-testid="stSidebar"] [data-testid="stPageLink"] a {
+    color: rgba(255,255,255,0.82) !important;
+    background: rgba(255,255,255,0.08) !important;
+    border-radius: 8px !important;
+    padding: 8px 12px 8px 10px !important;
+    margin-bottom: 3px !important;
+    font-size: 13px !important;
+    font-weight: 500 !important;
+    transition: background .15s;
+}
+[data-testid="stSidebar"] [data-testid="stPageLink"] a:hover {
+    background: rgba(255,255,255,0.18) !important;
+    color: #FFFFFF !important;
+}
+[data-testid="stSidebar"] [data-testid="stPageLink"][aria-current="page"] a,
+[data-testid="stSidebar"] [data-testid="stPageLink"] a[aria-current="page"] {
+    background: rgba(255,255,255,0.22) !important;
+    color: #FFFFFF !important;
+    font-weight: 700 !important;
+    border-left: 3px solid #42F2F2 !important;
+}
+/* Download button */
+[data-testid="stDownloadButton"] > button {
+    background: #1FB2DE !important;
+    color: #FFFFFF !important;
+    border: none !important;
+    border-radius: 8px !important;
+    font-weight: 600 !important;
+}
+[data-testid="stDownloadButton"] > button:hover {
+    background: #0F385A !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -64,14 +104,47 @@ fac_labels = {
     "Facultad de Ingeniería, Diseño e Innovación":    "Ingeniería, Diseño e Innovación",
     "Facultad de Negocios, Gestión y Sostenibilidad": "Negocios, Gestión y Sostenibilidad",
 }
-fac_inv = {v: k for k, v in fac_labels.items()}
+fac_inv  = {v: k for k, v in fac_labels.items()}
+FAC_LIST  = list(fac_labels.values())
+FAC_PALETTE = {
+    "Sociedad, Cultura y Creatividad":   "#EC0677",
+    "Ingeniería, Diseño e Innovación":   "#1FB2DE",
+    "Negocios, Gestión y Sostenibilidad":"#A6CE38",
+}
+
+# ── Sidebar personalizado ───────────────────────────────────────────────────────
+with st.sidebar:
+    st.markdown(
+        '<div style="padding:18px 6px 6px;text-align:center">'
+        '<div style="font-size:11px;font-weight:800;color:rgba(255,255,255,0.55);'
+        'letter-spacing:2px;text-transform:uppercase">Vicerrectoría Académica</div>'
+        '<div style="font-size:16px;font-weight:700;color:#FFFFFF;margin-top:4px;line-height:1.3">'
+        'Reforma Curricular</div></div>',
+        unsafe_allow_html=True,
+    )
+    st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
+    st.page_link("app.py",                          label="Resumen General",     icon="📊")
+    st.page_link("pages/1_Detalle_por_Etapa.py",    label="Detalle por Etapa",   icon="📋")
+    st.page_link("pages/2_Programa.py",             label="Ficha de Programa",   icon="🔍")
+    st.markdown("<div style='flex:1'></div>", unsafe_allow_html=True)
+    st.markdown(
+        '<div style="padding:12px 6px;font-size:10px;color:rgba(255,255,255,0.40);text-align:center">'
+        'POLI · 2025–2026</div>',
+        unsafe_allow_html=True,
+    )
 
 # ── Header ─────────────────────────────────────────────────────────────────────
 st.markdown(
-    "<h2 style='margin-bottom:2px;color:#0F385A'>🎓 Control Maestro · Reforma Curricular</h2>",
+    '<div style="background:linear-gradient(135deg,#0F385A 0%,#1A5276 55%,#1FB2DE 100%);'
+    'border-radius:12px;padding:16px 22px;margin-bottom:10px;'
+    'box-shadow:0 3px 12px rgba(15,56,90,0.18)">'
+    '<div style="font-size:20px;font-weight:700;color:#FFFFFF;letter-spacing:-.2px">'
+    'Reforma Curricular de Programas Académicos Poli</div>'
+    '<div style="font-size:12px;color:rgba(255,255,255,0.72);margin-top:4px">'
+    'Seguimiento de avance por proceso y etapa</div>'
+    '</div>',
     unsafe_allow_html=True,
 )
-st.caption("Vicerrectoría Académica · Seguimiento de avance por proceso y etapa")
 
 # ── Filtros inline ─────────────────────────────────────────────────────────────
 st.markdown("<div style='margin:10px 0 4px'></div>", unsafe_allow_html=True)
@@ -102,8 +175,31 @@ all_cl   = []
 for i in range(len(ETAPAS_MAP)):
     all_cl.extend(df[f"cl_{i}"].tolist())
 avg_av   = int(df["avance_general"].mean()) if n > 0 else 0
-cnt_crit = int((df["avance_general"] < 30).sum())
 cnt_adv  = int((df["avance_general"] >= 70).sum())
+
+def clasificar_programa(avance, periodo):
+    """Clasificación combinada A+C por avance y periodo de implementación."""
+    periodo = str(periodo) if pd.notna(periodo) else ""
+    es_2026_o_oferta = "2026" in periodo or "oferta" in periodo.lower() or "Ya en oferta" in periodo
+    es_2027_1 = "2027-1" in periodo
+    if es_2026_o_oferta and avance < 70:
+        return "Urgente"
+    if es_2027_1 and avance < 40:
+        return "Prioritario"
+    if avance < 70:
+        return "En seguimiento"
+    return "En curso"
+
+if n > 0:
+    df["_clasif"] = df.apply(
+        lambda r: clasificar_programa(r["avance_general"], r["PERIODO DE IMPLEMENTACIÓN"]), axis=1
+    )
+    cnt_urgente    = int((df["_clasif"] == "Urgente").sum())
+    cnt_prioritario = int((df["_clasif"] == "Prioritario").sum())
+    cnt_crit       = cnt_urgente + cnt_prioritario   # para compatibilidad
+else:
+    df["_clasif"] = "En curso"
+    cnt_urgente = cnt_prioritario = cnt_crit = 0
 cnt_2026   = int(df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2026",   na=False).sum())
 cnt_2027_1 = int(df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2027-1", na=False).sum())
 proc_avgs  = {p: (df[f"proc_{p}"].dropna().mean() if df[f"proc_{p}"].dropna().shape[0] > 0 else 0)
@@ -208,6 +304,107 @@ def _donut_card(proc, pct, done, inp, nst, na_val, color, size=128, r=44, sw=13)
         f'</div></div>'
     )
 
+# ── Colores de clasificación ────────────────────────────────────────────────────
+CLASIF_COLORS = {
+    "Urgente":        ("#EC0677", "#fce8f2"),
+    "Prioritario":    ("#F47B20", "#fdf0e8"),
+    "En seguimiento": ("#FBAF17", "#fef9e8"),
+    "En curso":       ("#A6CE38", "#f0f8e8"),
+}
+
+def _style_clasif_cell(val):
+    """CSS para celda de clasificación."""
+    if val in CLASIF_COLORS:
+        fg, bg = CLASIF_COLORS[val]
+        return f"background-color:{bg};color:{fg};font-weight:700;text-align:center"
+    return ""
+
+def _style_avance_cell(val):
+    """CSS para celda de avance %."""
+    try:
+        pct = int(str(val).replace("%", "").strip())
+    except Exception:
+        return ""
+    if pct >= 70:
+        return "background-color:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
+    if pct >= 40:
+        return "background-color:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
+    return "background-color:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
+
+def _excel_bytes(df_export):
+    """Genera Excel formateado con openpyxl."""
+    import io
+    from openpyxl import Workbook
+    from openpyxl.styles import PatternFill, Font, Alignment
+    from openpyxl.utils import get_column_letter
+
+    clasif_hex = {
+        "Urgente":        ("EC0677", "FFFFFF"),
+        "Prioritario":    ("F47B20", "FFFFFF"),
+        "En seguimiento": ("FBAF17", "333333"),
+        "En curso":       ("A6CE38", "FFFFFF"),
+    }
+
+    def _fill(hex6):
+        return PatternFill(start_color=hex6, end_color=hex6, fill_type="solid")
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Resumen"
+
+    headers = list(df_export.columns)
+    for ci, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=ci, value=h)
+        cell.font = Font(bold=True, color="FFFFFF", size=10)
+        cell.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+        if h in PROCESO_COLOR:
+            cell.fill = _fill(PROCESO_COLOR[h].lstrip("#"))
+        elif h == "Prioridad":
+            cell.fill = _fill("0F385A")
+        elif h == "Avance %":
+            cell.fill = _fill("1FB2DE")
+        else:
+            cell.fill = _fill("0F385A")
+    ws.row_dimensions[1].height = 36
+
+    for ri, row in enumerate(df_export.itertuples(index=False), 2):
+        for ci, (h, val) in enumerate(zip(headers, row), 1):
+            cell = ws.cell(row=ri, column=ci, value=val)
+            cell.alignment = Alignment(horizontal="left" if ci <= 4 else "center", vertical="center")
+            if h == "Prioridad" and str(val) in clasif_hex:
+                bg, fg = clasif_hex[str(val)]
+                cell.fill = _fill(bg)
+                cell.font = Font(bold=True, color=fg, size=10)
+                cell.alignment = Alignment(horizontal="center")
+            elif h == "Avance %":
+                try:
+                    pct = int(str(val).replace("%", ""))
+                    bg = "A6CE38" if pct >= 70 else ("FBAF17" if pct >= 40 else "EC0677")
+                    fg = "FFFFFF" if pct < 40 or pct >= 70 else "333333"
+                    cell.fill = _fill(bg)
+                    cell.font = Font(bold=True, color=fg, size=10)
+                    cell.alignment = Alignment(horizontal="center")
+                except Exception:
+                    pass
+            elif h in PROCESO_COLOR:
+                hex6 = PROCESO_COLOR[h].lstrip("#")
+                r2, g2, b2 = int(hex6[:2], 16), int(hex6[2:4], 16), int(hex6[4:], 16)
+                light = f"{min(r2+190,255):02X}{min(g2+190,255):02X}{min(b2+190,255):02X}"
+                cell.fill = _fill(light)
+                cell.font = Font(color=hex6, bold=True, size=10)
+                cell.alignment = Alignment(horizontal="center")
+
+    for ci, h in enumerate(headers, 1):
+        col_vals = [ws.cell(r, ci).value or "" for r in range(1, ws.max_row + 1)]
+        max_w = max(len(str(v)) for v in col_vals) if col_vals else 10
+        ws.column_dimensions[get_column_letter(ci)].width = min(max_w + 3, 35)
+
+    ws.freeze_panes = "A2"
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf.getvalue()
+
 # ── Tabs principales ────────────────────────────────────────────────────────────
 tab1, tab2, tab3 = st.tabs(["📊 Resumen General", "🏛️ Por Facultad y Programa", "📋 Tabla Resumen"])
 
@@ -219,7 +416,7 @@ with tab1:
     c1.markdown(_kpi("Programas en reforma",  n,          f"de {len(df_raw)} en total",                    "#0F385A", None, "📚"), unsafe_allow_html=True)
     c2.markdown(_kpi("Avance promedio",        f"{avg_av}%", "sobre todos los procesos",                   "#A6CE38", avg_av),       unsafe_allow_html=True)
     c3.markdown(_kpi("Avanzados ≥ 70%",        cnt_adv,    f"de {n} programas",                            "#1FB2DE", round(cnt_adv/n*100) if n else 0), unsafe_allow_html=True)
-    c4.markdown(_kpi("Críticos < 30%",         cnt_crit,   "requieren atención urgente",                   "#EC0677", round(cnt_crit/n*100) if n else 0), unsafe_allow_html=True)
+    c4.markdown(_kpi("Urgentes / Prioritarios",  cnt_crit,   f"{cnt_urgente} urgentes · {cnt_prioritario} prioritarios", "#EC0677", round(cnt_crit/n*100) if n else 0), unsafe_allow_html=True)
 
     st.markdown("<div style='margin:6px 0'></div>", unsafe_allow_html=True)
 
@@ -227,7 +424,7 @@ with tab1:
     c5, c6, c7, c8 = st.columns(4)
     c5.markdown(_kpi("Periodo 2026-2",       cnt_2026,       "programas más urgentes",       "#F47B20", round(cnt_2026/n*100)   if n else 0), unsafe_allow_html=True)
     c6.markdown(_kpi("Periodo 2027-1",       cnt_2027_1,     "programas próximo semestre",   "#FBAF17", round(cnt_2027_1/n*100) if n else 0), unsafe_allow_html=True)
-    c7.markdown(_kpi("Proceso más crítico",  f"{proc_min_pct}%", proc_short_map.get(proc_min, proc_min), "#EC0677", proc_min_pct), unsafe_allow_html=True)
+    c7.markdown(_kpi("Proceso rezagado",     f"{proc_min_pct}%", proc_short_map.get(proc_min, proc_min), "#EC0677", proc_min_pct), unsafe_allow_html=True)
     c8.markdown(_kpi("Proceso más avanzado", f"{proc_max_pct}%", proc_short_map.get(proc_max, proc_max), "#A6CE38", proc_max_pct), unsafe_allow_html=True)
 
     st.markdown("#### Avance Consolidado por Proceso")
@@ -343,7 +540,11 @@ with tab1:
             font=dict(family="Segoe UI"),
             bargap=0.28,
         )
-        st.plotly_chart(fig_bar, use_container_width=True, config={"displayModeBar": False})
+        sel_etapa = st.plotly_chart(
+            fig_bar, use_container_width=True,
+            on_select="rerun", key="sel_etapa",
+            config={"displayModeBar": False},
+        )
 
     with col_legend:
         st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
@@ -355,28 +556,72 @@ with tab1:
                 unsafe_allow_html=True,
             )
 
+    # ── Panel de detalle al hacer clic en una barra ──────────────────────────
+    if sel_etapa.selection and sel_etapa.selection.points:
+        pt         = sel_etapa.selection.points[0]
+        y_name     = pt.get("y", "")
+        curve_n    = pt.get("curve_number", 0)
+        if y_name and not str(y_name).startswith("__sp") and curve_n < len(cats):
+            cat_sel   = cats[curve_n]
+            lbl_sel   = cat_labels[curve_n]
+            clr_sel   = cat_colors[curve_n]
+            try:
+                ej = etapa_idxs[etapa_names.index(y_name)]
+            except (ValueError, IndexError):
+                ej = None
+            if ej is not None:
+                mask   = df[f"cl_{ej}"].eq(cat_sel)
+                df_det = df[mask][["NOMBRE DEL PROGRAMA", "FACULTAD", "avance_general",
+                                   "_clasif", "PERIODO DE IMPLEMENTACIÓN"]].copy()
+                df_det["Facultad"] = df_det["FACULTAD"].map(fac_labels).fillna(df_det["FACULTAD"])
+                df_det["Avance %"] = df_det["avance_general"].apply(lambda x: f"{int(x)}%")
+                df_det = df_det.rename(columns={
+                    "NOMBRE DEL PROGRAMA": "Programa",
+                    "_clasif": "Prioridad",
+                    "PERIODO DE IMPLEMENTACIÓN": "Periodo",
+                })[["Programa", "Facultad", "Avance %", "Prioridad", "Periodo"]]
+                st.markdown(
+                    f'<div style="background:#FFFFFF;border:1px solid {clr_sel};'
+                    f'border-left:4px solid {clr_sel};border-radius:8px;'
+                    f'padding:10px 14px;margin-top:6px">'
+                    f'<span style="font-size:12px;font-weight:700;color:{clr_sel}">'
+                    f'📋 {len(df_det)} programas</span>'
+                    f'<span style="font-size:11px;color:#6a8a9e"> — {y_name} · {lbl_sel}</span></div>',
+                    unsafe_allow_html=True,
+                )
+                det_styled = df_det.style\
+                    .map(_style_clasif_cell, subset=["Prioridad"])\
+                    .map(_style_avance_cell, subset=["Avance %"])
+                st.dataframe(det_styled, use_container_width=True, hide_index=True,
+                             height=min(300, len(df_det) * 38 + 40))
+
 # ── Tab 2: Por facultad ────────────────────────────────────────────────────────
 with tab2:
     col_l, col_r = st.columns(2)
 
     with col_l:
-        st.markdown("##### Programas por rango de avance y facultad")
-        # Clasificar cada programa en un rango
-        df_fac = df[["FACULTAD", "avance_general"]].copy()
+        st.markdown("##### Programas por nivel de prioridad y facultad")
+        df_fac = df[["FACULTAD", "avance_general", "PERIODO DE IMPLEMENTACIÓN", "_clasif"]].copy()
         df_fac["Facultad"] = df_fac["FACULTAD"].map(fac_labels).fillna(df_fac["FACULTAD"])
-        df_fac["Rango"] = pd.cut(
-            df_fac["avance_general"],
-            bins=[-1, 29, 69, 100],
-            labels=["Crítico  (<30%)", "En progreso  (30–69%)", "Avanzado  (≥70%)"],
-        )
-        fac_rango = df_fac.groupby(["Facultad", "Rango"], observed=True).size().reset_index(name="n")
+        df_fac["Rango"]    = df_fac["_clasif"]
+        fac_rango  = df_fac.groupby(["Facultad", "Rango"], observed=True).size().reset_index(name="n")
         faculties  = sorted(df_fac["Facultad"].unique())
-        rangos     = ["Crítico  (<30%)", "En progreso  (30–69%)", "Avanzado  (≥70%)"]
-        rango_colors = ["#EC0677", "#FBAF17", "#A6CE38"]
+        rangos       = ["Urgente", "Prioritario", "En seguimiento", "En curso"]
+        rango_colors = ["#EC0677", "#F47B20", "#FBAF17", "#A6CE38"]
 
         fig_fac = go.Figure()
+        # Fondo de color suave por facultad para diferenciarlas visualmente
+        for fi, fac in enumerate(faculties):
+            fc = FAC_PALETTE.get(fac, "#1FB2DE")
+            fig_fac.add_shape(
+                type="rect", layer="below",
+                x0=0, x1=1, xref="paper",
+                y0=fac, y1=fac, yref="y",
+                fillcolor=fc, opacity=0.07,
+                line_color=fc, line_width=1.5,
+            )
         for rng, clr in zip(rangos, rango_colors):
-            sub = fac_rango[fac_rango["Rango"] == rng]
+            sub    = fac_rango[fac_rango["Rango"] == rng]
             counts = [int(sub[sub["Facultad"] == f]["n"].sum()) for f in faculties]
             fig_fac.add_trace(go.Bar(
                 name=rng, y=faculties, x=counts, orientation="h",
@@ -385,10 +630,14 @@ with tab2:
                 textposition="inside", insidetextanchor="middle",
                 textangle=0, textfont=dict(size=11, color="white", family="Segoe UI"),
             ))
+        # Punto de color por facultad en el eje Y
+        tick_labels = [
+            f'<span style="color:{FAC_PALETTE.get(f,"#0F385A")};font-weight:700">◆</span> {f}'
+            for f in faculties
+        ]
         fig_fac.update_layout(
-            barmode="stack",
-            height=260,
-            margin=dict(l=0, r=10, t=10, b=10),
+            barmode="stack", height=300,
+            margin=dict(l=10, r=10, t=10, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
@@ -400,31 +649,43 @@ with tab2:
             font=dict(family="Segoe UI"),
             bargap=0.35,
         )
-        st.plotly_chart(fig_fac, use_container_width=True, config={"displayModeBar": False})
+        sel_fac = st.plotly_chart(
+            fig_fac, use_container_width=True,
+            on_select="rerun", key="sel_fac",
+            config={"displayModeBar": False},
+        )
 
-        # Resumen por facultad: avance promedio + total programas
+        # Avance promedio por facultad — color propio de cada facultad
         st.markdown("##### Avance promedio por facultad")
-        fac_avg = df_fac.groupby("Facultad")["avance_general"].mean().reset_index()
-        fac_avg = fac_avg.sort_values("avance_general")
-        fac_avg_colors = [color_for_pct(v) for v in fac_avg["avance_general"]]
+        fac_avg = df_fac.groupby("Facultad")["avance_general"].agg(["mean", "count"]).reset_index()
+        fac_avg.columns = ["Facultad", "avance", "total"]
+        fac_avg = fac_avg.sort_values("avance")
+        fac_avg_colors = [FAC_PALETTE.get(f, "#1FB2DE") for f in fac_avg["Facultad"]]
+        hover_avg = [
+            f"<b>{row.Facultad}</b><br>Avance: {int(row.avance)}%<br>Programas: {int(row.total)}"
+            for row in fac_avg.itertuples()
+        ]
         fig_favg = go.Figure(go.Bar(
-            x=fac_avg["avance_general"].tolist(),
+            x=fac_avg["avance"].tolist(),
             y=fac_avg["Facultad"].tolist(),
             orientation="h",
             marker_color=fac_avg_colors,
-            text=[f"{int(v)}%" for v in fac_avg["avance_general"]],
+            marker_line_color=[FAC_PALETTE.get(f, "#1FB2DE") for f in fac_avg["Facultad"]],
+            marker_line_width=2,
+            text=[f"  {int(v)}%  ({int(t)} prog.)" for v, t in zip(fac_avg["avance"], fac_avg["total"])],
             textposition="outside",
-            textfont=dict(size=11, color="#4a6a7e"),
+            textfont=dict(size=10, color="#4a6a7e"),
+            hovertext=hover_avg, hoverinfo="text",
         ))
         fig_favg.update_layout(
-            height=180,
-            margin=dict(l=0, r=50, t=6, b=10),
+            height=200,
+            margin=dict(l=10, r=10, t=6, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            xaxis=dict(range=[0, 118], showgrid=True, gridcolor="rgba(15,56,90,.07)",
+            xaxis=dict(range=[0, 128], showgrid=True, gridcolor="rgba(15,56,90,.07)",
                        color="#6a8a9e", tickfont=dict(size=10)),
-            yaxis=dict(color="#0F385A", tickfont=dict(size=10), autorange="reversed",
-                       automargin=True),
+            yaxis=dict(color="#0F385A", tickfont=dict(size=10, color="#0F385A"),
+                       autorange="reversed", automargin=True),
             font=dict(family="Segoe UI"),
             showlegend=False,
             bargap=0.45,
@@ -433,44 +694,155 @@ with tab2:
 
     with col_r:
         st.markdown("##### Ranking de programas por avance")
-        df_s = df[["NOMBRE DEL PROGRAMA", "avance_general", "FACULTAD"]].copy()
-        df_s["label"] = df_s["NOMBRE DEL PROGRAMA"].apply(lambda x: x[:34] + ("…" if len(x) > 34 else ""))
-        df_s = df_s.sort_values("avance_general")
-        colors_bar = [color_for_pct(v) for v in df_s["avance_general"]]
+        df_s = df[["NOMBRE DEL PROGRAMA", "avance_general", "FACULTAD", "_clasif",
+                   "PERIODO DE IMPLEMENTACIÓN"]].copy()
+        df_s["FacCorta"] = df_s["FACULTAD"].map(fac_labels).fillna(df_s["FACULTAD"])
+        df_s["label"]    = df_s["NOMBRE DEL PROGRAMA"].apply(lambda x: x[:32] + ("…" if len(x) > 32 else ""))
+        df_s = df_s.sort_values("avance_general").reset_index(drop=True)
 
+        # Control: mostrar top N o todos
+        rk_opts = st.radio(
+            "Mostrar", ["15 más rezagados", "15 más avanzados", "Todos"],
+            horizontal=True, key="rk_filter", label_visibility="collapsed",
+        )
+        if rk_opts == "15 más rezagados":
+            df_plot = df_s.head(15)
+        elif rk_opts == "15 más avanzados":
+            df_plot = df_s.tail(15)
+        else:
+            df_plot = df_s
+
+        # Color por facultad + indicador visual
+        bar_colors = [FAC_PALETTE.get(f, "#1FB2DE") for f in df_plot["FacCorta"]]
+        hover_prg  = [
+            f"<b>{row['NOMBRE DEL PROGRAMA']}</b><br>"
+            f"Facultad: {row['FacCorta']}<br>"
+            f"Avance: {int(row['avance_general'])}%<br>"
+            f"Prioridad: {row['_clasif']}<br>"
+            f"Periodo: {row['PERIODO DE IMPLEMENTACIÓN']}"
+            for _, row in df_plot.iterrows()
+        ]
         fig_prg = go.Figure(go.Bar(
-            x=df_s["avance_general"].tolist(),
-            y=df_s["label"].tolist(),
+            x=df_plot["avance_general"].tolist(),
+            y=df_plot["label"].tolist(),
             orientation="h",
-            marker_color=colors_bar,
-            text=[f"{int(v)}%" for v in df_s["avance_general"]],
+            marker_color=bar_colors,
+            marker_line_color=[FAC_PALETTE.get(f, "#1FB2DE") for f in df_plot["FacCorta"]],
+            marker_line_width=1,
+            text=[f"{int(v)}%" for v in df_plot["avance_general"]],
             textposition="outside",
             textfont=dict(size=9, color="#4a6a7e"),
+            hovertext=hover_prg, hoverinfo="text",
         ))
+        # Leyenda de facultades
+        for fac_name, fac_color in FAC_PALETTE.items():
+            fig_prg.add_trace(go.Bar(
+                x=[None], y=[None], name=fac_name[:22] + ("…" if len(fac_name) > 22 else ""),
+                marker_color=fac_color, showlegend=True,
+            ))
+        chart_h = max(320, len(df_plot) * 26 + 70)
         fig_prg.update_layout(
-            height=max(350, n * 22 + 60),
-            margin=dict(l=0, r=50, t=10, b=10),
+            height=chart_h,
+            margin=dict(l=0, r=55, t=10, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
             xaxis=dict(range=[0, 118], showgrid=True, gridcolor="rgba(15,56,90,.07)",
                        color="#6a8a9e", tickfont=dict(size=9)),
-            yaxis=dict(color="#4a6a7e", tickfont=dict(size=9)),
+            yaxis=dict(color="#4a6a7e", tickfont=dict(size=9), autorange="reversed"),
             font=dict(family="Segoe UI"),
-            showlegend=False,
+            legend=dict(orientation="h", yanchor="top", y=-0.06, xanchor="left", x=0,
+                        font=dict(size=9, color="#4a6a7e"), bgcolor="rgba(0,0,0,0)"),
+            barmode="overlay",
         )
-        st.plotly_chart(fig_prg, use_container_width=True)
+        sel_prg = st.plotly_chart(
+            fig_prg, use_container_width=True,
+            on_select="rerun", key="sel_prg",
+        )
+        # Detalle al hacer clic en un programa del ranking
+        if sel_prg.selection and sel_prg.selection.points:
+            pt_p   = sel_prg.selection.points[0]
+            y_prog = pt_p.get("y", "")
+            match  = df_plot[df_plot["label"] == y_prog]
+            if not match.empty:
+                row      = match.iloc[0]
+                clasif   = row["_clasif"]
+                fg_c, bg_c = CLASIF_COLORS.get(clasif, ("#0F385A", "#f0f4f8"))
+                av_pct   = int(row["avance_general"])
+                fac_label = fac_labels.get(row["FACULTAD"], row["FACULTAD"])
+                periodo  = row["PERIODO DE IMPLEMENTACIÓN"]
+                prog_name = row["NOMBRE DEL PROGRAMA"]
+                # buscar detalle por proceso
+                proc_rows = ""
+                for pi, proc in enumerate(PROCESOS):
+                    pv = df.loc[df["NOMBRE DEL PROGRAMA"] == prog_name, f"proc_{proc}"]
+                    pval = f"{int(pv.values[0])}%" if not pv.empty and pd.notna(pv.values[0]) else "N/A"
+                    pc   = PROCESO_COLOR[proc]
+                    proc_rows += (
+                        f'<div style="display:flex;justify-content:space-between;'
+                        f'padding:3px 0;border-bottom:1px solid #f0f4f8">'
+                        f'<span style="font-size:10px;color:#4a6a7e">{proc_short_map.get(proc,proc)}</span>'
+                        f'<span style="font-size:10px;font-weight:700;color:{pc}">{pval}</span></div>'
+                    )
+                st.markdown(
+                    f'<div style="background:#FFFFFF;border:1px solid {fg_c};'
+                    f'border-left:4px solid {fg_c};border-radius:8px;padding:12px 14px;margin-top:6px">'
+                    f'<div style="font-size:12px;font-weight:700;color:#0F385A;margin-bottom:6px">{prog_name}</div>'
+                    f'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
+                    f'<span style="font-size:10px;background:#f0f4f8;color:#4a6a7e;padding:2px 8px;border-radius:4px">{fac_label}</span>'
+                    f'<span style="font-size:10px;background:{bg_c};color:{fg_c};padding:2px 8px;border-radius:4px;font-weight:700">{clasif}</span>'
+                    f'<span style="font-size:10px;background:#e8f6fc;color:#0a6a8e;padding:2px 8px;border-radius:4px">Avance: {av_pct}%</span>'
+                    f'<span style="font-size:10px;background:#f8f4e8;color:#6a4e00;padding:2px 8px;border-radius:4px">{periodo}</span>'
+                    f'</div>'
+                    f'<div>{proc_rows}</div></div>',
+                    unsafe_allow_html=True,
+                )
+
+    # ── Panel de detalle al hacer clic en gráfica de facultad ────────────────
+    if sel_fac.selection and sel_fac.selection.points:
+        pt_f   = sel_fac.selection.points[0]
+        fac_y  = pt_f.get("y", "")
+        rng_n  = pt_f.get("curve_number", 0)
+        if fac_y and rng_n < len(rangos):
+            rng_sel = rangos[rng_n]
+            clr_sel = rango_colors[rng_n]
+            fac_full = fac_inv.get(fac_y, fac_y)
+            mask_f   = (df["FACULTAD"] == fac_full) & (df["_clasif"] == rng_sel)
+            df_fd    = df[mask_f][["NOMBRE DEL PROGRAMA", "avance_general",
+                                   "_clasif", "PERIODO DE IMPLEMENTACIÓN"]].copy()
+            df_fd["Avance %"] = df_fd["avance_general"].apply(lambda x: f"{int(x)}%")
+            df_fd = df_fd.rename(columns={
+                "NOMBRE DEL PROGRAMA": "Programa",
+                "_clasif": "Prioridad",
+                "PERIODO DE IMPLEMENTACIÓN": "Periodo",
+            })[["Programa", "Avance %", "Prioridad", "Periodo"]]
+            st.markdown(
+                f'<div style="background:#FFFFFF;border:1px solid {clr_sel};'
+                f'border-left:4px solid {clr_sel};border-radius:8px;'
+                f'padding:10px 14px;margin-top:6px">'
+                f'<span style="font-size:12px;font-weight:700;color:{clr_sel}">'
+                f'📋 {len(df_fd)} programas</span>'
+                f'<span style="font-size:11px;color:#6a8a9e"> — {fac_y} · {rng_sel}</span></div>',
+                unsafe_allow_html=True,
+            )
+            fd_styled = df_fd.style\
+                .map(_style_clasif_cell, subset=["Prioridad"])\
+                .map(_style_avance_cell, subset=["Avance %"])
+            st.dataframe(fd_styled, use_container_width=True, hide_index=True,
+                         height=min(300, len(df_fd) * 38 + 40))
 
 # ── Tab 3: Tabla resumen ───────────────────────────────────────────────────────
 with tab3:
-    st.caption(f"{n} programas · avance por proceso")
+    hdr_l, hdr_r = st.columns([3, 1])
+    hdr_l.caption(f"{n} programas · avance por proceso")
 
     display_cols = {
         "NOMBRE DEL PROGRAMA":       "Programa",
         "FACULTAD":                  "Facultad",
         "MODALIDAD":                 "Modalidad",
-        "NIVEL":                     "Nivel",
+        "NIVEL":                     "Nivel académico",
         "PERIODO DE IMPLEMENTACIÓN": "Periodo",
         "avance_general":            "Avance %",
+        "_clasif":                   "Prioridad",
     }
     for proc in PROCESOS:
         display_cols[f"proc_{proc}"] = proc
@@ -483,51 +855,102 @@ with tab3:
             lambda x: f"{int(x)}%" if pd.notna(x) and x == x else "N/A"
         )
 
-    # Colorear columnas de proceso con su color institucional
+    # Colorear columnas: proceso + Prioridad + Avance % + Facultad
     def _style_proc(df_s):
         result = pd.DataFrame("", index=df_s.index, columns=df_s.columns)
+        # Procesos
         for proc in PROCESOS:
             if proc not in df_s.columns:
                 continue
             color = PROCESO_COLOR[proc]
-            r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+            r2, g2, b2 = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
             result[proc] = (
-                f"background-color: rgba({r},{g},{b},0.10); "
+                f"background-color: rgba({r2},{g2},{b2},0.10); "
                 f"color: {color}; font-weight: 600; text-align: center"
             )
+        # Prioridad semáforo
+        if "Prioridad" in df_s.columns:
+            result["Prioridad"] = df_s["Prioridad"].apply(_style_clasif_cell)
+        # Avance % semáforo
+        if "Avance %" in df_s.columns:
+            result["Avance %"] = df_s["Avance %"].apply(_style_avance_cell)
+        # Facultad con color distintivo por facultad
+        if "Facultad" in df_s.columns:
+            def _fac_style(val):
+                color = FAC_PALETTE.get(str(val), "#1FB2DE")
+                r2, g2, b2 = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+                return (f"background-color: rgba({r2},{g2},{b2},0.10); "
+                        f"color: {color}; font-weight: 700; border-left: 3px solid {color}")
+            result["Facultad"] = df_s["Facultad"].apply(_fac_style)
         return result
 
-    header_styles = []
+    cols_list = list(df_show.columns)
+    header_styles = [
+        {"selector": "th", "props": [
+            ("background-color", "#0F385A"), ("color", "white"),
+            ("font-weight", "bold"), ("font-size", "11px"), ("text-align", "center"),
+        ]},
+    ]
     for proc in PROCESOS:
         if proc in df_show.columns:
-            col_idx = list(df_show.columns).index(proc)
+            col_idx = cols_list.index(proc)
             color   = PROCESO_COLOR[proc]
             header_styles.append({
                 "selector": f"th.col_heading.col{col_idx}",
-                "props": [
-                    ("background-color", color),
-                    ("color", "white"),
-                    ("font-weight", "bold"),
-                    ("font-size", "11px"),
-                    ("text-align", "center"),
-                ],
+                "props": [("background-color", color), ("color", "white"),
+                          ("font-weight", "bold"), ("font-size", "11px"), ("text-align", "center")],
             })
+    for fac_short, fac_color in FAC_PALETTE.items():
+        pass  # handled in cell style
+    if "Prioridad" in df_show.columns:
+        header_styles.append({
+            "selector": f"th.col_heading.col{cols_list.index('Prioridad')}",
+            "props": [("background-color", "#EC0677"), ("color", "white"),
+                      ("font-weight", "bold"), ("font-size", "11px"), ("text-align", "center")],
+        })
+    if "Facultad" in df_show.columns:
+        header_styles.append({
+            "selector": f"th.col_heading.col{cols_list.index('Facultad')}",
+            "props": [("background-color", "#1FB2DE"), ("color", "white"),
+                      ("font-weight", "bold"), ("font-size", "11px")],
+        })
 
     styled = df_show.style.apply(_style_proc, axis=None).set_table_styles(
         header_styles, overwrite=False
     )
+
+    # Columnas con anchos específicos en píxeles (auto-ajuste por contenido)
+    max_prog_len = df_show["Programa"].apply(len).max() if "Programa" in df_show.columns else 30
+    col_cfg = {
+        "Programa":        st.column_config.TextColumn(width=min(max(max_prog_len * 7, 220), 380)),
+        "Facultad":        st.column_config.TextColumn(width=200),
+        "Avance %":        st.column_config.TextColumn(width=85),
+        "Prioridad":       st.column_config.TextColumn(width=120),
+        "Modalidad":       st.column_config.TextColumn(width=90),
+        "Nivel académico": st.column_config.TextColumn(width=90),
+        "Periodo":         st.column_config.TextColumn(width=90),
+    }
+    for proc in PROCESOS:
+        if proc in df_show.columns:
+            col_cfg[proc] = st.column_config.TextColumn(width=90)
 
     st.dataframe(
         styled,
         use_container_width=True,
         height=460,
         hide_index=True,
-        column_config={
-            "Programa":  st.column_config.TextColumn(width="large"),
-            "Facultad":  st.column_config.TextColumn(width="medium"),
-            "Avance %":  st.column_config.TextColumn(width="small"),
-            "Modalidad": st.column_config.TextColumn(width="small"),
-            "Nivel":     st.column_config.TextColumn(width="small"),
-            "Periodo":   st.column_config.TextColumn(width="small"),
-        },
+        column_config=col_cfg,
     )
+
+    # ── Descarga Excel ─────────────────────────────────────────────────────────
+    st.markdown("<div style='margin-top:10px'></div>", unsafe_allow_html=True)
+    with hdr_r:
+        st.markdown("<div style='margin-top:4px'></div>", unsafe_allow_html=True)
+        excel_data = _excel_bytes(df_show)
+        st.download_button(
+            label="⬇️ Descargar Excel",
+            data=excel_data,
+            file_name="reforma_curricular.xlsx",
+            mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+            use_container_width=True,
+        )
