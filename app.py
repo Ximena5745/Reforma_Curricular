@@ -127,9 +127,7 @@ FAC_PALETTE = {
 with st.sidebar:
     st.markdown(
         '<div style="padding:18px 6px 6px;text-align:center">'
-        '<div style="font-size:11px;font-weight:800;color:rgba(255,255,255,0.55);'
-        'letter-spacing:2px;text-transform:uppercase">Vicerrectoría Académica</div>'
-        '<div style="font-size:16px;font-weight:700;color:#FFFFFF;margin-top:4px;line-height:1.3">'
+        '<div style="font-size:16px;font-weight:700;color:#FFFFFF;line-height:1.3">'
         'Reforma Curricular</div></div>',
         unsafe_allow_html=True,
     )
