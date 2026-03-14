@@ -22,21 +22,25 @@ st.set_page_config(
     initial_sidebar_state="collapsed",
 )
 
-# ── CSS tema azul oscuro ────────────────────────────────────────────────────────
+# ── CSS modo claro · colores institucionales ───────────────────────────────────
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] { background: #071428; }
-[data-testid="stSidebar"]          { background: #091a30; border-right: 1px solid rgba(255,255,255,0.06); }
-[data-testid="stHeader"]           { background: #071428 !important; }
-h1,h2,h3,h4 { font-family: 'Segoe UI', sans-serif; color: #e6edf3; }
-div[data-baseweb="select"] > div   { background: #0b1e38 !important; border-color: rgba(255,255,255,0.14) !important; color: #e6edf3 !important; }
-[data-testid="stSelectbox"] label  { font-size: 12px; color: #8b9fc0; }
-button[data-baseweb="tab"]         { color: #8b9fc0 !important; background: transparent !important; font-size: 13px !important; }
-button[data-baseweb="tab"][aria-selected="true"] { color: #e6edf3 !important; border-bottom-color: #4f8ef7 !important; }
-[data-testid="stDataFrame"]        { border-radius: 10px; overflow: hidden; }
+[data-testid="stAppViewContainer"] { background: #F0F4F8; }
+[data-testid="stSidebar"]          { background: #FFFFFF; border-right: 1px solid rgba(15,56,90,0.10); }
+[data-testid="stHeader"]           { background: #F0F4F8 !important; }
+h1,h2,h3,h4,h5                     { font-family: 'Segoe UI', sans-serif; color: #0F385A !important; }
+p, li, label, caption               { color: #2a4a5e; }
+[data-testid="stCaption"]           { color: #6a8a9e !important; }
+div[data-baseweb="select"] > div   { background: #FFFFFF !important; border-color: rgba(15,56,90,0.20) !important; color: #0F385A !important; }
+[data-testid="stSelectbox"] label  { font-size: 12px; color: #4a6a7e; }
+button[data-baseweb="tab"]         { color: #6a8a9e !important; background: transparent !important; font-size: 13px !important; font-weight: 500 !important; }
+button[data-baseweb="tab"][aria-selected="true"] { color: #0F385A !important; border-bottom-color: #1FB2DE !important; font-weight: 700 !important; }
+[data-testid="stDataFrame"]        { border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(15,56,90,0.08); }
+hr                                  { border-color: rgba(15,56,90,0.10) !important; }
 footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
 .block-container { padding-top: 1.2rem; padding-bottom: 2rem; }
+[data-testid="stExpander"]         { background: #FFFFFF; border: 1px solid rgba(15,56,90,0.10); border-radius: 10px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -101,7 +105,7 @@ def _arc(pct, color, r=22, sz=56):
     c    = sz // 2
     return (
         f'<svg width="{sz}" height="{sz}" viewBox="0 0 {sz} {sz}">'
-        f'<circle cx="{c}" cy="{c}" r="{r}" fill="none" stroke="rgba(255,255,255,0.07)" stroke-width="5"/>'
+        f'<circle cx="{c}" cy="{c}" r="{r}" fill="none" stroke="rgba(15,56,90,0.10)" stroke-width="5"/>'
         f'<circle cx="{c}" cy="{c}" r="{r}" fill="none" stroke="{color}" stroke-width="5"'
         f' stroke-dasharray="{dash:.2f} {gap:.2f}" stroke-linecap="round"'
         f' transform="rotate(-90 {c} {c})"/>'
@@ -114,31 +118,57 @@ def _kpi(label, val, sub, color, pct=None, icon="◈"):
         f'justify-content:center;font-size:28px">{icon}</div>'
     )
     return (
-        f'<div style="background:#0b1e38;border:1px solid rgba(255,255,255,0.09);'
-        f'border-left:3px solid {color};border-radius:14px;'
-        f'padding:14px 16px;display:flex;align-items:center;gap:12px;min-height:84px">'
+        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);'
+        f'border-left:4px solid {color};border-radius:12px;'
+        f'padding:14px 16px;display:flex;align-items:center;gap:12px;min-height:84px;'
+        f'box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
         f'<div style="flex-shrink:0">{arc}</div>'
         f'<div style="flex:1;min-width:0">'
-        f'<div style="font-size:10px;color:#8b9fc0;text-transform:uppercase;'
+        f'<div style="font-size:10px;color:#6a8a9e;text-transform:uppercase;'
         f'letter-spacing:.5px;margin-bottom:3px">{label}</div>'
         f'<div style="font-size:26px;font-weight:700;color:{color};line-height:1.1">{val}</div>'
-        f'<div style="font-size:10px;color:#5a6a7e;margin-top:2px">{sub}</div>'
+        f'<div style="font-size:10px;color:#8aabb0;margin-top:2px">{sub}</div>'
         f'</div></div>'
     )
 
 st.caption(f"Mostrando **{n}** de {len(df_raw)} programas")
 c1, c2, c3, c4 = st.columns(4)
-c1.markdown(_kpi("Programas en reforma",  n,        f"de {len(df_raw)} en total",         "#4f8ef7", None, "📚"), unsafe_allow_html=True)
-c2.markdown(_kpi("Avance promedio",        f"{avg_av}%", "sobre todos los procesos",      "#3ecf8e", avg_av),       unsafe_allow_html=True)
-c3.markdown(_kpi("Avanzados ≥ 70%",       cnt_adv,  f"de {n} programas",                 "#9b7aed", round(cnt_adv/n*100) if n else 0), unsafe_allow_html=True)
-c4.markdown(_kpi("Críticos < 30%",        cnt_crit, "requieren atención urgente",         "#ef4444", round(cnt_crit/n*100) if n else 0), unsafe_allow_html=True)
+c1.markdown(_kpi("Programas en reforma",  n,        f"de {len(df_raw)} en total",         "#0F385A", None, "📚"), unsafe_allow_html=True)
+c2.markdown(_kpi("Avance promedio",        f"{avg_av}%", "sobre todos los procesos",      "#A6CE38", avg_av),       unsafe_allow_html=True)
+c3.markdown(_kpi("Avanzados ≥ 70%",       cnt_adv,  f"de {n} programas",                 "#1FB2DE", round(cnt_adv/n*100) if n else 0), unsafe_allow_html=True)
+c4.markdown(_kpi("Críticos < 30%",        cnt_crit, "requieren atención urgente",         "#EC0677", round(cnt_crit/n*100) if n else 0), unsafe_allow_html=True)
 
 st.markdown("<div style='margin:6px 0'></div>", unsafe_allow_html=True)
+
+# ── Fila 2: métricas por periodo y proceso ─────────────────────────────────────
+cnt_2026 = int(df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2026", na=False).sum())
+cnt_2027_1 = int(df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2027-1", na=False).sum())
+cnt_2027_2 = int(df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2027-2", na=False).sum())
+
+# Proceso más rezagado y más adelantado (excluyendo NaN)
+proc_avgs = {p: (df[f"proc_{p}"].dropna().mean() if df[f"proc_{p}"].dropna().shape[0] > 0 else 0)
+             for p in PROCESOS}
+proc_min = min(proc_avgs, key=proc_avgs.get)
+proc_max = max(proc_avgs, key=proc_avgs.get)
+proc_min_pct = int(proc_avgs[proc_min])
+proc_max_pct = int(proc_avgs[proc_max])
+
+proc_short_map = {
+    "Gestión Académica": "Gest. Académica",
+    "Gestión Financiera": "Gest. Financiera",
+    "Aseguramiento de la Calidad": "Aseg. Calidad",
+    "Ger. Planeación y Gestión Institucional": "Ger. Planeación",
+    "Producción de Contenidos": "Prod. Contenidos",
+    "Convenios Institucionales": "Convenios",
+    "Parametrizar Reforma en Banner": "Banner",
+    "Publicación en Página Web": "Pág. Web",
+}
+
 c5, c6, c7, c8 = st.columns(4)
-c5.markdown(_kpi("Etapas finalizadas", cnt_done, f"de {total_e} etapas totales",    "#3ecf8e", round(cnt_done/total_e*100) if total_e else 0), unsafe_allow_html=True)
-c6.markdown(_kpi("En proceso",         cnt_inp,  "etapas activas",                  "#4f8ef7", round(cnt_inp/total_e*100) if total_e else 0),  unsafe_allow_html=True)
-c7.markdown(_kpi("Sin iniciar",        cnt_nst,  "etapas pendientes",               "#f97316", round(cnt_nst/total_e*100) if total_e else 0),  unsafe_allow_html=True)
-c8.markdown(_kpi("No aplica / Info",   cnt_na,   "etapas no contabilizadas",        "#6e7681", None, "ℹ"),           unsafe_allow_html=True)
+c5.markdown(_kpi("Periodo 2026-2",       cnt_2026,   "programas más urgentes",            "#F47B20", round(cnt_2026/n*100)   if n else 0), unsafe_allow_html=True)
+c6.markdown(_kpi("Periodo 2027-1",       cnt_2027_1, "programas próximo semestre",        "#FBAF17", round(cnt_2027_1/n*100) if n else 0), unsafe_allow_html=True)
+c7.markdown(_kpi("Proceso más crítico",  f"{proc_min_pct}%", proc_short_map.get(proc_min, proc_min), "#EC0677", proc_min_pct), unsafe_allow_html=True)
+c8.markdown(_kpi("Proceso más avanzado", f"{proc_max_pct}%", proc_short_map.get(proc_max, proc_max), "#A6CE38", proc_max_pct), unsafe_allow_html=True)
 
 st.divider()
 
@@ -187,7 +217,7 @@ for idx, proc in enumerate(PROCESOS):
     )
 
 # Estilar los títulos de cada subplot (aparecen antes de las anotaciones de %)
-fig_proc.update_annotations(font=dict(size=10, color="#8b9fc0"))
+fig_proc.update_annotations(font=dict(size=10, color="#4a6a7e"))
 
 # Agregar anotaciones de % DESPUÉS de update_annotations para no sobreescribirlas
 for idx in range(len(PROCESOS)):
@@ -206,39 +236,50 @@ fig_proc.update_layout(
     height=320,
     margin=dict(l=10, r=10, t=30, b=10),
     paper_bgcolor="rgba(0,0,0,0)",
-    font=dict(family="Segoe UI", color="#8b9fc0"),
+    font=dict(family="Segoe UI", color="#4a6a7e"),
     showlegend=False,
 )
 st.plotly_chart(fig_proc, use_container_width=True, config={"displayModeBar": False})
 
-# Leyenda de colores + stats por proceso
+# Leyenda de colores
 st.markdown(
-    '<div style="display:flex;gap:16px;justify-content:center;margin:-4px 0 8px">'
-    '<span style="font-size:10px;color:#3ecf8e">■ Finalizado</span>'
-    '<span style="font-size:10px;color:#4f8ef7">■ En proceso</span>'
-    '<span style="font-size:10px;color:#ef4444">■ Sin iniciar</span>'
-    '<span style="font-size:10px;color:#374151">■ N/A</span>'
+    '<div style="display:flex;gap:20px;justify-content:center;margin:-4px 0 12px">'
+    '<span style="font-size:11px;color:#6a8a9e;display:flex;align-items:center;gap:4px">'
+    '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#A6CE38"></span> Finalizado</span>'
+    '<span style="font-size:11px;color:#6a8a9e;display:flex;align-items:center;gap:4px">'
+    '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#1FB2DE"></span> En proceso</span>'
+    '<span style="font-size:11px;color:#6a8a9e;display:flex;align-items:center;gap:4px">'
+    '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#EC0677"></span> Sin iniciar</span>'
+    '<span style="font-size:11px;color:#6a8a9e;display:flex;align-items:center;gap:4px">'
+    '<span style="display:inline-block;width:10px;height:10px;border-radius:2px;background:#c8d8e0"></span> No aplica</span>'
     '</div>',
     unsafe_allow_html=True,
 )
 
-# Detalle numérico por proceso en 4 + 4 columnas
+# Detalle numérico por proceso en 4 + 4 columnas — con etiquetas claras
 sc1 = st.columns(4)
 sc2 = st.columns(4)
 for idx, proc in enumerate(PROCESOS):
     col = (sc1 + sc2)[idx]
     color = PROCESO_COLOR[proc]
     d, i_, ns, na = done_l[idx], inp_l[idx], nst_l[idx], na_l[idx]
+    proc_short = proc_short_map.get(proc, proc)
     with col:
         st.markdown(
-            f'<div style="background:#0b1e38;border:1px solid rgba(255,255,255,.08);'
-            f'border-top:2px solid {color};border-radius:0 0 10px 10px;'
-            f'padding:6px 10px;text-align:center">'
-            f'<div style="display:flex;gap:5px;justify-content:center;flex-wrap:wrap">'
-            f'<span style="font-size:9px;color:#3ecf8e;background:rgba(62,207,142,.1);padding:1px 5px;border-radius:3px">✓ {d}</span>'
-            f'<span style="font-size:9px;color:#93c5fd;background:rgba(79,142,247,.1);padding:1px 5px;border-radius:3px">◎ {i_}</span>'
-            f'<span style="font-size:9px;color:#fca5a5;background:rgba(239,68,68,.1);padding:1px 5px;border-radius:3px">✗ {ns}</span>'
-            + (f'<span style="font-size:9px;color:#6e7681;background:rgba(110,118,129,.1);padding:1px 5px;border-radius:3px">N/A {na}</span>' if na else "")
+            f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,.10);'
+            f'border-top:3px solid {color};border-radius:0 0 10px 10px;'
+            f'padding:8px 10px;box-shadow:0 2px 6px rgba(15,56,90,.05)">'
+            f'<div style="font-size:9px;color:#4a6a7e;font-weight:600;margin-bottom:5px;'
+            f'text-overflow:ellipsis;overflow:hidden;white-space:nowrap" title="{proc}">{proc_short}</div>'
+            f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:3px">'
+            f'<div style="font-size:9px;color:#5a7a2e;background:#f0f8e8;padding:2px 5px;border-radius:3px;text-align:center">'
+            f'<b>{d}</b> Fin.</div>'
+            f'<div style="font-size:9px;color:#0a6a8e;background:#e8f6fc;padding:2px 5px;border-radius:3px;text-align:center">'
+            f'<b>{i_}</b> Proc.</div>'
+            f'<div style="font-size:9px;color:#9a0050;background:#fce8f2;padding:2px 5px;border-radius:3px;text-align:center">'
+            f'<b>{ns}</b> Sin ini.</div>'
+            + (f'<div style="font-size:9px;color:#6a8a9e;background:#f0f4f8;padding:2px 5px;border-radius:3px;text-align:center">'
+               f'<b>{na}</b> N/A</div>' if na else '<div></div>')
             + '</div></div>',
             unsafe_allow_html=True,
         )
@@ -254,7 +295,7 @@ with tab1:
     etapa_names = [em[1] for em in ETAPAS_MAP]
     cats       = ["done", "inprog", "nostart", "na"]
     cat_labels = ["Finalizado", "En proceso", "Sin iniciar", "No aplica"]
-    cat_colors = ["#3ecf8e", "#4f8ef7", "#ef4444", "#374151"]
+    cat_colors = ["#A6CE38", "#1FB2DE", "#EC0677", "#c8d8e0"]
 
     fig_bar = go.Figure()
     for cat, lbl, clr in zip(cats, cat_labels, cat_colors):
@@ -273,9 +314,9 @@ with tab1:
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
-                    font=dict(size=10, color="#8b9fc0"), bgcolor="rgba(0,0,0,0)"),
-        xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,.05)", color="#6e7681", tickfont=dict(size=10)),
-        yaxis=dict(color="#8b9fc0", tickfont=dict(size=10), autorange="reversed"),
+                    font=dict(size=10, color="#4a6a7e"), bgcolor="rgba(0,0,0,0)"),
+        xaxis=dict(showgrid=True, gridcolor="rgba(15,56,90,.07)", color="#6a8a9e", tickfont=dict(size=10)),
+        yaxis=dict(color="#4a6a7e", tickfont=dict(size=10), autorange="reversed"),
         font=dict(family="Segoe UI"),
     )
     st.plotly_chart(fig_bar, use_container_width=True)
@@ -328,16 +369,16 @@ with tab2:
             marker_color=colors_bar,
             text=[f"{int(v)}%" for v in df_s["avance_general"]],
             textposition="outside",
-            textfont=dict(size=9, color="#8b9fc0"),
+            textfont=dict(size=9, color="#4a6a7e"),
         ))
         fig_prg.update_layout(
             height=max(350, n * 22 + 60),
             margin=dict(l=0, r=50, t=10, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            xaxis=dict(range=[0, 118], showgrid=True, gridcolor="rgba(255,255,255,.05)",
-                       color="#6e7681", tickfont=dict(size=9)),
-            yaxis=dict(color="#8b9fc0", tickfont=dict(size=9)),
+            xaxis=dict(range=[0, 118], showgrid=True, gridcolor="rgba(15,56,90,.07)",
+                       color="#6a8a9e", tickfont=dict(size=9)),
+            yaxis=dict(color="#4a6a7e", tickfont=dict(size=9)),
             font=dict(family="Segoe UI"),
             showlegend=False,
         )
@@ -388,24 +429,24 @@ with tab3:
         fig_hist.add_trace(go.Histogram(
             x=df["avance_general"].tolist(),
             nbinsx=10,
-            marker_color="#4f8ef7",
-            marker_line_color="rgba(0,0,30,0.4)",
+            marker_color="#1FB2DE",
+            marker_line_color="rgba(15,56,90,0.2)",
             marker_line_width=1.5,
             opacity=0.85,
         ))
-        fig_hist.add_vline(x=30, line_dash="dash", line_color="#ef4444", line_width=1.5,
-                           annotation_text=" 30%", annotation_font_color="#ef4444", annotation_font_size=10)
-        fig_hist.add_vline(x=70, line_dash="dash", line_color="#3ecf8e", line_width=1.5,
-                           annotation_text=" 70%", annotation_font_color="#3ecf8e", annotation_font_size=10)
+        fig_hist.add_vline(x=30, line_dash="dash", line_color="#EC0677", line_width=1.5,
+                           annotation_text=" 30%", annotation_font_color="#EC0677", annotation_font_size=10)
+        fig_hist.add_vline(x=70, line_dash="dash", line_color="#A6CE38", line_width=1.5,
+                           annotation_text=" 70%", annotation_font_color="#A6CE38", annotation_font_size=10)
         fig_hist.update_layout(
             height=300,
             margin=dict(l=0, r=10, t=20, b=10),
             paper_bgcolor="rgba(0,0,0,0)",
             plot_bgcolor="rgba(0,0,0,0)",
-            xaxis=dict(title="Avance %", color="#8b9fc0",
-                       gridcolor="rgba(255,255,255,.05)", tickfont=dict(size=10)),
-            yaxis=dict(title="Nº Programas", color="#8b9fc0",
-                       gridcolor="rgba(255,255,255,.05)", tickfont=dict(size=10)),
+            xaxis=dict(title="Avance %", color="#6a8a9e",
+                       gridcolor="rgba(15,56,90,.07)", tickfont=dict(size=10)),
+            yaxis=dict(title="Nº Programas", color="#6a8a9e",
+                       gridcolor="rgba(15,56,90,.07)", tickfont=dict(size=10)),
             font=dict(family="Segoe UI"),
             showlegend=False,
         )

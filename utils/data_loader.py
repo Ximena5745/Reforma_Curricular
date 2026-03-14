@@ -47,15 +47,16 @@ PROCESOS = [
     "Publicación en Página Web",
 ]
 
+# Colores institucionales: #EC0677 #FBAF17 #0F385A #1FB2DE #42F2F2 #A6CE38
 PROCESO_COLOR = {
-    "Gestión Académica":                       "#4f8ef7",
-    "Gestión Financiera":                      "#f97316",
-    "Aseguramiento de la Calidad":             "#9b7aed",
-    "Ger. Planeación y Gestión Institucional": "#06b6d4",
-    "Producción de Contenidos":                "#3ecf8e",
-    "Convenios Institucionales":               "#ec4899",
-    "Parametrizar Reforma en Banner":          "#eab308",
-    "Publicación en Página Web":               "#f87171",
+    "Gestión Académica":                       "#0F385A",
+    "Gestión Financiera":                      "#FBAF17",
+    "Aseguramiento de la Calidad":             "#EC0677",
+    "Ger. Planeación y Gestión Institucional": "#1FB2DE",
+    "Producción de Contenidos":                "#A6CE38",
+    "Convenios Institucionales":               "#42B0B5",
+    "Parametrizar Reforma en Banner":          "#5C89B5",
+    "Publicación en Página Web":               "#F47B20",
 }
 
 STATUS_LABEL = {
@@ -67,11 +68,11 @@ STATUS_LABEL = {
 }
 
 STATUS_COLOR = {
-    "done":    "#3ecf8e",
-    "inprog":  "#4f8ef7",
-    "nostart": "#ef4444",
-    "info":    "#eab308",
-    "na":      "#6e7681",
+    "done":    "#A6CE38",
+    "inprog":  "#1FB2DE",
+    "nostart": "#EC0677",
+    "info":    "#FBAF17",
+    "na":      "#9aabb5",
 }
 
 

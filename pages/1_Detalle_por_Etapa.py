@@ -20,16 +20,18 @@ st.set_page_config(
 
 st.markdown("""
 <style>
-[data-testid="stAppViewContainer"] { background: #071428; }
-[data-testid="stSidebar"]          { background: #091a30; border-right: 1px solid rgba(255,255,255,0.06); }
-[data-testid="stHeader"]           { background: #071428 !important; }
-h1,h2,h3,h4 { font-family: 'Segoe UI', sans-serif; color: #e6edf3; }
-div[data-baseweb="select"] > div   { background: #0b1e38 !important; border-color: rgba(255,255,255,0.14) !important; color: #e6edf3 !important; }
-[data-testid="stSelectbox"] label  { font-size: 12px; color: #8b9fc0; }
+[data-testid="stAppViewContainer"] { background: #F0F4F8; }
+[data-testid="stSidebar"]          { background: #e8edf2; border-right: 1px solid rgba(15,56,90,0.10); }
+[data-testid="stHeader"]           { background: #F0F4F8 !important; }
+h1,h2,h3,h4,h5 { font-family: 'Segoe UI', sans-serif; color: #0F385A; }
+p, li, span { color: #0F385A; }
+div[data-baseweb="select"] > div   { background: #FFFFFF !important; border-color: rgba(15,56,90,0.20) !important; color: #0F385A !important; }
+[data-testid="stSelectbox"] label  { font-size: 12px; color: #4a6a7e; }
 [data-testid="stDataFrame"]        { border-radius: 10px; overflow: hidden; }
 footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
 .block-container { padding-top: 1rem; padding-bottom: 2rem; }
+[data-testid="stMarkdownContainer"] p { color: #0F385A; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -45,7 +47,7 @@ fac_inv = {v: k for k, v in fac_labels.items()}
 
 # ── Header ─────────────────────────────────────────────────────────────────────
 st.markdown(
-    "<h2 style='margin-bottom:2px;color:#e6edf3'>📋 Detalle por Etapa</h2>",
+    "<h2 style='margin-bottom:2px;color:#0F385A'>📋 Detalle por Etapa</h2>",
     unsafe_allow_html=True,
 )
 st.caption("Estado consolidado de etapas con conteo de programas por estado")
@@ -77,7 +79,7 @@ st.divider()
 # ══════════════════════════════════════════════════════════════════════════════
 st.markdown(
     f"### Consolidado por Etapa &nbsp;"
-    f"<span style='font-size:14px;color:#4f8ef7;font-weight:500'>"
+    f"<span style='font-size:14px;color:#1FB2DE;font-weight:500'>"
     f"{n} programas seleccionados</span>",
     unsafe_allow_html=True,
 )
@@ -85,14 +87,14 @@ st.markdown(
 # Cabecera de columnas
 st.markdown(
     '<div style="display:flex;align-items:center;gap:8px;padding:4px 12px;'
-    'border-bottom:1px solid rgba(255,255,255,0.08);margin-bottom:2px">'
-    '<div style="width:220px;font-size:10px;color:#6e7681;text-transform:uppercase;letter-spacing:.5px">Etapa</div>'
-    '<div style="width:54px;font-size:10px;color:#6e7681;text-align:center">Avance</div>'
-    '<div style="flex:1;font-size:10px;color:#6e7681">Distribución</div>'
-    '<div style="width:48px;font-size:10px;color:#3ecf8e;text-align:center">✓ Final</div>'
-    '<div style="width:48px;font-size:10px;color:#93c5fd;text-align:center">◎ Proc.</div>'
-    '<div style="width:48px;font-size:10px;color:#fca5a5;text-align:center">✗ Sin ini.</div>'
-    '<div style="width:48px;font-size:10px;color:#6e7681;text-align:center">N/A</div>'
+    'border-bottom:1px solid rgba(15,56,90,0.12);margin-bottom:2px">'
+    '<div style="width:220px;font-size:10px;color:#4a6a7e;text-transform:uppercase;letter-spacing:.5px">Etapa</div>'
+    '<div style="width:54px;font-size:10px;color:#4a6a7e;text-align:center">Avance</div>'
+    '<div style="flex:1;font-size:10px;color:#4a6a7e">Distribución</div>'
+    '<div style="width:48px;font-size:10px;color:#A6CE38;text-align:center">✓ Final</div>'
+    '<div style="width:48px;font-size:10px;color:#1FB2DE;text-align:center">◎ Proc.</div>'
+    '<div style="width:48px;font-size:10px;color:#EC0677;text-align:center">✗ Sin ini.</div>'
+    '<div style="width:48px;font-size:10px;color:#9aabb5;text-align:center">N/A</div>'
     '</div>',
     unsafe_allow_html=True,
 )
@@ -133,25 +135,25 @@ for proc in PROCESOS:
 
         st.markdown(
             f'<div style="display:flex;align-items:center;gap:8px;'
-            f'background:#0b1e38;border:1px solid rgba(255,255,255,.06);'
+            f'background:#FFFFFF;border:1px solid rgba(15,56,90,0.08);'
             f'border-left:2px solid {color};border-radius:8px;'
             f'padding:5px 12px;margin-bottom:2px">'
-            f'<div style="width:220px;flex-shrink:0;font-size:10px;color:#a0b0c8;'
+            f'<div style="width:220px;flex-shrink:0;font-size:10px;color:#4a6a7e;'
             f'overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="{etapa_name}">{etapa_name}</div>'
             f'<div style="width:54px;flex-shrink:0;text-align:center">'
             f'<span style="font-size:12px;font-weight:700;color:{color}">{pct}%</span>'
             f'</div>'
-            f'<div style="flex:1;height:6px;background:rgba(255,255,255,.05);border-radius:3px;overflow:hidden">'
+            f'<div style="flex:1;height:6px;background:rgba(15,56,90,0.07);border-radius:3px;overflow:hidden">'
             f'<div style="display:flex;height:100%">'
-            f'<div style="width:{w_done:.1f}%;background:#3ecf8e"></div>'
-            f'<div style="width:{w_inp:.1f}%;background:#4f8ef7"></div>'
-            f'<div style="width:{w_nst:.1f}%;background:#ef4444"></div>'
-            f'<div style="width:{w_na:.1f}%;background:#374151"></div>'
+            f'<div style="width:{w_done:.1f}%;background:#A6CE38"></div>'
+            f'<div style="width:{w_inp:.1f}%;background:#1FB2DE"></div>'
+            f'<div style="width:{w_nst:.1f}%;background:#EC0677"></div>'
+            f'<div style="width:{w_na:.1f}%;background:#ccd5dc"></div>'
             f'</div></div>'
-            f'<div style="width:48px;text-align:center;font-size:11px;font-weight:600;color:#3ecf8e">{done}</div>'
-            f'<div style="width:48px;text-align:center;font-size:11px;font-weight:600;color:#93c5fd">{inp}</div>'
-            f'<div style="width:48px;text-align:center;font-size:11px;font-weight:600;color:#fca5a5">{nst}</div>'
-            f'<div style="width:48px;text-align:center;font-size:11px;color:#6e7681">{na_t}</div>'
+            f'<div style="width:48px;text-align:center;font-size:11px;font-weight:600;color:#A6CE38">{done}</div>'
+            f'<div style="width:48px;text-align:center;font-size:11px;font-weight:600;color:#1FB2DE">{inp}</div>'
+            f'<div style="width:48px;text-align:center;font-size:11px;font-weight:600;color:#EC0677">{nst}</div>'
+            f'<div style="width:48px;text-align:center;font-size:11px;color:#9aabb5">{na_t}</div>'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -162,9 +164,6 @@ st.divider()
 # SECCIÓN 2 — Gráfico de barras apiladas por proceso (conteo total)
 # ══════════════════════════════════════════════════════════════════════════════
 st.markdown("### Vista Gráfica por Proceso")
-
-etapa_filter = [(i, em) for i, em in enumerate(ETAPAS_MAP)
-                if sel_proc == "Todos los procesos" or em[0] == sel_proc]
 
 proc_names_f = []
 p_done_f, p_inp_f, p_nst_f, p_na_f, p_pct_f = [], [], [], [], []
@@ -190,10 +189,10 @@ with col_g1:
     st.markdown("##### Distribución de estados por proceso (etapas × programas)")
     fig_sp = go.Figure()
     for vals_lst, lbl, clr in [
-        (p_done_f, "Finalizado",   "#3ecf8e"),
-        (p_inp_f,  "En proceso",   "#4f8ef7"),
-        (p_nst_f,  "Sin iniciar",  "#ef4444"),
-        (p_na_f,   "No aplica",    "#374151"),
+        (p_done_f, "Finalizado",   "#A6CE38"),
+        (p_inp_f,  "En proceso",   "#1FB2DE"),
+        (p_nst_f,  "Sin iniciar",  "#EC0677"),
+        (p_na_f,   "No aplica",    "#ccd5dc"),
     ]:
         fig_sp.add_trace(go.Bar(
             name=lbl, y=proc_names_f, x=vals_lst, orientation="h",
@@ -208,9 +207,10 @@ with col_g1:
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="right", x=1,
-                    font=dict(size=10, color="#8b9fc0"), bgcolor="rgba(0,0,0,0)"),
-        xaxis=dict(showgrid=True, gridcolor="rgba(255,255,255,.05)", color="#6e7681", tickfont=dict(size=10)),
-        yaxis=dict(color="#8b9fc0", tickfont=dict(size=10), autorange="reversed"),
+                    font=dict(size=10, color="#4a6a7e"), bgcolor="rgba(0,0,0,0)"),
+        xaxis=dict(showgrid=True, gridcolor="rgba(15,56,90,0.07)", color="#4a6a7e",
+                   tickfont=dict(size=10)),
+        yaxis=dict(color="#0F385A", tickfont=dict(size=10), autorange="reversed"),
         font=dict(family="Segoe UI"),
     )
     st.plotly_chart(fig_sp, use_container_width=True)
@@ -223,16 +223,16 @@ with col_g2:
         marker_color=colors_p,
         text=[f"{v}%" for v in p_pct_f],
         textposition="outside",
-        textfont=dict(size=10, color="#8b9fc0"),
+        textfont=dict(size=10, color="#4a6a7e"),
     ))
     fig_pct.update_layout(
         height=max(250, len(proc_names_f) * 52 + 60),
         margin=dict(l=0, r=50, t=10, b=10),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(range=[0, 118], showgrid=True, gridcolor="rgba(255,255,255,.05)",
-                   color="#6e7681", tickfont=dict(size=10)),
-        yaxis=dict(color="#8b9fc0", tickfont=dict(size=10), autorange="reversed"),
+        xaxis=dict(range=[0, 118], showgrid=True, gridcolor="rgba(15,56,90,0.07)",
+                   color="#4a6a7e", tickfont=dict(size=10)),
+        yaxis=dict(color="#0F385A", tickfont=dict(size=10), autorange="reversed"),
         font=dict(family="Segoe UI"),
         showlegend=False,
     )
@@ -304,11 +304,11 @@ with st.expander("🗺️ Ver Mapa de Calor — Programa × Etapa"):
         z.append(rz); hover.append(rh)
 
     colorscale = [
-        [0.0, "#1c2333"], [0.19, "#1c2333"],
-        [0.2, "#ef4444"], [0.59, "#ef4444"],
-        [0.6, "#4f8ef7"], [0.79, "#4f8ef7"],
-        [0.8, "#eab308"], [0.99, "#eab308"],
-        [1.0, "#3ecf8e"],
+        [0.0,  "#f0f4f8"], [0.19, "#f0f4f8"],
+        [0.2,  "#EC0677"], [0.59, "#EC0677"],
+        [0.6,  "#1FB2DE"], [0.79, "#1FB2DE"],
+        [0.8,  "#FBAF17"], [0.99, "#FBAF17"],
+        [1.0,  "#A6CE38"],
     ]
     fig_heat = go.Figure(go.Heatmap(
         z=z, x=etapas_labels, y=prog_labels,
@@ -320,8 +320,8 @@ with st.expander("🗺️ Ver Mapa de Calor — Programa × Etapa"):
         margin=dict(l=0, r=0, t=10, b=60),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(tickfont=dict(size=9, color="#8b9fc0"), tickangle=-40, side="bottom"),
-        yaxis=dict(tickfont=dict(size=9, color="#8b9fc0"), autorange="reversed"),
+        xaxis=dict(tickfont=dict(size=9, color="#4a6a7e"), tickangle=-40, side="bottom"),
+        yaxis=dict(tickfont=dict(size=9, color="#4a6a7e"), autorange="reversed"),
         font=dict(family="Segoe UI"),
     )
     st.plotly_chart(fig_heat, use_container_width=True)
