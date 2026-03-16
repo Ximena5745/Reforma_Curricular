@@ -104,6 +104,42 @@ footer { visibility: hidden; }
 [data-testid="stDownloadButton"] > button:hover {
     background: #0F385A !important;
 }
+/* ── Pills / botones de filtro ── */
+[data-testid="stPills"] button,
+[data-testid="stSegmentedControl"] button {
+    border: 1.5px solid rgba(31,178,222,0.50) !important;
+    color: #0F385A !important;
+    background: #EEF3F8 !important;
+    border-radius: 20px !important;
+    font-size: 12px !important;
+    font-weight: 500 !important;
+    transition: all .15s !important;
+}
+[data-testid="stPills"] button:hover,
+[data-testid="stSegmentedControl"] button:hover {
+    border-color: #1FB2DE !important;
+    background: #d0ecf8 !important;
+    color: #0F385A !important;
+}
+/* Pill activo / seleccionado */
+[data-testid="stPills"] button[aria-checked="true"],
+[data-testid="stPills"] button[aria-pressed="true"],
+[data-testid="stPills"] button[data-active="true"],
+[data-testid="stSegmentedControl"] button[aria-selected="true"] {
+    background: #0F385A !important;
+    color: #FFFFFF !important;
+    border-color: #0F385A !important;
+    font-weight: 700 !important;
+}
+/* Label del filtro */
+[data-testid="stPills"] label,
+[data-testid="stSegmentedControl"] label {
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    color: #4a6a7e !important;
+    text-transform: uppercase !important;
+    letter-spacing: .5px !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -160,33 +196,52 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ── Filtros inline ─────────────────────────────────────────────────────────────
+# ── Filtros con botones ─────────────────────────────────────────────────────────
 st.markdown(
     '<div style="background:#FFFFFF;border-radius:10px;'
-    'margin:8px 0 10px;padding:12px 16px 10px;'
+    'margin:8px 0 12px;padding:14px 16px 12px;'
     'border:1px solid rgba(15,56,90,0.10);'
     'box-shadow:0 2px 8px rgba(15,56,90,0.06)">',
     unsafe_allow_html=True,
 )
-f1, f2, f3, f4 = st.columns([2, 2, 2, 1])
-with f1:
-    modalidades = ["Todas las modalidades"] + sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
-    sel_mod = st.selectbox("Modalidad", modalidades, help="Filtra los programas por su modalidad de oferta (presencial, virtual, distancia, etc.)")
-with f2:
-    fac_ops = [fac_labels.get(f, f) for f in sorted(df_raw["FACULTAD"].dropna().unique())]
-    sel_fac = st.selectbox("Facultad", ["Todas las facultades"] + fac_ops, help="Filtra los programas por facultad. Hay tres facultades: Sociedad Cultura y Creatividad, Ingeniería Diseño e Innovación, y Negocios Gestión y Sostenibilidad.")
-with f3:
-    periodos = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
-    sel_per  = st.selectbox("Periodo de implementación", ["Todos los periodos"] + periodos, help="Filtra por el semestre objetivo de implementación del programa. Los periodos 2026 son los más urgentes.")
-with f4:
-    st.caption(f"📊 Total: **{len(df_raw)}** programas")
-    st.caption("📂 Excel · Hoja: Maestro")
 
-st.markdown("</div>", unsafe_allow_html=True)   # cierre wrapper filtros
+_use_pills = hasattr(st, "pills")
+_use_seg   = not _use_pills and hasattr(st, "segmented_control")
 
-modalidad_f = "" if sel_mod == "Todas las modalidades" else sel_mod
-facultad_f  = "" if sel_fac == "Todas las facultades" else fac_inv.get(sel_fac, sel_fac)
-periodo_f   = "" if sel_per == "Todos los periodos"   else sel_per
+_mods_ops = sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
+fac_ops   = [fac_labels.get(f, f) for f in sorted(df_raw["FACULTAD"].dropna().unique())]
+_pers_ops = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
+
+def _filter_widget(label, options, key, help_txt):
+    """Renderiza pills multi / multiselect según versión disponible."""
+    if _use_pills:
+        return st.pills(label, options, selection_mode="multi", key=key, help=help_txt)
+    else:
+        return st.multiselect(label, options, key=key, help=help_txt,
+                              placeholder="Todas (sin filtro)")
+
+fb1, fb2, fb3 = st.columns(3)
+with fb1:
+    sel_mod = _filter_widget(
+        "Modalidad", _mods_ops, "flt_mod",
+        "Selecciona una o varias modalidades. Sin selección = todas.")
+with fb2:
+    sel_fac = _filter_widget(
+        "Facultad", fac_ops, "flt_fac",
+        "Selecciona una o varias facultades. Sin selección = todas.")
+with fb3:
+    sel_per = _filter_widget(
+        "Periodo de implementación", _pers_ops, "flt_per",
+        "Selecciona uno o varios periodos. Sin selección = todos.")
+
+n_filt = len(df_raw)
+st.caption(f"📊 **{len(df_raw)}** programas · sin selección = sin filtro aplicado")
+st.markdown("</div>", unsafe_allow_html=True)
+
+# Convertir selecciones a listas para apply_filters
+modalidad_f = list(sel_mod) if sel_mod else []
+facultad_f  = [fac_inv.get(f, f) for f in sel_fac] if sel_fac else []
+periodo_f   = list(sel_per) if sel_per else []
 df = apply_filters(df_raw.copy(), modalidad_f, facultad_f, periodo_f)
 n  = len(df)
 

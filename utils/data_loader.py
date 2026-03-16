@@ -222,16 +222,26 @@ def load_data():
 
 
 # ─── Filtros ──────────────────────────────────────────────────────────────────
-def apply_filters(df, modalidad="", facultad="", periodo=""):
-    if modalidad:
-        df = df[df["MODALIDAD"] == modalidad]
-    if facultad:
-        df = df[df["FACULTAD"] == facultad]
-    if periodo:
-        if periodo == "2027-1":
-            df = df[df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2027-1", na=False)]
-        else:
-            df = df[df["PERIODO DE IMPLEMENTACIÓN"] == periodo]
+def apply_filters(df, modalidad=None, facultad=None, periodo=None):
+    """Acepta str o lista en cada parámetro. Vacío / None = sin filtro."""
+    def _to_list(v):
+        if not v:
+            return []
+        return list(v) if not isinstance(v, str) else [v]
+
+    mods = _to_list(modalidad)
+    facs = _to_list(facultad)
+    pers = _to_list(periodo)
+
+    if mods:
+        df = df[df["MODALIDAD"].isin(mods)]
+    if facs:
+        df = df[df["FACULTAD"].isin(facs)]
+    if pers:
+        mask = df["PERIODO DE IMPLEMENTACIÓN"].isin(pers)
+        if "2027-1" in pers:
+            mask = mask | df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2027-1", na=False)
+        df = df[mask]
     return df.copy()
 
 
