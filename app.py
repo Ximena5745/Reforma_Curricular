@@ -107,19 +107,20 @@ footer { visibility: hidden; }
 /* ── Pills / botones de filtro ── */
 [data-testid="stPills"] button,
 [data-testid="stSegmentedControl"] button {
-    border: 1.5px solid rgba(31,178,222,0.50) !important;
-    color: #0F385A !important;
-    background: #EEF3F8 !important;
+    border: 2px solid #1A5276 !important;
+    color: #1A5276 !important;
+    background: #FFFFFF !important;
     border-radius: 20px !important;
     font-size: 12px !important;
-    font-weight: 500 !important;
+    font-weight: 600 !important;
     transition: all .15s !important;
+    box-shadow: 0 1px 3px rgba(15,56,90,0.12) !important;
 }
 [data-testid="stPills"] button:hover,
 [data-testid="stSegmentedControl"] button:hover {
     border-color: #1FB2DE !important;
-    background: #d0ecf8 !important;
-    color: #0F385A !important;
+    background: #1FB2DE !important;
+    color: #FFFFFF !important;
 }
 /* Pill activo / seleccionado */
 [data-testid="stPills"] button[aria-checked="true"],
@@ -130,13 +131,14 @@ footer { visibility: hidden; }
     color: #FFFFFF !important;
     border-color: #0F385A !important;
     font-weight: 700 !important;
+    box-shadow: 0 2px 6px rgba(15,56,90,0.30) !important;
 }
 /* Label del filtro */
 [data-testid="stPills"] label,
 [data-testid="stSegmentedControl"] label {
     font-size: 11px !important;
     font-weight: 700 !important;
-    color: #4a6a7e !important;
+    color: #0F385A !important;
     text-transform: uppercase !important;
     letter-spacing: .5px !important;
 }
