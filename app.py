@@ -392,7 +392,7 @@ def _donut_card(proc, pct, done, inp, nst, na_val, color, size=128, r=44, sw=13)
 CLASIF_COLORS = {
     "Urgente":        ("#EC0677", "#fce8f2"),
     "Prioritario":    ("#F47B20", "#fdf0e8"),
-    "En seguimiento": ("#FBAF17", "#fef9e8"),
+    "En seguimiento": ("#2980B9", "#EBF5FB"),
     "En curso":       ("#A6CE38", "#f0f8e8"),
 }
 
@@ -417,7 +417,7 @@ def _dialog_estados():
          "El programa implementa en 2027-1 pero registra un avance muy bajo. "
          "Necesita un plan de aceleración antes de que cierre el semestre actual "
          "para no pasar a estado Urgente."),
-        ("En seguimiento", "#FBAF17", "#fef9e8",
+        ("En seguimiento", "#2980B9", "#EBF5FB",
          "Cualquier periodo", "Avance general < 70 %",
          "El avance es insuficiente para garantizar la implementación a tiempo, "
          "pero el plazo aún permite corrección. Requiere monitoreo activo y reporte "
@@ -479,7 +479,7 @@ def _excel_bytes(df_export):
     clasif_hex = {
         "Urgente":        ("EC0677", "FFFFFF"),
         "Prioritario":    ("F47B20", "FFFFFF"),
-        "En seguimiento": ("FBAF17", "333333"),
+        "En seguimiento": ("2980B9", "FFFFFF"),
         "En curso":       ("A6CE38", "FFFFFF"),
     }
 
@@ -517,8 +517,8 @@ def _excel_bytes(df_export):
             elif h == "Avance %":
                 try:
                     pct = int(str(val).replace("%", ""))
-                    bg = "A6CE38" if pct >= 70 else ("FBAF17" if pct >= 40 else "EC0677")
-                    fg = "FFFFFF" if pct < 40 or pct >= 70 else "333333"
+                    bg = "A6CE38" if pct >= 70 else ("2980B9" if pct >= 40 else "EC0677")
+                    fg = "FFFFFF"
                     cell.fill = _fill(bg)
                     cell.font = Font(bold=True, color=fg, size=10)
                     cell.alignment = Alignment(horizontal="center")
@@ -779,7 +779,7 @@ with tab2:
         fac_rango  = df_fac.groupby(["Facultad", "Rango"], observed=True).size().reset_index(name="n")
         faculties  = sorted(df_fac["Facultad"].unique())
         rangos       = ["Urgente", "Prioritario", "En seguimiento", "En curso"]
-        rango_colors = ["#EC0677", "#F47B20", "#FBAF17", "#A6CE38"]
+        rango_colors = ["#EC0677", "#F47B20", "#2980B9", "#A6CE38"]
 
         fig_fac = go.Figure()
         # Fondo de color suave por facultad para diferenciarlas visualmente
@@ -1235,7 +1235,7 @@ with tab4:
         clasif_rows = [
             ("Urgente",        "#EC0677", "#fce8f2", "2026-2 o ya en oferta", "< 70 %"),
             ("Prioritario",    "#F47B20", "#fdf0e8", "2027-1",               "< 40 %"),
-            ("En seguimiento", "#FBAF17", "#fef9e8", "Cualquier periodo",     "< 70 %"),
+            ("En seguimiento", "#2980B9", "#EBF5FB", "Cualquier periodo",     "< 70 %"),
             ("En curso",       "#A6CE38", "#f0f8e8", "Cualquier periodo",     "≥ 70 %"),
         ]
         for nombre, fg, bg, periodo, avance in clasif_rows:
