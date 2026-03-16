@@ -391,7 +391,7 @@ def _donut_card(proc, pct, done, inp, nst, na_val, color, size=128, r=44, sw=13)
 # ── Colores de clasificación ────────────────────────────────────────────────────
 CLASIF_COLORS = {
     "Urgente":        ("#EC0677", "#fce8f2"),
-    "Prioritario":    ("#F47B20", "#fdf0e8"),
+    "Prioritario":    ("#C9A84C", "#fdf8e8"),
     "En seguimiento": ("#2980B9", "#EBF5FB"),
     "En curso":       ("#A6CE38", "#f0f8e8"),
 }
@@ -412,7 +412,7 @@ def _dialog_estados():
          "El programa debe implementarse en el próximo semestre (2026-2) pero "
          "aún no alcanza el avance mínimo requerido. Requiere intervención inmediata "
          "de todas las áreas involucradas para evitar incumplimiento."),
-        ("Prioritario",    "#F47B20", "#fdf0e8",
+        ("Prioritario",    "#C9A84C", "#fdf8e8",
          "Periodo 2027-1", "Avance general < 40 %",
          "El programa implementa en 2027-1 pero registra un avance muy bajo. "
          "Necesita un plan de aceleración antes de que cierre el semestre actual "
@@ -478,7 +478,7 @@ def _excel_bytes(df_export):
 
     clasif_hex = {
         "Urgente":        ("EC0677", "FFFFFF"),
-        "Prioritario":    ("F47B20", "FFFFFF"),
+        "Prioritario":    ("C9A84C", "FFFFFF"),
         "En seguimiento": ("2980B9", "FFFFFF"),
         "En curso":       ("A6CE38", "FFFFFF"),
     }
@@ -568,7 +568,7 @@ with tab1:
 
     # KPI fila 2
     c5, c6, c7, c8 = st.columns(4)
-    c5.markdown(_kpi("Periodo 2026-2",       cnt_2026,       "programas más urgentes",       "#F47B20", round(cnt_2026/n*100)   if n else 0,
+    c5.markdown(_kpi("Periodo 2026-2",       cnt_2026,       "programas más urgentes",       "#C9A84C", round(cnt_2026/n*100)   if n else 0,
         tooltip="Programas cuyo periodo de implementación es 2026-2. Son los de mayor urgencia porque su fecha límite es el próximo semestre."), unsafe_allow_html=True)
     c6.markdown(_kpi("Periodo 2027-1",       cnt_2027_1,     "programas próximo semestre",   "#FBAF17", round(cnt_2027_1/n*100) if n else 0,
         tooltip="Programas con periodo de implementación 2027-1. Deben completar al menos el 40% del proceso para no considerarse prioritarios."), unsafe_allow_html=True)
@@ -779,7 +779,7 @@ with tab2:
         fac_rango  = df_fac.groupby(["Facultad", "Rango"], observed=True).size().reset_index(name="n")
         faculties  = sorted(df_fac["Facultad"].unique())
         rangos       = ["Urgente", "Prioritario", "En seguimiento", "En curso"]
-        rango_colors = ["#EC0677", "#F47B20", "#2980B9", "#A6CE38"]
+        rango_colors = ["#EC0677", "#C9A84C", "#2980B9", "#A6CE38"]
 
         fig_fac = go.Figure()
         # Fondo de color suave por facultad para diferenciarlas visualmente
@@ -1234,7 +1234,7 @@ with tab4:
         )
         clasif_rows = [
             ("Urgente",        "#EC0677", "#fce8f2", "2026-2 o ya en oferta", "< 70 %"),
-            ("Prioritario",    "#F47B20", "#fdf0e8", "2027-1",               "< 40 %"),
+            ("Prioritario",    "#C9A84C", "#fdf8e8", "2027-1",               "< 40 %"),
             ("En seguimiento", "#2980B9", "#EBF5FB", "Cualquier periodo",     "< 70 %"),
             ("En curso",       "#A6CE38", "#f0f8e8", "Cualquier periodo",     "≥ 70 %"),
         ]
