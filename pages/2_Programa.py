@@ -6,6 +6,7 @@ Vista general de programas con conteo de etapas + ficha detallada por programa.
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import datetime
 from utils.data_loader import (
     load_data, apply_filters, ETAPAS_MAP, PROCESOS, PROCESO_COLOR,
     STATUS_LABEL, STATUS_COLOR, color_for_pct,
@@ -358,16 +359,107 @@ for tab, proc in zip(tabs, PROCESOS):
                     unsafe_allow_html=True,
                 )
 
-# ── Tabla valores brutos ───────────────────────────────────────────────────────
+# ── Tabla valores completa ────────────────────────────────────────────────────
 st.divider()
-with st.expander("Ver tabla completa de valores Excel para este programa"):
+
+FAC_PALETTE = {
+    "Sociedad, Cultura y Creatividad":    "#EC0677",
+    "Ingeniería, Diseño e Innovación":    "#1FB2DE",
+    "Negocios, Gestión y Sostenibilidad": "#A6CE38",
+}
+
+def _fmt_val(val, tipo):
+    """Formatea el valor según el tipo de campo."""
+    s = str(val).strip()
+    if s in ("—", "No aplica", "no aplica", "None", "nan", ""):
+        return s
+    if tipo == "pct":
+        try:
+            v = float(s)
+            pct = v * 100 if v <= 1.0 else v
+            return f"{int(pct)}%" if pct == int(pct) else f"{pct:.1f}%"
+        except (ValueError, TypeError):
+            return s
+    if tipo == "date":
+        try:
+            n = int(float(s))
+            if n <= 0:
+                return "—"
+            dt = datetime.date(1899, 12, 30) + datetime.timedelta(days=n)
+            return dt.strftime("%d/%m/%Y")
+        except (ValueError, TypeError):
+            return s
+    return s
+
+# Estilos por estado (cl_)
+_CL_BG = {
+    "done":    "background-color:#edf7e1;color:#2d6a00;font-weight:600",
+    "inprog":  "background-color:#e3f4fb;color:#0a5e80;font-weight:600",
+    "nostart": "background-color:#fce8f2;color:#9a003e;font-weight:600",
+    "na":      "color:#9aabb5;font-style:italic",
+    "info":    "color:#9aabb5;font-style:italic",
+}
+
+with st.expander("Ver tabla completa de valores para este programa"):
     rows_data = []
+    cl_list   = []
+    proc_list = []
+    tipo_list = []
+
     for i, (proc, etapa, col_excel, tipo) in enumerate(ETAPAS_MAP):
+        cl  = row[f"cl_{i}"]
+        val = _fmt_val(row[f"val_{i}"], tipo)
         rows_data.append({
-            "Proceso":  proc,
-            "Etapa":    etapa,
-            "Columna":  col_excel,
-            "Valor":    row[f"val_{i}"],
-            "Estado":   STATUS_LABEL.get(row[f"cl_{i}"], "—"),
+            "Proceso": proc,
+            "Etapa":   etapa,
+            "Valor":   val,
+            "Estado":  STATUS_LABEL.get(cl, "—"),
         })
-    st.dataframe(pd.DataFrame(rows_data), use_container_width=True, hide_index=True, height=400)
+        cl_list.append(cl)
+        proc_list.append(proc)
+        tipo_list.append(tipo)
+
+    df_tbl = pd.DataFrame(rows_data)
+
+    # ── Styler columna por columna ──
+    def _proc_col(s):
+        return [
+            f"background-color:rgba({int(PROCESO_COLOR[p][1:3],16)},"
+            f"{int(PROCESO_COLOR[p][3:5],16)},"
+            f"{int(PROCESO_COLOR[p][5:7],16)},0.12);"
+            f"color:{PROCESO_COLOR[p]};font-weight:700"
+            if p in PROCESO_COLOR else ""
+            for p in proc_list
+        ]
+
+    def _estado_col(s):
+        return [_CL_BG.get(cl, "") for cl in cl_list]
+
+    def _valor_col(s):
+        styles = []
+        for cl, tp in zip(cl_list, tipo_list):
+            base = _CL_BG.get(cl, "")
+            if tp == "pct" and cl not in ("na", "info"):
+                base += ";font-weight:700"
+            styles.append(base)
+        return styles
+
+    styled_tbl = (
+        df_tbl.style
+        .apply(_proc_col,   subset=["Proceso"])
+        .apply(_valor_col,  subset=["Valor"])
+        .apply(_estado_col, subset=["Estado"])
+    )
+
+    st.dataframe(
+        styled_tbl,
+        use_container_width=True,
+        hide_index=True,
+        height=400,
+        column_config={
+            "Proceso": st.column_config.TextColumn("Proceso", width="medium"),
+            "Etapa":   st.column_config.TextColumn("Etapa",   width="large"),
+            "Valor":   st.column_config.TextColumn("Valor",   width="medium"),
+            "Estado":  st.column_config.TextColumn("Estado",  width="small"),
+        },
+    )
