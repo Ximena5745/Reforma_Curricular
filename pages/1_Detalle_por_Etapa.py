@@ -354,11 +354,11 @@ df_det["Avance %"] = df_det["Avance %"].apply(lambda x: f"{int(x)}%" if pd.notna
 df_cl = df.reset_index(drop=True)
 
 def _fmt_pct(val):
-    """Convierte valor decimal o entero a texto porcentaje."""
+    """Convierte valor decimal (0-1) o entero a texto porcentaje."""
     try:
         v = float(val)
         pct = v * 100 if v <= 1.0 else v
-        return f"{pct:.1f}%".rstrip("0").rstrip(".") + "%" if "." in f"{pct:.1f}" else f"{pct:.0f}%"
+        return f"{int(pct)}%" if pct == int(pct) else f"{pct:.1f}%"
     except (ValueError, TypeError):
         return str(val)
 
