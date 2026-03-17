@@ -387,63 +387,58 @@ for i, em in etapas_show:
     else:
         df_det[col_label] = raw.values
 
-# Columna Programa como índice → queda fija al desplazarse horizontalmente
-df_det = df_det.set_index("Programa")
-
-# ── Colores semáforo ────────────────────────────────────────────────────────
-_ST_STYLE = {
-    "done":    ("background-color:#edf7e1;color:#2d6a00;font-weight:600",
-                "background-color:#A6CE38;color:#FFFFFF;font-weight:700"),
-    "inprog":  ("background-color:#e3f4fb;color:#0a5e80;font-weight:600",
-                "background-color:#1FB2DE;color:#FFFFFF;font-weight:700"),
-    "nostart": ("background-color:#fce8f2;color:#9a003e;font-weight:600",
-                "background-color:#EC0677;color:#FFFFFF;font-weight:700"),
-    "na":      ("color:#9aabb5;font-style:italic", ""),
-    "info":    ("color:#9aabb5;font-style:italic", ""),
+# ── Colores semáforo (aplicados columna por columna para evitar KeyError) ────
+_CL_STYLE = {
+    "done":    "background-color:#edf7e1;color:#2d6a00;font-weight:600",
+    "inprog":  "background-color:#e3f4fb;color:#0a5e80;font-weight:600",
+    "nostart": "background-color:#fce8f2;color:#9a003e;font-weight:600",
+    "na":      "color:#9aabb5;font-style:italic",
+    "info":    "color:#9aabb5;font-style:italic",
 }
 
-def _style_det(df_s):
-    res = pd.DataFrame("", index=df_s.index, columns=df_s.columns)
+def _av_col(s):
+    out = []
+    for val in s:
+        try:
+            p = int(str(val).replace("%", ""))
+            if p >= 70:   out.append("background-color:#edf7e1;color:#2d6a00;font-weight:700")
+            elif p >= 40: out.append("background-color:#EBF5FB;color:#0a5e80;font-weight:700")
+            else:         out.append("background-color:#fce8f2;color:#9a003e;font-weight:700")
+        except:
+            out.append("")
+    return out
 
-    # Avance %
-    if "Avance %" in df_s.columns:
-        def _av(val):
-            try:
-                p = int(str(val).replace("%", ""))
-                if p >= 70:   return "background-color:#edf7e1;color:#2d6a00;font-weight:700"
-                elif p >= 40: return "background-color:#EBF5FB;color:#0a5e80;font-weight:700"
-                else:         return "background-color:#fce8f2;color:#9a003e;font-weight:700"
-            except:
-                return ""
-        res["Avance %"] = df_s["Avance %"].apply(_av)
+def _fac_col(s):
+    out = []
+    for val in s:
+        c = FAC_PALETTE.get(str(val), "#1FB2DE")
+        h = c.lstrip("#")
+        r2, g2, b2 = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+        out.append(f"background-color:rgba({r2},{g2},{b2},0.12);"
+                   f"color:{c};font-weight:700;border-left:3px solid {c}")
+    return out
 
-    # Facultad
-    if "Facultad" in df_s.columns:
-        def _fac(val):
-            c = FAC_PALETTE.get(str(val), "#1FB2DE")
-            h = c.lstrip("#")
-            r2, g2, b2 = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
-            return (f"background-color:rgba({r2},{g2},{b2},0.12);"
-                    f"color:{c};font-weight:700;border-left:3px solid {c}")
-        res["Facultad"] = df_s["Facultad"].apply(_fac)
+styled = df_det.style
+if "Avance %" in df_det.columns:
+    styled = styled.apply(_av_col, subset=["Avance %"])
+if "Facultad" in df_det.columns:
+    styled = styled.apply(_fac_col, subset=["Facultad"])
 
-    # Etapas — usar cl_ para definir color
-    for i, col_label, _ in etapa_labels:
-        if col_label not in df_s.columns:
-            continue
-        cl_series = df_cl[f"cl_{i}"]
-        res[col_label] = [_ST_STYLE.get(cl, ("", ""))[0] for cl in cl_series]
-
-    return res
-
-styled = df_det.style.apply(_style_det, axis=None)
+for i, col_label, _ in etapa_labels:
+    if col_label not in df_det.columns:
+        continue
+    cl_vals = df_cl[f"cl_{i}"].tolist()
+    def _etapa_col(s, _cl=cl_vals):
+        return [_CL_STYLE.get(c, "") for c in _cl]
+    styled = styled.apply(_etapa_col, subset=[col_label])
 
 st.dataframe(
     styled,
     use_container_width=True,
     height=460,
-    hide_index=False,   # índice=Programa queda fijo al desplazarse
+    hide_index=True,
     column_config={
+        "Programa": st.column_config.TextColumn("Programa", width="large"),
         "Facultad": st.column_config.TextColumn("Facultad", width="medium"),
         "Avance %": st.column_config.TextColumn("Avance %", width="small"),
         "Modal.":   st.column_config.TextColumn("Modal.",   width="small"),
