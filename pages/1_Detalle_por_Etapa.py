@@ -6,6 +6,7 @@ Vista consolidada de todas las etapas con conteo de programas por estado.
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
+import datetime
 from utils.data_loader import (
     load_data, apply_filters, ETAPAS_MAP, PROCESOS,
     PROCESO_COLOR, STATUS_LABEL, STATUS_COLOR, color_for_pct,
@@ -351,11 +352,43 @@ df_det["Avance %"] = df_det["Avance %"].apply(lambda x: f"{int(x)}%" if pd.notna
 
 # Guardar cl_ para cada etapa (alineado con df_det tras reset_index)
 df_cl = df.reset_index(drop=True)
+
+def _fmt_pct(val):
+    """Convierte valor decimal o entero a texto porcentaje."""
+    try:
+        v = float(val)
+        pct = v * 100 if v <= 1.0 else v
+        return f"{pct:.1f}%".rstrip("0").rstrip(".") + "%" if "." in f"{pct:.1f}" else f"{pct:.0f}%"
+    except (ValueError, TypeError):
+        return str(val)
+
+def _fmt_date(val):
+    """Convierte número serial Excel a fecha dd/mm/aaaa."""
+    try:
+        n = int(float(str(val).strip()))
+        if n <= 0:
+            return "—"
+        dt = datetime.date(1899, 12, 30) + datetime.timedelta(days=n)
+        return dt.strftime("%d/%m/%Y")
+    except (ValueError, TypeError):
+        return str(val) if str(val).strip() not in ("", "None", "nan", "—") else "—"
+
 etapa_labels = []
 for i, em in etapas_show:
+    _, _, _, tipo = em
     col_label = f"{em[1][:28]}…" if len(em[1]) > 28 else em[1]
-    etapa_labels.append((i, col_label))
-    df_det[col_label] = df_cl[f"val_{i}"].values
+    etapa_labels.append((i, col_label, tipo))
+    raw = df_cl[f"val_{i}"]
+    if tipo == "pct":
+        df_det[col_label] = raw.apply(
+            lambda v: _fmt_pct(v) if v not in ("—", "No aplica", "no aplica") else v)
+    elif tipo == "date":
+        df_det[col_label] = raw.apply(_fmt_date)
+    else:
+        df_det[col_label] = raw.values
+
+# Columna Programa como índice → queda fija al desplazarse horizontalmente
+df_det = df_det.set_index("Programa")
 
 # ── Colores semáforo ────────────────────────────────────────────────────────
 _ST_STYLE = {
@@ -395,7 +428,7 @@ def _style_det(df_s):
         res["Facultad"] = df_s["Facultad"].apply(_fac)
 
     # Etapas — usar cl_ para definir color
-    for i, col_label in etapa_labels:
+    for i, col_label, _ in etapa_labels:
         if col_label not in df_s.columns:
             continue
         cl_series = df_cl[f"cl_{i}"]
@@ -409,9 +442,8 @@ st.dataframe(
     styled,
     use_container_width=True,
     height=460,
-    hide_index=True,
+    hide_index=False,   # índice=Programa queda fijo al desplazarse
     column_config={
-        "Programa": st.column_config.TextColumn("Programa", width="large"),
         "Facultad": st.column_config.TextColumn("Facultad", width="medium"),
         "Avance %": st.column_config.TextColumn("Avance %", width="small"),
         "Modal.":   st.column_config.TextColumn("Modal.",   width="small"),
