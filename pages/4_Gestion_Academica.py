@@ -3,13 +3,14 @@ pages/4_Gestion_Academica.py
 Tabla principal de Gestión Académica con estado de todas las etapas por programa.
 """
 
+import math
+import io
 import streamlit as st
 import pandas as pd
-import numpy as np
-from utils.data_loader import (
-    load_data, enrich_df, apply_filters, ETAPAS_MAP, PROCESOS,
-    PROCESO_COLOR, STATUS_LABEL, STATUS_COLOR, color_for_pct,
-)
+from openpyxl import Workbook
+from openpyxl.styles import PatternFill, Font, Alignment
+from openpyxl.utils import get_column_letter
+from utils.data_loader import load_data, enrich_df, PROCESOS
 
 st.set_page_config(
     page_title="Gestión Académica · Reforma Curricular",
@@ -36,8 +37,6 @@ div[data-baseweb="select"] span    { color: #0F385A !important; }
 ul[data-baseweb="menu"]            { background: #FFFFFF !important; border-radius: 8px !important; }
 ul[data-baseweb="menu"] li         { color: #0F385A !important; background: #FFFFFF !important; }
 ul[data-baseweb="menu"] li:hover   { background: #E3F4FB !important; }
-li[aria-selected="true"]           { background: #d0ecf8 !important; font-weight: 600 !important; }
-[data-testid="stDataFrame"]        { border-radius: 10px; overflow: hidden; box-shadow: 0 2px 8px rgba(15,56,90,.08); }
 footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
 [data-testid="stSidebar"] {
@@ -61,18 +60,21 @@ footer { visibility: hidden; }
     background: rgba(255,255,255,0.22) !important; color: #FFFFFF !important;
     font-weight: 700 !important; border-left: 3px solid #42F2F2 !important;
 }
-[data-testid="stPills"] button { border: 2px solid #1A5276 !important; color: #1A5276 !important;
-    background: #FFFFFF !important; border-radius: 20px !important; font-size: 12px !important;
-    font-weight: 600 !important; }
+[data-testid="stPills"] button {
+    border: 2px solid #1A5276 !important; color: #1A5276 !important;
+    background: #FFFFFF !important; border-radius: 20px !important;
+    font-size: 12px !important; font-weight: 600 !important;
+}
 [data-testid="stPills"] button[aria-checked="true"],
 [data-testid="stPills"] button[aria-pressed="true"] {
     background: #0F385A !important; color: #FFFFFF !important;
-    border-color: #0F385A !important; font-weight: 700 !important; }
+    border-color: #0F385A !important; font-weight: 700 !important;
+}
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
 
-# ── Datos ─────────────────────────────────────────────────────────────────────
+# ── Datos ──────────────────────────────────────────────────────────────────────
 df_raw = enrich_df(load_data())
 
 fac_abrev = {
@@ -80,12 +82,21 @@ fac_abrev = {
     "Facultad de Ingeniería, Diseño e Innovación":    "FIDI",
     "Facultad de Negocios, Gestión y Sostenibilidad": "FNGS",
 }
-fac_full = {v: k for k, v in fac_abrev.items()}
-fac_labels = {
-    "Facultad de Sociedad, Cultura y Creatividad":    "Sociedad, Cultura y Creatividad",
-    "Facultad de Ingeniería, Diseño e Innovación":    "Ingeniería, Diseño e Innovación",
-    "Facultad de Negocios, Gestión y Sostenibilidad": "Negocios, Gestión y Sostenibilidad",
+FAC_COLOR = {"FSCC": "#1FB2DE", "FIDI": "#A6CE38", "FNGS": "#FBAF17"}
+MOD_COLOR = {"Virtual": "#1FB2DE", "Presencial": "#A6CE38", "Híbrido": "#FBAF17"}
+PER_COLOR = {
+    "2026-2":            "#EC0677",
+    "2027-1":            "#FBAF17",
+    "2027-2":            "#5a7a2e",
+    "Ya está en oferta": "#1FB2DE",
 }
+PER_DISPLAY = {
+    "Ya está en oferta": "Ya oferta",
+    "2026-2": "2026-2",
+    "2027-1": "2027-1",
+    "2027-2": "2027-2",
+}
+PER_REVERSE = {v: k for k, v in PER_DISPLAY.items()}
 
 # ── Sidebar ────────────────────────────────────────────────────────────────────
 with st.sidebar:
@@ -119,199 +130,286 @@ st.markdown(
     '</div>',
     unsafe_allow_html=True,
 )
-
 st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
 # ── Filtros ────────────────────────────────────────────────────────────────────
-st.markdown(
-    '<div style="background:#FFFFFF;border-radius:10px;padding:14px 16px 12px;'
-    'border:1px solid rgba(15,56,90,0.10);box-shadow:0 2px 8px rgba(15,56,90,0.06);'
-    'margin-bottom:12px">',
-    unsafe_allow_html=True,
-)
+def _clear():
+    st.session_state["ga_buscar"] = ""
+    st.session_state["ga_mod"]    = []
+    st.session_state["ga_per"]    = []
 
 _use_pills = hasattr(st, "pills")
 
-_mods_ops = sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
-_fac_ops  = [fac_abrev.get(f, f) for f in sorted(df_raw["FACULTAD"].dropna().unique())]
-_per_ops  = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
-_sede_ops = sorted(df_raw["SEDE"].dropna().unique().tolist()) if "SEDE" in df_raw.columns else []
+with st.container():
+    st.markdown(
+        '<div style="background:#FFFFFF;border-radius:10px;padding:14px 16px 12px;'
+        'border:1px solid rgba(15,56,90,0.10);box-shadow:0 2px 8px rgba(15,56,90,0.06);'
+        'margin-bottom:8px">',
+        unsafe_allow_html=True,
+    )
+    buscar = st.text_input(
+        "Buscar",
+        placeholder="🔍  Buscar programa o escuela...",
+        key="ga_buscar",
+        label_visibility="collapsed",
+    )
+    fc1, fc2, fc3 = st.columns([3, 4, 1])
+    with fc1:
+        if _use_pills:
+            sel_mod = st.pills("Modalidad", ["Virtual", "Presencial", "Híbrido"],
+                               selection_mode="multi", key="ga_mod")
+        else:
+            sel_mod = st.multiselect("Modalidad", ["Virtual", "Presencial", "Híbrido"],
+                                     key="ga_mod", placeholder="Todas")
+    with fc2:
+        per_opts = list(PER_DISPLAY.values())
+        if _use_pills:
+            sel_per_disp = st.pills("Período", per_opts,
+                                    selection_mode="multi", key="ga_per")
+        else:
+            sel_per_disp = st.multiselect("Período", per_opts,
+                                          key="ga_per", placeholder="Todos")
+    with fc3:
+        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
+        st.button("LIMPIAR", on_click=_clear, use_container_width=True)
+    st.markdown("</div>", unsafe_allow_html=True)
 
-def _pill_or_multi(label, options, key):
-    if _use_pills:
-        return st.pills(label, options, selection_mode="multi", key=key)
-    return st.multiselect(label, options, key=key, placeholder="Todas")
+# ── Aplicar filtros ────────────────────────────────────────────────────────────
+df = df_raw.copy()
 
-fc1, fc2, fc3, fc4 = st.columns(4)
-with fc1:
-    sel_mod = _pill_or_multi("Modalidad", _mods_ops, "ga_mod")
-with fc2:
-    sel_fac = _pill_or_multi("Facultad", _fac_ops, "ga_fac")
-with fc3:
-    sel_per = _pill_or_multi("Periodo", _per_ops, "ga_per")
-with fc4:
-    if _sede_ops:
-        sel_sed = _pill_or_multi("Sede", _sede_ops, "ga_sed")
-    else:
-        sel_sed = []
+buscar_v   = (st.session_state.get("ga_buscar") or "").strip().lower()
+sel_mod_v  = list(st.session_state.get("ga_mod") or [])
+sel_per_v  = [PER_REVERSE.get(p, p) for p in (st.session_state.get("ga_per") or [])]
 
-st.markdown("</div>", unsafe_allow_html=True)
+if buscar_v:
+    fac_abrev_lower = {k.lower(): v for k, v in fac_abrev.items()}
+    mask_prog = df["NOMBRE DEL PROGRAMA"].str.lower().str.contains(buscar_v, na=False)
+    mask_fac  = df["FACULTAD"].str.lower().str.contains(buscar_v, na=False)
+    mask_fabr = df["FACULTAD"].str.lower().map(fac_abrev_lower).str.lower().str.contains(buscar_v, na=False)
+    df = df[mask_prog | mask_fac | mask_fabr]
 
-# Aplicar filtros
-modalidad_f = list(sel_mod) if sel_mod else []
-facultad_f  = [fac_full.get(f, f) for f in sel_fac] if sel_fac else []
-periodo_f   = list(sel_per) if sel_per else []
-df = apply_filters(df_raw.copy(), modalidad_f, facultad_f, periodo_f)
+if sel_mod_v:
+    df = df[df["MODALIDAD"].isin(sel_mod_v)]
 
-if sel_sed and "SEDE" in df.columns:
-    df = df[df["SEDE"].isin(list(sel_sed))]
+if sel_per_v:
+    df = df[df["periodo_propuesto"].isin(sel_per_v)]
 
-n = len(df)
-st.caption(f"📊 **{n}** programas mostrados")
+n_total = len(df_raw)
+n_show  = len(df)
 
-# ── Columnas de estado por etapa agrupadas por proceso ────────────────────────
-# Para cada proceso, tomamos el primer campo de tipo status/pct como el estado representativo
-PROC_KEY = {
-    "Gestión Académica":                       "GA",
-    "Gestión Financiera":                      "CF",
-    "Aseguramiento de la Calidad":             "Aseg",
-    "Ger. Planeación y Gestión Institucional": "GP",
-    "Producción de Contenidos":                "PC",
-    "Convenios Institucionales":               "Conv",
-    "Parametrizar Reforma en Banner":          "Banner",
-    "Publicación en Página Web":               "Pub",
-}
+st.markdown(
+    f'<div style="font-size:12px;color:#6a8a9e;margin-bottom:6px">'
+    f'Mostrando <b style="color:#0F385A">{n_show}</b> de '
+    f'<b style="color:#0F385A">{n_total}</b> programas</div>',
+    unsafe_allow_html=True,
+)
 
-# Índice del campo representativo por proceso (preferir pct > status)
-PROC_REP_IDX = {}
-for proc in PROCESOS:
-    idxs = [i for i, (p, _, _, t) in enumerate(ETAPAS_MAP) if p == proc]
-    # Preferir pct, luego status
-    pct_idxs = [i for i in idxs if ETAPAS_MAP[i][3] == "pct"]
-    st_idxs  = [i for i in idxs if ETAPAS_MAP[i][3] in ("status", "estado_tramite")]
-    PROC_REP_IDX[proc] = pct_idxs[0] if pct_idxs else (st_idxs[0] if st_idxs else idxs[0])
+# ── Helpers HTML ───────────────────────────────────────────────────────────────
+def _esc(s):
+    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-def _st_html(cl, pct_val=None):
-    bg = {"done":"#f0f8e8","inprog":"#e8f6fc","nostart":"#fce8f2","na":"#f0f4f8","info":"#fdf8e8"}
-    fg = {"done":"#5a7a2e","inprog":"#0a6a8e","nostart":"#9a0050","na":"#6a8a9e","info":"#8a6000"}
-    lbl = {"done":"✓ Finalizado","inprog":"⟳ En proceso","nostart":"✗ Sin iniciar",
-           "na":"— N/A","info":"ℹ Info"}.get(cl, cl)
-    if pct_val is not None and cl not in ("na", "info"):
-        lbl = f"{lbl} {int(pct_val)}%"
-    b = bg.get(cl, "#f0f4f8"); c = fg.get(cl, "#4a6a7e")
-    return f'<span style="background:{b};color:{c};font-size:10px;font-weight:600;padding:2px 7px;border-radius:10px;white-space:nowrap">{lbl}</span>'
+def _proc_icon(val):
+    if val is None or (isinstance(val, float) and math.isnan(float(val))):
+        return '<span style="color:#9aabb5;font-size:15px;font-weight:600">—</span>'
+    v = float(val)
+    if v >= 100:
+        return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                'width:22px;height:22px;background:#f0f8e8;color:#5a7a2e;border-radius:50%;'
+                'font-weight:700;font-size:13px">✓</span>')
+    if v > 0:
+        return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                'width:22px;height:22px;background:#fef9e8;color:#d97706;border-radius:50%;'
+                'font-weight:700;font-size:13px">○</span>')
+    return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+            'width:22px;height:22px;background:#fce8f2;color:#EC0677;border-radius:50%;'
+            'font-weight:700;font-size:13px">○</span>')
 
-def _avance_bar_html(pct):
+def _syl_icon(syl):
+    if syl == "Si":
+        return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                'width:22px;height:22px;background:#f0f8e8;color:#5a7a2e;border-radius:50%;'
+                'font-weight:700;font-size:13px">✓</span>')
+    if syl == "NO":
+        return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                'width:22px;height:22px;background:#fce8f2;color:#EC0677;border-radius:50%;'
+                'font-weight:700;font-size:13px">○</span>')
+    return '<span style="color:#9aabb5;font-size:15px;font-weight:600">—</span>'
+
+def _pct_bar(pct):
     pct = float(pct or 0)
-    clr = "#A6CE38" if pct >= 70 else ("#FBAF17" if pct >= 40 else "#EC0677")
+    clr = "#5a7a2e" if pct >= 70 else ("#d97706" if pct >= 40 else "#EC0677")
+    bg  = "#f0f8e8" if pct >= 70 else ("#fef9e8" if pct >= 40 else "#fce8f2")
+    bar_clr = "#A6CE38" if pct >= 70 else ("#FBAF17" if pct >= 40 else "#EC0677")
     return (
-        f'<div style="display:flex;align-items:center;gap:5px">'
-        f'<div style="flex:1;min-width:50px;height:7px;background:#e2e8f0;border-radius:4px;overflow:hidden">'
-        f'<div style="width:{min(pct,100):.0f}%;height:100%;background:{clr};border-radius:4px"></div></div>'
-        f'<span style="font-size:11px;font-weight:700;color:{clr};min-width:32px">{int(pct)}%</span>'
-        f'</div>'
+        f'<div style="min-width:64px;text-align:center">'
+        f'<div style="font-size:11px;font-weight:700;color:{clr};margin-bottom:3px">{int(pct)}%</div>'
+        f'<div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden">'
+        f'<div style="width:{min(pct,100):.0f}%;height:100%;background:{bar_clr};border-radius:3px"></div>'
+        f'</div></div>'
     )
 
-# ── Construir tabla ────────────────────────────────────────────────────────────
-rows = []
-for _, row in df.iterrows():
-    r = {
-        "Programa": row["NOMBRE DEL PROGRAMA"],
-        "Modalidad": row.get("MODALIDAD", "—"),
-        "Nivel": row.get("NIVEL", "—"),
-        "Sede": row.get("SEDE", "—"),
-        "Facultad": fac_abrev.get(row.get("FACULTAD", ""), "—"),
-        "Avance %": int(row["avance_general"]),
-        "Periodo": row.get("PERIODO DE IMPLEMENTACIÓN", "—"),
-    }
-    for proc in PROCESOS:
-        key = PROC_KEY[proc]
-        rep_i = PROC_REP_IDX[proc]
-        cl = str(row.get(f"cl_{rep_i}", "na"))
-        pct = df_raw.loc[row.name, f"proc_{proc}"] if f"proc_{proc}" in df_raw.columns else None
-        pct_val = round(float(pct)) if pct is not None and not np.isnan(pct) else None
-        lbl = {"done": "Finalizado", "inprog": f"En proceso {pct_val}%" if pct_val else "En proceso",
-               "nostart": "Sin iniciar", "na": "N/A", "info": "Info"}.get(cl, cl)
-        r[key] = lbl
-    rows.append(r)
+def _badge(text, color):
+    r = int(color[1:3], 16); g = int(color[3:5], 16); b = int(color[5:7], 16)
+    bg = f"rgba({r},{g},{b},0.12)"
+    return (f'<span style="background:{bg};color:{color};font-size:10px;font-weight:700;'
+            f'padding:3px 9px;border-radius:12px;white-space:nowrap">{_esc(text)}</span>')
 
-df_show = pd.DataFrame(rows)
+# ── Construir tabla HTML ───────────────────────────────────────────────────────
+TH = ('style="background:#0F385A;color:#FFFFFF;font-size:11px;font-weight:700;'
+      'padding:10px 8px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;'
+      'border-right:1px solid rgba(255,255,255,0.10)"')
+TH_L = ('style="background:#0F385A;color:#FFFFFF;font-size:11px;font-weight:700;'
+        'padding:10px 14px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2;'
+        'border-right:1px solid rgba(255,255,255,0.10)"')
 
-if len(df_show) == 0:
+ETAPA_COLS = [
+    ("G.ACADÉMICA",  f"proc_Gestión Académica",                      "proc"),
+    ("C.FINANCIERO", f"proc_Gestión Financiera",                      "proc"),
+    ("ASEGURAMIENT", f"proc_Aseguramiento de la Calidad",             "proc"),
+    ("PLANEACIÓN",   f"proc_Ger. Planeación y Gestión Institucional", "proc"),
+    ("SYLLABUS",     "syl_val",                                       "syl"),
+    ("PROD.CONT.",   "pc_pct",                                        "bar"),
+    ("CONVENIOS",    f"proc_Convenios Institucionales",               "proc"),
+    ("BANNER",       "ban_pct",                                       "bar"),
+]
+
+rows_html = []
+for idx, (_, row) in enumerate(df.iterrows()):
+    row_bg = "#FFFFFF" if idx % 2 == 0 else "#f8fafc"
+    TD  = (f'style="padding:8px;text-align:center;vertical-align:middle;'
+           f'border-bottom:1px solid #eef3f8;background:{row_bg}"')
+    TD_L = (f'style="padding:8px 14px;text-align:left;vertical-align:middle;'
+            f'border-bottom:1px solid #eef3f8;background:{row_bg};min-width:200px;max-width:280px"')
+
+    prog    = _esc(row.get("NOMBRE DEL PROGRAMA", "—"))
+    fac     = fac_abrev.get(str(row.get("FACULTAD", "")), "—")
+    fac_clr = FAC_COLOR.get(fac, "#9aabb5")
+    mod     = str(row.get("MODALIDAD", "—"))
+    mod_clr = MOD_COLOR.get(mod, "#9aabb5")
+    sede    = _esc(str(row.get("SEDE", "—")))
+    per     = str(row.get("periodo_propuesto", "—"))
+    per_clr = PER_COLOR.get(per, "#9aabb5")
+    per_lbl = PER_DISPLAY.get(per, per)
+
+    prog_cell = (
+        f'<div style="font-size:12px;font-weight:600;color:#0F385A;line-height:1.4">{prog}</div>'
+        f'<div style="font-size:10px;color:{fac_clr};font-weight:600;margin-top:2px">{fac}</div>'
+    )
+
+    etapa_cells = []
+    for _, col_key, typ in ETAPA_COLS:
+        val = row.get(col_key)
+        if typ == "proc":
+            try:
+                v = None if (val == "" or val is None) else float(val)
+                if v is not None and math.isnan(v):
+                    v = None
+            except Exception:
+                v = None
+            etapa_cells.append(f'<td {TD}>{_proc_icon(v)}</td>')
+        elif typ == "syl":
+            etapa_cells.append(f'<td {TD}>{_syl_icon(str(val or "N/A"))}</td>')
+        else:
+            try:
+                pct = float(val or 0)
+            except Exception:
+                pct = 0.0
+            etapa_cells.append(f'<td {TD}>{_pct_bar(pct)}</td>')
+
+    rows_html.append(
+        f'<tr>'
+        f'<td {TD_L}>{prog_cell}</td>'
+        f'<td {TD}>{_badge(mod, mod_clr)}</td>'
+        f'<td {TD}><span style="font-size:11px;color:#4a6a7e">{sede}</span></td>'
+        f'<td {TD}>{_badge(per_lbl, per_clr)}</td>'
+        + "".join(etapa_cells) +
+        f'</tr>'
+    )
+
+if n_show == 0:
     st.info("Sin programas para los filtros seleccionados.")
 else:
-    # Estilo condicional
-    def _style_col(val):
-        if isinstance(val, str):
-            if "Finalizado" in val:
-                return "background:#f0f8e8;color:#5a7a2e;font-weight:600;text-align:center"
-            if "En proceso" in val:
-                return "background:#e8f6fc;color:#0a6a8e;font-weight:600;text-align:center"
-            if "Sin iniciar" in val:
-                return "background:#fce8f2;color:#9a0050;font-weight:600;text-align:center"
-            if val == "N/A":
-                return "background:#f0f4f8;color:#6a8a9e;text-align:center"
-        return ""
-
-    def _style_avance(val):
-        if isinstance(val, (int, float)):
-            if val >= 70:
-                return "background:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
-            if val >= 40:
-                return "background:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
-            return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
-        return ""
-
-    etapa_cols = list(PROC_KEY.values())
-    styled = df_show.style.applymap(_style_avance, subset=["Avance %"])
-    for ec in etapa_cols:
-        if ec in df_show.columns:
-            styled = styled.applymap(_style_col, subset=[ec])
-
-    st.dataframe(
-        styled,
-        use_container_width=True,
-        hide_index=True,
-        height=min(700, n * 38 + 60),
-        column_config={
-            "Avance %": st.column_config.ProgressColumn(
-                "Avance %", help="Avance general calculado", min_value=0, max_value=100, format="%d%%"
-            ),
-        },
+    header_cells = "".join(f'<th {TH}>{h}</th>' for h, _, _ in ETAPA_COLS)
+    table_html = (
+        '<div style="overflow-x:auto;overflow-y:auto;max-height:580px;border-radius:10px;'
+        'border:1px solid #dde8f0;box-shadow:0 2px 10px rgba(15,56,90,.08)">'
+        '<table style="width:100%;border-collapse:collapse;font-family:\'Segoe UI\',sans-serif">'
+        '<thead><tr>'
+        f'<th {TH_L}>PROGRAMA</th>'
+        f'<th {TH}>MODALIDAD</th>'
+        f'<th {TH}>SEDE</th>'
+        f'<th {TH}>PERÍODO</th>'
+        + header_cells +
+        '</tr></thead>'
+        '<tbody>'
+        + "".join(rows_html) +
+        '</tbody></table></div>'
     )
+    st.markdown(table_html, unsafe_allow_html=True)
 
-    # ── Descarga Excel ─────────────────────────────────────────────────────────
-    import io
-    from openpyxl import Workbook
-    from openpyxl.styles import PatternFill, Font, Alignment
-    from openpyxl.utils import get_column_letter
+# ── Descarga Excel ─────────────────────────────────────────────────────────────
+st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-    def _gen_excel(df_exp):
-        wb = Workbook(); ws = wb.active; ws.title = "Gestión Académica"
-        headers = list(df_exp.columns)
-        for ci, h in enumerate(headers, 1):
-            cell = ws.cell(row=1, column=ci, value=h)
-            cell.font = Font(bold=True, color="FFFFFF", size=10)
-            cell.fill = PatternFill(start_color="0F385A", end_color="0F385A", fill_type="solid")
-            cell.alignment = Alignment(horizontal="center", vertical="center")
-        ws.row_dimensions[1].height = 28
-        for ri, row_data in enumerate(df_exp.itertuples(index=False), 2):
-            for ci, val in enumerate(row_data, 1):
-                cell = ws.cell(row=ri, column=ci, value=val)
-                cell.alignment = Alignment(horizontal="left" if ci <= 5 else "center")
-        for ci, h in enumerate(headers, 1):
-            ws.column_dimensions[get_column_letter(ci)].width = min(
-                max(len(str(h)) + 2, 8), 30
-            )
-        ws.freeze_panes = "A2"
-        buf = io.BytesIO(); wb.save(buf); buf.seek(0)
-        return buf.getvalue()
+def _gen_excel(df_src):
+    rows_exp = []
+    for _, row in df_src.iterrows():
+        fac = fac_abrev.get(str(row.get("FACULTAD", "")), "—")
+        r   = {
+            "Programa":  row.get("NOMBRE DEL PROGRAMA", "—"),
+            "Facultad":  fac,
+            "Modalidad": row.get("MODALIDAD", "—"),
+            "Sede":      row.get("SEDE", "—"),
+            "Período":   PER_DISPLAY.get(str(row.get("periodo_propuesto", "—")), "—"),
+            "Avance %":  int(float(row.get("avance_general", 0) or 0)),
+        }
+        for hdr, col_key, typ in ETAPA_COLS:
+            val = row.get(col_key)
+            if typ == "proc":
+                try:
+                    v = float(val)
+                    if math.isnan(v):
+                        r[hdr] = "N/A"
+                    elif v >= 100:
+                        r[hdr] = "Finalizado"
+                    elif v > 0:
+                        r[hdr] = f"En proceso ({int(v)}%)"
+                    else:
+                        r[hdr] = "Sin iniciar"
+                except Exception:
+                    r[hdr] = "N/A"
+            elif typ == "syl":
+                r[hdr] = str(val or "N/A")
+            else:
+                try:
+                    r[hdr] = f"{int(float(val or 0))}%"
+                except Exception:
+                    r[hdr] = "0%"
+        rows_exp.append(r)
 
-    st.download_button(
-        "⬇️ Descargar Excel",
-        data=_gen_excel(df_show),
-        file_name="gestion_academica.xlsx",
-        mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    )
+    df_exp = pd.DataFrame(rows_exp)
+    wb = Workbook(); ws = wb.active; ws.title = "Gestión Académica"
+    headers = list(df_exp.columns)
+    for ci, h in enumerate(headers, 1):
+        cell = ws.cell(row=1, column=ci, value=h)
+        cell.font = Font(bold=True, color="FFFFFF", size=10)
+        cell.fill = PatternFill(start_color="0F385A", end_color="0F385A", fill_type="solid")
+        cell.alignment = Alignment(horizontal="center", vertical="center")
+    ws.row_dimensions[1].height = 28
+    for ri, row_data in enumerate(df_exp.itertuples(index=False), 2):
+        for ci, val in enumerate(row_data, 1):
+            cell = ws.cell(row=ri, column=ci, value=val)
+            cell.alignment = Alignment(horizontal="left" if ci <= 5 else "center")
+    for ci, h in enumerate(headers, 1):
+        ws.column_dimensions[get_column_letter(ci)].width = min(max(len(str(h)) + 2, 8), 35)
+    ws.freeze_panes = "A2"
+    buf = io.BytesIO(); wb.save(buf); buf.seek(0)
+    return buf.getvalue()
+
+st.download_button(
+    "⬇️ Descargar Excel",
+    data=_gen_excel(df),
+    file_name="gestion_academica.xlsx",
+    mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+)
 
 st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)

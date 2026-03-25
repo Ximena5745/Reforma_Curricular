@@ -3,8 +3,13 @@ pages/6_Plan_de_Trabajo.py
 Plan de trabajo sugerido con fechas de inicio y cierre por periodo propuesto.
 """
 
+import io
+import math
 import streamlit as st
 import pandas as pd
+from openpyxl import Workbook
+from openpyxl.styles import PatternFill, Font, Alignment
+from openpyxl.utils import get_column_letter
 from utils.data_loader import load_data, enrich_df, STATUS_LABEL
 
 st.set_page_config(
@@ -70,9 +75,9 @@ fac_abrev = {
 }
 
 WORK_DATES = {
-    "2026-2":            {"inicio": "Enero 2026",   "cierre": "Junio 2026"},
-    "2027-1":            {"inicio": "Julio 2026",   "cierre": "Diciembre 2026"},
-    "2027-2":            {"inicio": "Enero 2027",   "cierre": "Junio 2027"},
+    "2026-2":            {"inicio": "Enero 2026",      "cierre": "Junio 2026"},
+    "2027-1":            {"inicio": "Julio 2026",      "cierre": "Diciembre 2026"},
+    "2027-2":            {"inicio": "Enero 2027",      "cierre": "Junio 2027"},
     "Ya está en oferta": {"inicio": "Ya implementado", "cierre": "—"},
 }
 
@@ -116,114 +121,113 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+st.markdown("<div style='height:14px'></div>", unsafe_allow_html=True)
 
-# ── Tabla de fechas por periodo ────────────────────────────────────────────────
-for periodo, dates in WORK_DATES.items():
-    sub = df_raw[df_raw["periodo_propuesto"] == periodo].copy()
-    if sub.empty:
-        continue
-    color = PERIOD_COLORS.get(periodo, "#1FB2DE")
-    n     = len(sub)
-
-    st.markdown(
-        f'<div style="background:white;border-left:5px solid {color};border-radius:10px;'
-        f'padding:12px 16px;margin:12px 0 6px;box-shadow:0 2px 8px rgba(15,56,90,.06)">'
-        f'<div style="display:flex;align-items:center;justify-content:space-between">'
-        f'<div>'
-        f'<div style="font-size:15px;font-weight:700;color:#0F385A">Periodo {periodo}</div>'
-        f'<div style="font-size:11px;color:#6a8a9e;margin-top:2px">'
-        f'📅 Inicio sugerido: <b>{dates["inicio"]}</b> &nbsp;·&nbsp; '
-        f'🏁 Cierre sugerido: <b>{dates["cierre"]}</b></div>'
-        f'</div>'
-        f'<div style="background:{color};color:white;font-size:18px;font-weight:800;'
-        f'padding:5px 16px;border-radius:20px">{n} programas</div>'
-        f'</div></div>',
-        unsafe_allow_html=True,
-    )
-
-    rows = []
-    for _, row in sub.iterrows():
-        avance = int(row.get("avance_general", 0))
-        cf_lbl = STATUS_LABEL.get(str(row.get("cf_st", "")), str(row.get("cf_st", "—")))
-        rows.append({
-            "Programa": row["NOMBRE DEL PROGRAMA"],
-            "Modalidad": row.get("MODALIDAD", "—"),
-            "Sede": row.get("SEDE", "—"),
-            "Facultad": fac_abrev.get(row.get("FACULTAD", ""), "—"),
-            "Fecha inicio sugerida": dates["inicio"],
-            "Fecha cierre sugerida": dates["cierre"],
-            "Avance %": avance,
-            "CF": cf_lbl,
-            "% PC": int(row.get("pc_pct", 0)),
-        })
-
-    df_sub = pd.DataFrame(rows)
-
-    def _style_av(val):
-        if isinstance(val, (int, float)):
-            if val >= 70: return "background:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
-            if val >= 40: return "background:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
-            return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
-        return ""
-
-    st.dataframe(
-        df_sub.style.applymap(_style_av, subset=["Avance %"]),
-        use_container_width=True,
-        hide_index=True,
-        height=min(400, n * 38 + 60),
-    )
-
-# ── Resumen visual por periodo ──────────────────────────────────────────────────
-st.markdown("<div style='height:12px'></div>", unsafe_allow_html=True)
-st.markdown("#### Resumen de carga por periodo")
-
-cols = st.columns(len(WORK_DATES))
-for col, (periodo, dates) in zip(cols, WORK_DATES.items()):
-    n = int((df_raw["periodo_propuesto"] == periodo).sum())
-    color = PERIOD_COLORS.get(periodo, "#1FB2DE")
-    col.markdown(
-        f'<div style="background:white;border-top:4px solid {color};border-radius:10px;'
-        f'padding:14px;text-align:center;box-shadow:0 2px 8px rgba(15,56,90,.06)">'
-        f'<div style="font-size:11px;font-weight:700;color:{color};text-transform:uppercase;'
-        f'letter-spacing:.5px;margin-bottom:6px">{periodo}</div>'
-        f'<div style="font-size:30px;font-weight:800;color:#0F385A;line-height:1">{n}</div>'
-        f'<div style="font-size:10px;color:#6a8a9e;margin-top:4px">programas</div>'
-        f'<div style="margin-top:8px;font-size:10px;color:#4a6a7e">'
-        f'📅 {dates["inicio"]}</div>'
-        f'<div style="font-size:10px;color:#4a6a7e">🏁 {dates["cierre"]}</div>'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
-
-# ── Descarga Excel ──────────────────────────────────────────────────────────────
-st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-
+# ── Construir tabla completa ────────────────────────────────────────────────────
 all_rows = []
 for periodo, dates in WORK_DATES.items():
     sub = df_raw[df_raw["periodo_propuesto"] == periodo]
     for _, row in sub.iterrows():
+        try:
+            av = int(float(row.get("avance_general", 0)))
+            av = 0 if math.isnan(float(av)) else av
+        except Exception:
+            av = 0
+        cf_lbl = STATUS_LABEL.get(str(row.get("cf_st", "")), str(row.get("cf_st", "—")))
         all_rows.append({
-            "Programa": row["NOMBRE DEL PROGRAMA"],
-            "Modalidad": row.get("MODALIDAD", "—"),
-            "Sede": row.get("SEDE", "—"),
-            "Facultad": fac_abrev.get(row.get("FACULTAD", ""), "—"),
-            "Periodo propuesto": periodo,
+            "Programa":             row["NOMBRE DEL PROGRAMA"],
+            "Modalidad":            row.get("MODALIDAD", "—"),
+            "Sede":                 row.get("SEDE", "—"),
+            "Facultad":             fac_abrev.get(row.get("FACULTAD", ""), "—"),
+            "Periodo propuesto":    periodo,
             "Fecha inicio sugerida": dates["inicio"],
             "Fecha cierre sugerida": dates["cierre"],
-            "Avance %": int(row.get("avance_general", 0)),
-            "Periodo original": row.get("PERIODO DE IMPLEMENTACIÓN", "—"),
+            "Avance %":             av,
+            "CF":                   cf_lbl,
+            "% PC":                 int(float(row.get("pc_pct", 0))),
         })
 
-df_export = pd.DataFrame(all_rows)
+df_all = pd.DataFrame(all_rows)
 
-import io
-from openpyxl import Workbook
-from openpyxl.styles import PatternFill, Font, Alignment
-from openpyxl.utils import get_column_letter
+# ── Filtro por Periodo ──────────────────────────────────────────────────────────
+periodos_disponibles = [p for p in WORK_DATES if p in df_all["Periodo propuesto"].values]
+
+fc1, fc2 = st.columns([2, 5])
+with fc1:
+    sel_periodo = st.selectbox(
+        "Filtrar por periodo",
+        options=["Todos"] + periodos_disponibles,
+        index=0,
+    )
+
+# Aplicar filtro
+if sel_periodo == "Todos":
+    df_show = df_all.copy()
+else:
+    df_show = df_all[df_all["Periodo propuesto"] == sel_periodo].copy()
+
+# Indicador de periodo seleccionado
+color_sel = PERIOD_COLORS.get(sel_periodo, "#1FB2DE") if sel_periodo != "Todos" else "#0F385A"
+dates_sel  = WORK_DATES.get(sel_periodo, {})
+n_show     = len(df_show)
+
+if sel_periodo != "Todos":
+    st.markdown(
+        f'<div style="background:white;border-left:5px solid {color_sel};border-radius:10px;'
+        f'padding:10px 16px;margin:4px 0 10px;box-shadow:0 2px 8px rgba(15,56,90,.06);'
+        f'display:flex;align-items:center;justify-content:space-between">'
+        f'<div style="font-size:13px;color:#6a8a9e">'
+        f'📅 Inicio sugerido: <b style="color:#0F385A">{dates_sel["inicio"]}</b>'
+        f'&nbsp;·&nbsp;🏁 Cierre sugerido: <b style="color:#0F385A">{dates_sel["cierre"]}</b></div>'
+        f'<div style="background:{color_sel};color:white;font-size:14px;font-weight:800;'
+        f'padding:4px 14px;border-radius:16px">{n_show} programas</div>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+else:
+    st.caption(f"{n_show} programas en total")
+
+# ── Tabla ───────────────────────────────────────────────────────────────────────
+def _style_av(val):
+    if isinstance(val, (int, float)):
+        if val >= 70: return "background:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
+        if val >= 40: return "background:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
+        return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
+    return ""
+
+def _style_periodo(val):
+    color_map = {
+        "2026-2": "#fce8f2", "2027-1": "#fef9e8",
+        "2027-2": "#f0f8e8", "Ya está en oferta": "#e8f6fc",
+    }
+    fg_map = {
+        "2026-2": "#9a0050", "2027-1": "#8a6000",
+        "2027-2": "#5a7a2e", "Ya está en oferta": "#0a6a8e",
+    }
+    if val in color_map:
+        return f"background:{color_map[val]};color:{fg_map[val]};font-weight:700;text-align:center"
+    return ""
+
+styled = (
+    df_show.style
+    .applymap(_style_av,      subset=["Avance %"])
+    .applymap(_style_periodo, subset=["Periodo propuesto"])
+)
+
+st.dataframe(
+    styled,
+    use_container_width=True,
+    hide_index=True,
+    height=min(600, n_show * 38 + 60),
+)
+
+# ── Descarga Excel ──────────────────────────────────────────────────────────────
+st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
 def _gen_excel_plan(df_exp):
-    wb = Workbook(); ws = wb.active; ws.title = "Plan de Trabajo"
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Plan de Trabajo"
     headers = list(df_exp.columns)
     for ci, h in enumerate(headers, 1):
         cell = ws.cell(row=1, column=ci, value=h)
@@ -238,13 +242,15 @@ def _gen_excel_plan(df_exp):
     for ci, h in enumerate(headers, 1):
         ws.column_dimensions[get_column_letter(ci)].width = min(max(len(str(h)) + 2, 10), 35)
     ws.freeze_panes = "A2"
-    buf = io.BytesIO(); wb.save(buf); buf.seek(0)
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
     return buf.getvalue()
 
 st.download_button(
     "⬇️ Descargar Plan de Trabajo (Excel)",
-    data=_gen_excel_plan(df_export),
-    file_name="plan_de_trabajo.xlsx",
+    data=_gen_excel_plan(df_show),
+    file_name=f"plan_de_trabajo{'_' + sel_periodo if sel_periodo != 'Todos' else ''}.xlsx",
     mime="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
 )
 
