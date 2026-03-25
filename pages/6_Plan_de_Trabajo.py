@@ -187,39 +187,88 @@ if sel_periodo != "Todos":
 else:
     st.caption(f"{n_show} programas en total")
 
-# ── Tabla ───────────────────────────────────────────────────────────────────────
-def _style_av(val):
-    if isinstance(val, (int, float)):
-        if val >= 70: return "background:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
-        if val >= 40: return "background:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
-        return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
-    return ""
+# ── Tabla HTML ──────────────────────────────────────────────────────────────────
+def _esc(s):
+    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-def _style_periodo(val):
-    color_map = {
-        "2026-2": "#fce8f2", "2027-1": "#fef9e8",
-        "2027-2": "#f0f8e8", "Ya está en oferta": "#e8f6fc",
-    }
-    fg_map = {
-        "2026-2": "#9a0050", "2027-1": "#8a6000",
-        "2027-2": "#5a7a2e", "Ya está en oferta": "#0a6a8e",
-    }
-    if val in color_map:
-        return f"background:{color_map[val]};color:{fg_map[val]};font-weight:700;text-align:center"
-    return ""
+def _badge(text, color):
+    r, g, b = int(color[1:3], 16), int(color[3:5], 16), int(color[5:7], 16)
+    return (f'<span style="background:rgba({r},{g},{b},0.12);color:{color};font-size:10px;'
+            f'font-weight:700;padding:3px 9px;border-radius:12px;white-space:nowrap">'
+            f'{_esc(text)}</span>')
 
-styled = (
-    df_show.style
-    .applymap(_style_av,      subset=["Avance %"])
-    .applymap(_style_periodo, subset=["Periodo propuesto"])
+def _pct_bar(pct, color=None):
+    pct = float(pct or 0)
+    if color is None:
+        color = "#5a7a2e" if pct >= 70 else ("#d97706" if pct >= 40 else "#EC0677")
+    bar = "#A6CE38" if pct >= 70 else ("#FBAF17" if pct >= 40 else "#EC0677")
+    return (f'<div style="min-width:64px;text-align:center">'
+            f'<div style="font-size:11px;font-weight:700;color:{color};margin-bottom:2px">{int(pct)}%</div>'
+            f'<div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden">'
+            f'<div style="width:{min(pct,100):.0f}%;height:100%;background:{bar};border-radius:3px"></div>'
+            f'</div></div>')
+
+MOD_COLOR = {"Virtual": "#1FB2DE", "Presencial": "#A6CE38", "Híbrido": "#FBAF17"}
+FAC_COLOR_PT = {"FSCC": "#1FB2DE", "FIDI": "#A6CE38", "FNGS": "#FBAF17"}
+
+TH  = ('style="background:#0F385A;color:#FFFFFF;font-size:11px;font-weight:700;'
+       'padding:10px 10px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2"')
+TH_L = ('style="background:#0F385A;color:#FFFFFF;font-size:11px;font-weight:700;'
+        'padding:10px 14px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2"')
+
+rows_html = []
+for idx, row in df_show.iterrows():
+    row_bg = "#FFFFFF" if len(rows_html) % 2 == 0 else "#f8fafc"
+    TD   = (f'style="padding:8px 10px;text-align:center;vertical-align:middle;'
+            f'border-bottom:1px solid #eef3f8;background:{row_bg}"')
+    TD_L = (f'style="padding:8px 14px;text-align:left;vertical-align:middle;'
+            f'border-bottom:1px solid #eef3f8;background:{row_bg}"')
+
+    mod_clr  = MOD_COLOR.get(str(row["Modalidad"]), "#9aabb5")
+    fac_clr  = FAC_COLOR_PT.get(str(row["Facultad"]), "#9aabb5")
+    per      = str(row["Periodo propuesto"])
+    per_clr  = PERIOD_COLORS.get(per, "#9aabb5")
+    cf_lbl   = _esc(str(row["CF"]))
+    cf_clr   = "#5a7a2e" if "finaliz" in cf_lbl.lower() else ("#d97706" if "proceso" in cf_lbl.lower() else "#9a0050")
+
+    rows_html.append(
+        f'<tr>'
+        f'<td {TD_L}><span style="font-size:12px;font-weight:600;color:#0F385A">{_esc(str(row["Programa"]))}</span></td>'
+        f'<td {TD}>{_badge(str(row["Modalidad"]), mod_clr)}</td>'
+        f'<td {TD}><span style="font-size:11px;color:#4a6a7e">{_esc(str(row["Sede"]))}</span></td>'
+        f'<td {TD}>{_badge(str(row["Facultad"]), fac_clr)}</td>'
+        f'<td {TD}>{_badge(per, per_clr)}</td>'
+        f'<td {TD}><span style="font-size:11px;color:#4a6a7e">{_esc(str(row["Fecha inicio sugerida"]))}</span></td>'
+        f'<td {TD}><span style="font-size:11px;color:#4a6a7e">{_esc(str(row["Fecha cierre sugerida"]))}</span></td>'
+        f'<td {TD}>{_pct_bar(row["Avance %"])}</td>'
+        f'<td {TD}><span style="font-size:10px;font-weight:600;color:{cf_clr}">{cf_lbl}</span></td>'
+        f'<td {TD}>{_pct_bar(row["% PC"])}</td>'
+        f'</tr>'
+    )
+
+table_html = (
+    '<div style="overflow-x:auto;overflow-y:auto;max-height:560px;border-radius:10px;'
+    'border:1px solid #dde8f0;box-shadow:0 2px 10px rgba(15,56,90,.08)">'
+    '<table style="width:100%;border-collapse:collapse;font-family:\'Segoe UI\',sans-serif">'
+    '<thead><tr>'
+    f'<th {TH_L}>PROGRAMA</th>'
+    f'<th {TH}>MODALIDAD</th>'
+    f'<th {TH}>SEDE</th>'
+    f'<th {TH}>FACULTAD</th>'
+    f'<th {TH}>PERIODO PROPUESTO</th>'
+    f'<th {TH}>FECHA INICIO</th>'
+    f'<th {TH}>FECHA CIERRE</th>'
+    f'<th {TH}>AVANCE %</th>'
+    f'<th {TH}>CF</th>'
+    f'<th {TH}>% PC</th>'
+    '</tr></thead>'
+    '<tbody>' + "".join(rows_html) + '</tbody>'
+    '</table></div>'
 )
-
-st.dataframe(
-    styled,
-    use_container_width=True,
-    hide_index=True,
-    height=min(600, n_show * 38 + 60),
-)
+if n_show == 0:
+    st.info("Sin programas para el periodo seleccionado.")
+else:
+    st.markdown(table_html, unsafe_allow_html=True)
 
 # ── Descarga Excel ──────────────────────────────────────────────────────────────
 st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)

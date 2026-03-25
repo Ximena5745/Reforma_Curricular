@@ -54,6 +54,24 @@ hr  { border-color: rgba(15,56,90,0.10) !important; }
 [data-testid="stExpander"] { background: #FFFFFF; border: 1px solid rgba(15,56,90,0.10); border-radius: 10px; }
 footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
+[data-testid="stPills"] button {
+    border: 2px solid #1A5276 !important; color: #1A5276 !important;
+    background: #FFFFFF !important; border-radius: 20px !important;
+    font-size: 12px !important; font-weight: 600 !important;
+}
+[data-testid="stPills"] button[aria-checked="true"],
+[data-testid="stPills"] button[aria-pressed="true"] {
+    background: #0F385A !important; color: #FFFFFF !important;
+    border-color: #0F385A !important; font-weight: 700 !important;
+}
+[data-testid="stBaseButton-primary"] {
+    background: #0F385A !important; border-color: #0F385A !important;
+    color: #FFFFFF !important; font-size: 12px !important; font-weight: 700 !important;
+    border-radius: 8px !important;
+}
+[data-testid="stBaseButton-primary"]:hover {
+    background: #1A5276 !important; border-color: #1A5276 !important;
+}
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #0F385A 0%, #1A5276 45%, #1FB2DE 100%) !important;
     border-right: none !important;
@@ -146,22 +164,81 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ── Filtros inline ─────────────────────────────────────────────────────────────
-f1, f2, f3 = st.columns(3)
-with f1:
-    fac_ops = [FAC_LABELS.get(f, f) for f in sorted(df_raw["FACULTAD"].dropna().unique())]
-    sel_fac = st.selectbox("Facultad", ["Todas las facultades"] + fac_ops)
-with f2:
-    mods = ["Todas las modalidades"] + sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
-    sel_mod = st.selectbox("Modalidad", mods)
-with f3:
-    pers = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
-    sel_per = st.selectbox("Periodo", ["Todos los periodos"] + pers)
+# ── Filtros ─────────────────────────────────────────────────────────────────────
+_use_pills = hasattr(st, "pills")
+fac_ops    = [FAC_LABELS.get(f, f) for f in sorted(df_raw["FACULTAD"].dropna().unique())]
+_mods_ops  = sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
+_pers_ops  = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
 
-facultad_f  = "" if sel_fac == "Todas las facultades"  else fac_inv.get(sel_fac, sel_fac)
-modalidad_f = "" if sel_mod == "Todas las modalidades" else sel_mod
-periodo_f   = "" if sel_per == "Todos los periodos"    else sel_per
+def _clear_p2():
+    st.session_state["p2_mod"] = []
+    st.session_state["p2_fac"] = []
+    st.session_state["p2_per"] = []
+
+_LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
+        'letter-spacing:.4px;white-space:nowrap"')
+
+with st.container():
+    st.markdown(
+        '<div style="background:#FFFFFF;border-radius:10px;margin:8px 0 6px;'
+        'padding:10px 16px 8px;border:1px solid rgba(15,56,90,0.10);'
+        'box-shadow:0 2px 8px rgba(15,56,90,0.06)">',
+        unsafe_allow_html=True,
+    )
+
+    # Fila 1: MODALIDAD · FACULTAD
+    lb1, in1, _sp, lb2, in2 = st.columns([0.6, 2.5, 0.05, 0.6, 3.4])
+    with lb1:
+        st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
+    with in1:
+        if _use_pills:
+            sel_mod = st.pills("mod", _mods_ops, selection_mode="multi",
+                               key="p2_mod", label_visibility="collapsed")
+        else:
+            sel_mod = st.multiselect("mod", _mods_ops, key="p2_mod",
+                                     label_visibility="collapsed", placeholder="Todas")
+    with lb2:
+        st.markdown(f'<div {_LBL}>🏛️ FACULTAD</div>', unsafe_allow_html=True)
+    with in2:
+        if _use_pills:
+            sel_fac = st.pills("fac", fac_ops, selection_mode="multi",
+                               key="p2_fac", label_visibility="collapsed")
+        else:
+            sel_fac = st.multiselect("fac", fac_ops, key="p2_fac",
+                                     label_visibility="collapsed", placeholder="Todas")
+
+    # Fila 2: PERÍODO · LIMPIAR · contador
+    lb3, in3, btn_col, cnt_col = st.columns([0.6, 4.1, 0.65, 1.5])
+    with lb3:
+        st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
+    with in3:
+        if _use_pills:
+            sel_per = st.pills("per", _pers_ops, selection_mode="multi",
+                               key="p2_per", label_visibility="collapsed")
+        else:
+            sel_per = st.multiselect("per", _pers_ops, key="p2_per",
+                                     label_visibility="collapsed", placeholder="Todos")
+    with btn_col:
+        st.markdown("<div style='height:3px'></div>", unsafe_allow_html=True)
+        st.button("🔄 LIMPIAR", on_click=_clear_p2, use_container_width=True,
+                  type="primary", key="p2_clear")
+    with cnt_col:
+        _p2_counter = st.empty()
+
+    st.markdown("</div>", unsafe_allow_html=True)
+
+# Aplicar filtros
+modalidad_f = list(sel_mod) if sel_mod else []
+facultad_f  = [fac_inv.get(f, f) for f in sel_fac] if sel_fac else []
+periodo_f   = list(sel_per) if sel_per else []
 df = apply_filters(df_raw.copy(), modalidad_f, facultad_f, periodo_f)
+
+_p2_counter.markdown(
+    f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right;white-space:nowrap">'
+    f'Mostrando <b style="color:#0F385A">{len(df)}</b> de '
+    f'<b style="color:#0F385A">{len(df_raw)}</b></div>',
+    unsafe_allow_html=True,
+)
 
 st.divider()
 

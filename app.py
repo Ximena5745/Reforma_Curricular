@@ -122,7 +122,6 @@ footer { visibility: hidden; }
     background: #1FB2DE !important;
     color: #FFFFFF !important;
 }
-/* Pill activo / seleccionado */
 [data-testid="stPills"] button[aria-checked="true"],
 [data-testid="stPills"] button[aria-pressed="true"],
 [data-testid="stPills"] button[data-active="true"],
@@ -133,14 +132,14 @@ footer { visibility: hidden; }
     font-weight: 700 !important;
     box-shadow: 0 2px 6px rgba(15,56,90,0.30) !important;
 }
-/* Label del filtro */
-[data-testid="stPills"] label,
-[data-testid="stSegmentedControl"] label {
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    color: #0F385A !important;
-    text-transform: uppercase !important;
-    letter-spacing: .5px !important;
+/* LIMPIAR button */
+[data-testid="stBaseButton-primary"] {
+    background: #0F385A !important; border-color: #0F385A !important;
+    color: #FFFFFF !important; font-size: 12px !important; font-weight: 700 !important;
+    border-radius: 8px !important;
+}
+[data-testid="stBaseButton-primary"]:hover {
+    background: #1A5276 !important; border-color: #1A5276 !important;
 }
 </style>
 """, unsafe_allow_html=True)
@@ -201,47 +200,68 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ── Filtros con botones ─────────────────────────────────────────────────────────
-st.markdown(
-    '<div style="background:#FFFFFF;border-radius:10px;'
-    'margin:8px 0 12px;padding:14px 16px 12px;'
-    'border:1px solid rgba(15,56,90,0.10);'
-    'box-shadow:0 2px 8px rgba(15,56,90,0.06)">',
-    unsafe_allow_html=True,
-)
-
+# ── Filtros ─────────────────────────────────────────────────────────────────────
 _use_pills = hasattr(st, "pills")
-_use_seg   = not _use_pills and hasattr(st, "segmented_control")
+_mods_ops  = sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
+fac_ops    = [fac_labels.get(f, f) for f in sorted(df_raw["FACULTAD"].dropna().unique())]
+_pers_ops  = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
 
-_mods_ops = sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
-fac_ops   = [fac_labels.get(f, f) for f in sorted(df_raw["FACULTAD"].dropna().unique())]
-_pers_ops = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
+def _clear_app():
+    st.session_state["flt_mod"] = []
+    st.session_state["flt_fac"] = []
+    st.session_state["flt_per"] = []
 
-def _filter_widget(label, options, key, help_txt):
-    """Renderiza pills multi / multiselect según versión disponible."""
-    if _use_pills:
-        return st.pills(label, options, selection_mode="multi", key=key, help=help_txt)
-    else:
-        return st.multiselect(label, options, key=key, help=help_txt,
-                              placeholder="Todas (sin filtro)")
+_LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
+        'letter-spacing:.4px;white-space:nowrap"')
 
-fb1, fb2, fb3 = st.columns(3)
-with fb1:
-    sel_mod = _filter_widget(
-        "Modalidad", _mods_ops, "flt_mod",
-        "Selecciona una o varias modalidades. Sin selección = todas.")
-with fb2:
-    sel_fac = _filter_widget(
-        "Facultad", fac_ops, "flt_fac",
-        "Selecciona una o varias facultades. Sin selección = todas.")
-with fb3:
-    sel_per = _filter_widget(
-        "Periodo de implementación", _pers_ops, "flt_per",
-        "Selecciona uno o varios periodos. Sin selección = todos.")
+with st.container():
+    st.markdown(
+        '<div style="background:#FFFFFF;border-radius:10px;margin:8px 0 6px;'
+        'padding:10px 16px 8px;border:1px solid rgba(15,56,90,0.10);'
+        'box-shadow:0 2px 8px rgba(15,56,90,0.06)">',
+        unsafe_allow_html=True,
+    )
 
-n_filt = len(df_raw)
-st.caption(f"📊 **{len(df_raw)}** programas · sin selección = sin filtro aplicado")
-st.markdown("</div>", unsafe_allow_html=True)
+    # Fila 1: MODALIDAD · FACULTAD
+    lb1, in1, _sp, lb2, in2 = st.columns([0.6, 2.5, 0.05, 0.6, 3.4])
+    with lb1:
+        st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
+    with in1:
+        if _use_pills:
+            sel_mod = st.pills("mod", _mods_ops, selection_mode="multi",
+                               key="flt_mod", label_visibility="collapsed")
+        else:
+            sel_mod = st.multiselect("mod", _mods_ops, key="flt_mod",
+                                     label_visibility="collapsed", placeholder="Todas")
+    with lb2:
+        st.markdown(f'<div {_LBL}>🏛️ FACULTAD</div>', unsafe_allow_html=True)
+    with in2:
+        if _use_pills:
+            sel_fac = st.pills("fac", fac_ops, selection_mode="multi",
+                               key="flt_fac", label_visibility="collapsed")
+        else:
+            sel_fac = st.multiselect("fac", fac_ops, key="flt_fac",
+                                     label_visibility="collapsed", placeholder="Todas")
+
+    # Fila 2: PERÍODO · LIMPIAR · contador
+    lb3, in3, btn_col, cnt_col = st.columns([0.6, 4.1, 0.65, 1.5])
+    with lb3:
+        st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
+    with in3:
+        if _use_pills:
+            sel_per = st.pills("per", _pers_ops, selection_mode="multi",
+                               key="flt_per", label_visibility="collapsed")
+        else:
+            sel_per = st.multiselect("per", _pers_ops, key="flt_per",
+                                     label_visibility="collapsed", placeholder="Todos")
+    with btn_col:
+        st.markdown("<div style='height:3px'></div>", unsafe_allow_html=True)
+        st.button("🔄 LIMPIAR", on_click=_clear_app, use_container_width=True,
+                  type="primary", key="app_clear")
+    with cnt_col:
+        _app_counter = st.empty()
+
+    st.markdown("</div>", unsafe_allow_html=True)
 
 # Convertir selecciones a listas para apply_filters
 modalidad_f = list(sel_mod) if sel_mod else []
@@ -249,6 +269,13 @@ facultad_f  = [fac_inv.get(f, f) for f in sel_fac] if sel_fac else []
 periodo_f   = list(sel_per) if sel_per else []
 df = apply_filters(df_raw.copy(), modalidad_f, facultad_f, periodo_f)
 n  = len(df)
+
+_app_counter.markdown(
+    f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right;white-space:nowrap">'
+    f'Mostrando <b style="color:#0F385A">{n}</b> de '
+    f'<b style="color:#0F385A">{len(df_raw)}</b></div>',
+    unsafe_allow_html=True,
+)
 
 st.divider()
 

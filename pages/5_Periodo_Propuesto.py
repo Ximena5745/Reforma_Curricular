@@ -36,6 +36,16 @@ ul[data-baseweb="menu"] li:hover   { background: #E3F4FB !important; }
 [data-testid="stDataFrame"]        { border-radius: 10px; overflow: hidden; }
 footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
+[data-testid="stPills"] button {
+    border: 2px solid #1A5276 !important; color: #1A5276 !important;
+    background: #FFFFFF !important; border-radius: 20px !important;
+    font-size: 12px !important; font-weight: 600 !important;
+}
+[data-testid="stPills"] button[aria-checked="true"],
+[data-testid="stPills"] button[aria-pressed="true"] {
+    background: #0F385A !important; color: #FFFFFF !important;
+    border-color: #0F385A !important; font-weight: 700 !important;
+}
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #0F385A 0%, #1A5276 45%, #1FB2DE 100%) !important;
     border-right: none !important;
@@ -167,13 +177,35 @@ PERIOD_COLORS = {
 
 st.markdown("#### Gráfico de Ruta por Periodo Propuesto")
 
-# Filtro por periodo en el gráfico
-sel_per_gantt = st.multiselect(
-    "Filtrar periodos en gráfico",
-    ["2026-2", "2027-1", "2027-2", "Ya está en oferta"],
-    default=["2026-2", "2027-1"],
-    key="gantt_per",
-)
+# Filtro inline por periodo en el gráfico
+_use_pills_p5 = hasattr(st, "pills")
+_gantt_opts   = ["2026-2", "2027-1", "2027-2", "Ya está en oferta"]
+_LBL_P5 = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
+           'letter-spacing:.4px;white-space:nowrap"')
+
+with st.container():
+    st.markdown(
+        '<div style="background:#FFFFFF;border-radius:10px;padding:10px 16px 8px;'
+        'border:1px solid rgba(15,56,90,0.10);box-shadow:0 2px 8px rgba(15,56,90,0.06);'
+        'margin-bottom:8px">',
+        unsafe_allow_html=True,
+    )
+    lb_g, in_g = st.columns([0.85, 5.5])
+    with lb_g:
+        st.markdown(f'<div {_LBL_P5}>📅 PERÍODOS EN GRÁFICO</div>', unsafe_allow_html=True)
+    with in_g:
+        if _use_pills_p5:
+            sel_per_gantt = st.pills(
+                "gantt", _gantt_opts, selection_mode="multi",
+                key="gantt_per", label_visibility="collapsed",
+                default=["2026-2", "2027-1"],
+            )
+        else:
+            sel_per_gantt = st.multiselect(
+                "gantt", _gantt_opts, default=["2026-2", "2027-1"],
+                key="gantt_per", label_visibility="collapsed",
+            )
+    st.markdown("</div>", unsafe_allow_html=True)
 
 df_gantt = df[df["periodo_propuesto"].isin(sel_per_gantt)].copy()
 df_gantt = df_gantt.sort_values(["periodo_propuesto", "avance_general"])
@@ -255,7 +287,23 @@ st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 # ── Tabla de periodo propuesto ─────────────────────────────────────────────────
 st.markdown("#### Detalle por Programa")
 
-show_cambios = st.checkbox("Mostrar solo programas con cambio de periodo", value=False)
+with st.container():
+    st.markdown(
+        '<div style="background:#FFFFFF;border-radius:10px;padding:8px 16px;'
+        'border:1px solid rgba(15,56,90,0.10);box-shadow:0 2px 8px rgba(15,56,90,0.06);'
+        'margin-bottom:8px;display:inline-flex;align-items:center">',
+        unsafe_allow_html=True,
+    )
+    lb_c, in_c = st.columns([0.65, 3])
+    with lb_c:
+        st.markdown(
+            f'<div {_LBL_P5}>🔀 VER SOLO CAMBIOS</div>',
+            unsafe_allow_html=True,
+        )
+    with in_c:
+        show_cambios = st.checkbox("cambios", value=False, key="p5_cambios",
+                                   label_visibility="collapsed")
+    st.markdown("</div>", unsafe_allow_html=True)
 
 df_table = df.copy() if not show_cambios else df[df["Cambio"]].copy()
 

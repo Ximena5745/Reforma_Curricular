@@ -70,6 +70,17 @@ footer { visibility: hidden; }
     background: #0F385A !important; color: #FFFFFF !important;
     border-color: #0F385A !important; font-weight: 700 !important;
 }
+/* LIMPIAR button */
+[data-testid="stBaseButton-primary"] {
+    background: #0F385A !important; border-color: #0F385A !important;
+    color: #FFFFFF !important; font-size: 12px !important; font-weight: 700 !important;
+    border-radius: 8px !important;
+}
+[data-testid="stBaseButton-primary"]:hover {
+    background: #1A5276 !important; border-color: #1A5276 !important;
+}
+/* reduce gap between filter rows */
+[data-testid="stVerticalBlockBorderWrapper"] > div { gap: 0 !important; }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)
@@ -139,68 +150,83 @@ def _clear():
     st.session_state["ga_per"]    = []
 
 _use_pills = hasattr(st, "pills")
+_per_opts  = list(PER_DISPLAY.values())
+
+_LBL = (
+    'style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
+    'letter-spacing:.4px;white-space:nowrap"'
+)
 
 with st.container():
     st.markdown(
-        '<div style="background:#FFFFFF;border-radius:10px;padding:14px 16px 12px;'
+        '<div style="background:#FFFFFF;border-radius:10px;padding:10px 16px 8px;'
         'border:1px solid rgba(15,56,90,0.10);box-shadow:0 2px 8px rgba(15,56,90,0.06);'
-        'margin-bottom:8px">',
+        'margin-bottom:6px">',
         unsafe_allow_html=True,
     )
-    buscar = st.text_input(
-        "Buscar",
-        placeholder="🔍  Buscar programa o escuela...",
-        key="ga_buscar",
-        label_visibility="collapsed",
-    )
-    fc1, fc2, fc3 = st.columns([3, 4, 1])
-    with fc1:
+
+    # ── Fila 1: BUSCAR · MODALIDAD ─────────────────────────────────────────────
+    lb1, in1, _sp, lb2, in2 = st.columns([0.55, 2.6, 0.05, 0.7, 3.4])
+    with lb1:
+        st.markdown(f'<div {_LBL}>🔍 BUSCAR</div>', unsafe_allow_html=True)
+    with in1:
+        st.text_input("buscar", placeholder="Programa o escuela...",
+                      key="ga_buscar", label_visibility="collapsed")
+    with lb2:
+        st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
+    with in2:
         if _use_pills:
-            sel_mod = st.pills("Modalidad", ["Virtual", "Presencial", "Híbrido"],
-                               selection_mode="multi", key="ga_mod")
+            st.pills("mod", ["Virtual", "Presencial", "Híbrido"],
+                     selection_mode="multi", key="ga_mod", label_visibility="collapsed")
         else:
-            sel_mod = st.multiselect("Modalidad", ["Virtual", "Presencial", "Híbrido"],
-                                     key="ga_mod", placeholder="Todas")
-    with fc2:
-        per_opts = list(PER_DISPLAY.values())
+            st.multiselect("mod", ["Virtual", "Presencial", "Híbrido"],
+                           key="ga_mod", label_visibility="collapsed", placeholder="Todas")
+
+    # ── Fila 2: PERÍODO · LIMPIAR · Mostrando ──────────────────────────────────
+    lb3, in3, btn_col, cnt_col = st.columns([0.55, 3.6, 0.65, 1.5])
+    with lb3:
+        st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
+    with in3:
         if _use_pills:
-            sel_per_disp = st.pills("Período", per_opts,
-                                    selection_mode="multi", key="ga_per")
+            st.pills("per", _per_opts,
+                     selection_mode="multi", key="ga_per", label_visibility="collapsed")
         else:
-            sel_per_disp = st.multiselect("Período", per_opts,
-                                          key="ga_per", placeholder="Todos")
-    with fc3:
-        st.markdown("<div style='height:28px'></div>", unsafe_allow_html=True)
-        st.button("LIMPIAR", on_click=_clear, use_container_width=True)
+            st.multiselect("per", _per_opts,
+                           key="ga_per", label_visibility="collapsed", placeholder="Todos")
+    with btn_col:
+        st.markdown("<div style='height:3px'></div>", unsafe_allow_html=True)
+        st.button("🔄 LIMPIAR", on_click=_clear, use_container_width=True, type="primary")
+    with cnt_col:
+        _counter = st.empty()
+
     st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Aplicar filtros ────────────────────────────────────────────────────────────
 df = df_raw.copy()
 
-buscar_v   = (st.session_state.get("ga_buscar") or "").strip().lower()
-sel_mod_v  = list(st.session_state.get("ga_mod") or [])
-sel_per_v  = [PER_REVERSE.get(p, p) for p in (st.session_state.get("ga_per") or [])]
+buscar_v  = (st.session_state.get("ga_buscar") or "").strip().lower()
+sel_mod_v = list(st.session_state.get("ga_mod") or [])
+sel_per_v = [PER_REVERSE.get(p, p) for p in (st.session_state.get("ga_per") or [])]
 
 if buscar_v:
-    fac_abrev_lower = {k.lower(): v for k, v in fac_abrev.items()}
+    _fal = {k.lower(): v for k, v in fac_abrev.items()}
     mask_prog = df["NOMBRE DEL PROGRAMA"].str.lower().str.contains(buscar_v, na=False)
     mask_fac  = df["FACULTAD"].str.lower().str.contains(buscar_v, na=False)
-    mask_fabr = df["FACULTAD"].str.lower().map(fac_abrev_lower).str.lower().str.contains(buscar_v, na=False)
+    mask_fabr = df["FACULTAD"].str.lower().map(_fal).str.lower().str.contains(buscar_v, na=False)
     df = df[mask_prog | mask_fac | mask_fabr]
 
 if sel_mod_v:
     df = df[df["MODALIDAD"].isin(sel_mod_v)]
-
 if sel_per_v:
     df = df[df["periodo_propuesto"].isin(sel_per_v)]
 
 n_total = len(df_raw)
 n_show  = len(df)
 
-st.markdown(
-    f'<div style="font-size:12px;color:#6a8a9e;margin-bottom:6px">'
+_counter.markdown(
+    f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right;white-space:nowrap">'
     f'Mostrando <b style="color:#0F385A">{n_show}</b> de '
-    f'<b style="color:#0F385A">{n_total}</b> programas</div>',
+    f'<b style="color:#0F385A">{n_total}</b></div>',
     unsafe_allow_html=True,
 )
 
