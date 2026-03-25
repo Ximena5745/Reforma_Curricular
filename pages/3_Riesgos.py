@@ -5,7 +5,7 @@ Análisis de riesgos: 5 secciones con criterios específicos de filtrado.
 
 import streamlit as st
 import pandas as pd
-from utils.data_loader import load_data, enrich_df, PROCESO_COLOR, STATUS_LABEL, STATUS_COLOR
+from utils.data_loader import load_data, enrich_df, STATUS_LABEL
 
 st.set_page_config(
     page_title="Riesgos · Reforma Curricular",
@@ -107,30 +107,6 @@ st.markdown(
 st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
-def _status_badge(st_val, pct=None):
-    """Retorna HTML de badge para un estado."""
-    labels = {"done": "Finalizado", "inprog": "En proceso",
-              "nostart": "Sin iniciar", "na": "No aplica", "info": "Info"}
-    colors = {"done": ("#f0f8e8", "#5a7a2e"), "inprog": ("#e8f6fc", "#0a6a8e"),
-              "nostart": ("#fce8f2", "#9a0050"), "na": ("#f0f4f8", "#6a8a9e"),
-              "info": ("#fdf8e8", "#8a6000")}
-    bg, fg = colors.get(st_val, ("#f0f4f8", "#6a8a9e"))
-    lbl = labels.get(st_val, st_val)
-    if pct is not None and pct > 0:
-        lbl = f"{lbl} ({int(pct)}%)"
-    return (f'<span style="background:{bg};color:{fg};font-weight:700;font-size:10px;'
-            f'padding:2px 8px;border-radius:12px;white-space:nowrap">{lbl}</span>')
-
-def _pct_bar(pct, color="#1FB2DE", width=80):
-    pct = min(max(float(pct or 0), 0), 100)
-    clr = "#A6CE38" if pct >= 70 else ("#FBAF17" if pct >= 30 else "#EC0677")
-    return (
-        f'<div style="display:flex;align-items:center;gap:6px">'
-        f'<div style="width:{width}px;height:6px;background:#e2e8f0;border-radius:4px;overflow:hidden">'
-        f'<div style="width:{pct}%;height:100%;background:{clr};border-radius:4px"></div></div>'
-        f'<span style="font-size:11px;font-weight:700;color:{clr}">{int(pct)}%</span></div>'
-    )
-
 def _risk_header(title, desc, color, n):
     return (
         f'<div style="background:white;border-left:5px solid {color};border-radius:10px;'
@@ -144,59 +120,69 @@ def _risk_header(title, desc, color, n):
         f'</div></div>'
     )
 
-PERIODO_ORDER = {"2026-2": 0, "2027-1": 1, "2027-2": 2}
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# RIESGO 1: PC > 0 y CF sin iniciar → ordenar por periodo (2026-2 primero)
-# ═══════════════════════════════════════════════════════════════════════════════
-r1 = df_raw[
-    (df_raw["pc_pct"] > 0) &
-    (df_raw["cf_st"].isin(["nostart", "na"]) | df_raw["cf_st"].isna())
-].copy()
-r1["_ord"] = r1["PERIODO DE IMPLEMENTACIÓN"].map(PERIODO_ORDER).fillna(99)
-r1 = r1.sort_values("_ord")
-
-st.markdown(
-    _risk_header(
-        "Riesgo 1 — Producción de Contenidos sin Concepto Financiero",
-        "Programas con avance en Producción de Contenidos (AK > 0%) pero sin Concepto Financiero aprobado (col T sin iniciar)",
-        "#EC0677", len(r1),
-    ),
-    unsafe_allow_html=True,
-)
-
-if len(r1) == 0:
+def _empty_risk():
     st.markdown(
         '<div style="background:#f0f8e8;border:1px solid #A6CE38;border-radius:8px;'
         'padding:10px 14px;color:#5a7a2e;font-size:12px">✅ Sin programas en este riesgo</div>',
         unsafe_allow_html=True,
     )
+
+def _style_avance(val):
+    if isinstance(val, (int, float)):
+        if val >= 70: return "background:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
+        if val >= 40: return "background:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
+        return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
+    return ""
+
+PERIODO_ORDER = {"2026-2": 0, "2027-1": 1, "2027-2": 2, "Ya está en oferta": 3}
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# RIESGO 1: Producción virtual sin aval financiero
+# PC (AK) > 0 Y CF (T) sin iniciar / vacío
+# Tabla: Programa | Periodo | % AK | % Avance  — ordenar 2026-2 → 2027-1 → 2027-2
+# ═══════════════════════════════════════════════════════════════════════════════
+r1 = df_raw[
+    (df_raw["pc_pct"] > 0) &
+    (df_raw["cf_st"].isin(["nostart", "na"]) | df_raw["cf_st"].isna())
+].copy()
+r1["_ord"] = r1["periodo_propuesto"].map(PERIODO_ORDER).fillna(99)
+r1 = r1.sort_values("_ord")
+
+st.markdown(
+    _risk_header(
+        "Riesgo 1 — Producción virtual sin aval financiero",
+        "Programas con avance en Producción de Contenidos (AK > 0%) pero sin Concepto Financiero aprobado (col T sin iniciar o vacío)",
+        "#dc2626", len(r1),
+    ),
+    unsafe_allow_html=True,
+)
+
+if len(r1) == 0:
+    _empty_risk()
 else:
     rows_r1 = []
     for _, row in r1.iterrows():
         rows_r1.append({
-            "Programa": row["NOMBRE DEL PROGRAMA"],
-            "Modalidad": row.get("MODALIDAD", "—"),
-            "Sede": row.get("SEDE", "—"),
-            "Facultad": fac_abrev.get(row.get("FACULTAD", ""), row.get("FACULTAD", "—")),
-            "Periodo": row.get("PERIODO DE IMPLEMENTACIÓN", "—"),
-            "% PC (AK)": int(row["pc_pct"]),
-            "CF (T)": STATUS_LABEL.get(row["cf_st"], row["cf_st"]),
+            "Programa":    row["NOMBRE DEL PROGRAMA"],
+            "Periodo":     row.get("periodo_propuesto", row.get("PERIODO DE IMPLEMENTACIÓN", "—")),
+            "% PC (AK)":  int(row["pc_pct"]),
+            "% Avance":   int(row.get("avance_general", 0)),
         })
     df_r1 = pd.DataFrame(rows_r1)
     st.dataframe(
-        df_r1.style.applymap(
-            lambda v: "background:#fce8f2;color:#9a0050;font-weight:700" if v == "Sin iniciar" else "",
-            subset=["CF (T)"]
-        ).background_gradient(subset=["% PC (AK)"], cmap="Reds"),
+        df_r1.style
+            .applymap(_style_avance, subset=["% Avance"])
+            .background_gradient(subset=["% PC (AK)"], cmap="Reds"),
         use_container_width=True, hide_index=True,
     )
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# RIESGO 2: Periodo 2026-2 con PC < 100% (excluye No aplica) → ordenar asc por PC
+# RIESGO 2: Lanzamiento en 2026-2 con Contenidos incompletos
+# periodo_propuesto = 2026-2  Y  pc_pct < 100  (excluye No aplica)
+# Tabla: Programa | % AK (asc, excluye 100%) | % Avance
 # ═══════════════════════════════════════════════════════════════════════════════
 r2 = df_raw[
-    (df_raw["PERIODO DE IMPLEMENTACIÓN"].str.contains("2026-2", na=False)) &
+    (df_raw["periodo_propuesto"] == "2026-2") &
     (df_raw["pc_st"] != "na") &
     (df_raw["pc_pct"] < 100)
 ].copy()
@@ -204,85 +190,82 @@ r2 = r2.sort_values("pc_pct", ascending=True)
 
 st.markdown(
     _risk_header(
-        "Riesgo 2 — Periodo 2026-2 con Producción de Contenidos incompleta",
-        "Programas para 2026-2 con % de PC (AK) < 100% — excluye modalidad Presencial (No aplica)",
-        "#FBAF17", len(r2),
+        "Riesgo 2 — Lanzamiento en 2026-2 con Contenidos incompletos",
+        "Programas propuestos para 2026-2 con % de Producción de Contenidos (AK) < 100% — excluye No aplica",
+        "#d97706", len(r2),
     ),
     unsafe_allow_html=True,
 )
 
 if len(r2) == 0:
-    st.markdown(
-        '<div style="background:#f0f8e8;border:1px solid #A6CE38;border-radius:8px;'
-        'padding:10px 14px;color:#5a7a2e;font-size:12px">✅ Sin programas en este riesgo</div>',
-        unsafe_allow_html=True,
-    )
+    _empty_risk()
 else:
     rows_r2 = []
     for _, row in r2.iterrows():
         rows_r2.append({
-            "Programa": row["NOMBRE DEL PROGRAMA"],
-            "Modalidad": row.get("MODALIDAD", "—"),
-            "Facultad": fac_abrev.get(row.get("FACULTAD", ""), row.get("FACULTAD", "—")),
-            "Periodo": row.get("PERIODO DE IMPLEMENTACIÓN", "—"),
-            "% PC (AK)": int(row["pc_pct"]),
-            "Estado PC": STATUS_LABEL.get(row["pc_st"], row["pc_st"]),
+            "Programa":   row["NOMBRE DEL PROGRAMA"],
+            "% PC (AK)":  int(row["pc_pct"]),
+            "% Avance":   int(row.get("avance_general", 0)),
         })
     df_r2 = pd.DataFrame(rows_r2)
 
-    def _style_r2_pct(val):
+    def _style_pc(val):
         if isinstance(val, (int, float)):
-            if val == 0:
-                return "background:#fce8f2;color:#9a0050;font-weight:700"
-            if val < 50:
-                return "background:#fdf8e8;color:#8a6000;font-weight:700"
+            if val == 0:   return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
+            if val < 50:   return "background:#fdf8e8;color:#8a6000;font-weight:700;text-align:center"
+            return "text-align:center"
         return ""
 
     st.dataframe(
-        df_r2.style.applymap(_style_r2_pct, subset=["% PC (AK)"]),
+        df_r2.style
+            .applymap(_style_pc,    subset=["% PC (AK)"])
+            .applymap(_style_avance, subset=["% Avance"]),
         use_container_width=True, hide_index=True,
     )
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# RIESGO 3: Banner > 0 y PC = 0 → ordenar desc por Banner
+# RIESGO 3: Avance en Banner sin producción de contenidos virtuales
+# ban_pct (BB) > 0  Y  pc_pct (AK) = 0
+# Tabla: Programa | % Banner (BB) | % PC (AK) | % Avance  — desc por BB
 # ═══════════════════════════════════════════════════════════════════════════════
 r3 = df_raw[
     (df_raw["ban_pct"] > 0) &
-    (df_raw["pc_pct"] == 0) &
-    (df_raw["pc_st"] != "na")
+    (df_raw["pc_pct"] == 0)
 ].copy()
 r3 = r3.sort_values("ban_pct", ascending=False)
 
 st.markdown(
     _risk_header(
-        "Riesgo 3 — Banner avanzado sin Producción de Contenidos iniciada",
+        "Riesgo 3 — Avance en parametrización en Banner sin producción de contenidos virtuales",
         "Programas con avance en Parametrizar Banner (BB > 0%) pero sin contenidos producidos (AK = 0%)",
-        "#0F385A", len(r3),
+        "#7c3aed", len(r3),
     ),
     unsafe_allow_html=True,
 )
 
 if len(r3) == 0:
-    st.markdown(
-        '<div style="background:#f0f8e8;border:1px solid #A6CE38;border-radius:8px;'
-        'padding:10px 14px;color:#5a7a2e;font-size:12px">✅ Sin programas en este riesgo</div>',
-        unsafe_allow_html=True,
-    )
+    _empty_risk()
 else:
     rows_r3 = []
     for _, row in r3.iterrows():
         rows_r3.append({
-            "Programa": row["NOMBRE DEL PROGRAMA"],
-            "Modalidad": row.get("MODALIDAD", "—"),
-            "Facultad": fac_abrev.get(row.get("FACULTAD", ""), row.get("FACULTAD", "—")),
-            "Periodo": row.get("PERIODO DE IMPLEMENTACIÓN", "—"),
+            "Programa":      row["NOMBRE DEL PROGRAMA"],
             "% Banner (BB)": int(row["ban_pct"]),
-            "% PC (AK)": int(row["pc_pct"]),
+            "% PC (AK)":     int(row["pc_pct"]),
+            "% Avance":      int(row.get("avance_general", 0)),
         })
-    st.dataframe(pd.DataFrame(rows_r3), use_container_width=True, hide_index=True)
+    df_r3 = pd.DataFrame(rows_r3)
+    st.dataframe(
+        df_r3.style
+            .background_gradient(subset=["% Banner (BB)"], cmap="Purples")
+            .applymap(_style_avance, subset=["% Avance"]),
+        use_container_width=True, hide_index=True,
+    )
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# RIESGO 4: Virtual/Híbrido con PC > 0 y Syllabus sin completar
+# RIESGO 4: Avance en PC y Syllabus incompleto (Virtual/Híbrido)
+# Modalidad Virtual/Híbrido  Y  pc_pct > 0  Y  syl_val = "NO"
+# Tabla: Programa | Estado Syllabus (AD) | % AK | % Avance  — desc por AK
 # ═══════════════════════════════════════════════════════════════════════════════
 r4 = df_raw[
     (df_raw["MODALIDAD"].isin(["Virtual", "Híbrido"])) &
@@ -293,34 +276,43 @@ r4 = r4.sort_values("pc_pct", ascending=False)
 
 st.markdown(
     _risk_header(
-        "Riesgo 4 — Contenidos producidos sin Syllabus completado (Virtual/Híbrido)",
-        "Programas Virtual/Híbrido con producción de contenidos iniciada (AK > 0%) pero Syllabus incompleto",
-        "#A6CE38", len(r4),
+        "Riesgo 4 — Avance en producción de contenidos virtuales y Syllabus incompleto",
+        "Programas Virtual/Híbrido con producción de contenidos iniciada (AK > 0%) pero Syllabus sin completar (AD = NO)",
+        "#0d9488", len(r4),
     ),
     unsafe_allow_html=True,
 )
 
 if len(r4) == 0:
-    st.markdown(
-        '<div style="background:#f0f8e8;border:1px solid #A6CE38;border-radius:8px;'
-        'padding:10px 14px;color:#5a7a2e;font-size:12px">✅ Sin programas en este riesgo</div>',
-        unsafe_allow_html=True,
-    )
+    _empty_risk()
 else:
     rows_r4 = []
     for _, row in r4.iterrows():
         rows_r4.append({
-            "Programa": row["NOMBRE DEL PROGRAMA"],
-            "Modalidad": row.get("MODALIDAD", "—"),
-            "Facultad": fac_abrev.get(row.get("FACULTAD", ""), row.get("FACULTAD", "—")),
-            "Periodo": row.get("PERIODO DE IMPLEMENTACIÓN", "—"),
-            "% PC (AK)": int(row["pc_pct"]),
-            "Syllabus": row.get("syl_val", "—"),
+            "Programa":           row["NOMBRE DEL PROGRAMA"],
+            "Estado Syllabus (AD)": row.get("syl_val", "—"),
+            "% PC (AK)":          int(row["pc_pct"]),
+            "% Avance":           int(row.get("avance_general", 0)),
         })
-    st.dataframe(pd.DataFrame(rows_r4), use_container_width=True, hide_index=True)
+    df_r4 = pd.DataFrame(rows_r4)
+
+    def _style_syl(val):
+        if val == "NO": return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
+        if val == "Si": return "background:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
+        return "text-align:center"
+
+    st.dataframe(
+        df_r4.style
+            .applymap(_style_syl,   subset=["Estado Syllabus (AD)"])
+            .background_gradient(subset=["% PC (AK)"],  cmap="Greens")
+            .applymap(_style_avance, subset=["% Avance"]),
+        use_container_width=True, hide_index=True,
+    )
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# RIESGO 5: Banner > 0 y Convenios < 100% → ordenar asc por Convenios
+# RIESGO 5: Parametrización en Banner sin trámite de convenios
+# ban_pct (BB) > 0  Y  conv_pct (AS) < 100
+# Tabla: Programa | % Convenios (AS) | % Banner (BB) | % Avance  — asc por AS
 # ═══════════════════════════════════════════════════════════════════════════════
 r5 = df_raw[
     (df_raw["ban_pct"] > 0) &
@@ -330,42 +322,38 @@ r5 = r5.sort_values("conv_pct", ascending=True)
 
 st.markdown(
     _risk_header(
-        "Riesgo 5 — Banner configurado con Convenios pendientes",
+        "Riesgo 5 — Parametrización en Banner sin trámite de convenios",
         "Programas con Banner avanzado (BB > 0%) pero Convenios Institucionales sin completar (AS < 100%)",
-        "#1FB2DE", len(r5),
+        "#2563eb", len(r5),
     ),
     unsafe_allow_html=True,
 )
 
 if len(r5) == 0:
-    st.markdown(
-        '<div style="background:#f0f8e8;border:1px solid #A6CE38;border-radius:8px;'
-        'padding:10px 14px;color:#5a7a2e;font-size:12px">✅ Sin programas en este riesgo</div>',
-        unsafe_allow_html=True,
-    )
+    _empty_risk()
 else:
     rows_r5 = []
     for _, row in r5.iterrows():
         rows_r5.append({
-            "Programa": row["NOMBRE DEL PROGRAMA"],
-            "Modalidad": row.get("MODALIDAD", "—"),
-            "Facultad": fac_abrev.get(row.get("FACULTAD", ""), row.get("FACULTAD", "—")),
-            "Periodo": row.get("PERIODO DE IMPLEMENTACIÓN", "—"),
-            "% Banner (BB)": int(row["ban_pct"]),
-            "% Convenios (AS)": int(row["conv_pct"]),
+            "Programa":          row["NOMBRE DEL PROGRAMA"],
+            "% Convenios (AS)":  int(row["conv_pct"]),
+            "% Banner (BB)":     int(row["ban_pct"]),
+            "% Avance":          int(row.get("avance_general", 0)),
         })
     df_r5 = pd.DataFrame(rows_r5)
 
-    def _style_r5_conv(val):
+    def _style_conv(val):
         if isinstance(val, (int, float)):
-            if val == 0:
-                return "background:#fce8f2;color:#9a0050;font-weight:700"
-            if val < 50:
-                return "background:#fdf8e8;color:#8a6000;font-weight:700"
+            if val == 0:  return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
+            if val < 50:  return "background:#fdf8e8;color:#8a6000;font-weight:700;text-align:center"
+            return "text-align:center"
         return ""
 
     st.dataframe(
-        df_r5.style.applymap(_style_r5_conv, subset=["% Convenios (AS)"]),
+        df_r5.style
+            .applymap(_style_conv,   subset=["% Convenios (AS)"])
+            .background_gradient(subset=["% Banner (BB)"], cmap="Blues")
+            .applymap(_style_avance,  subset=["% Avance"]),
         use_container_width=True, hide_index=True,
     )
 

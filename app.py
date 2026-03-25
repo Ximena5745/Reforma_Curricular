@@ -697,27 +697,29 @@ with tab0:
     _syl = df["syl_val"] if "syl_val" in df.columns else pd.Series(["Si"]*len(df), index=df.index)
 
     r1_df = df[(_pc > 0) & (_cf.isin(["nostart", "na"]))].copy()
-    r1_df["_ord"] = r1_df["PERIODO DE IMPLEMENTACIÓN"].map(PERIODO_ORDER).fillna(99)
+    _pp = df["periodo_propuesto"] if "periodo_propuesto" in df.columns else pd.Series([""] * len(df), index=df.index)
+    r1_df["_ord"] = r1_df["periodo_propuesto"].map(PERIODO_ORDER).fillna(99) if "periodo_propuesto" in r1_df.columns else 99
     r1_df = r1_df.sort_values("_ord")
     r1_rows = _r_rows(r1_df, {
-        "% PC": lambda r: _pbar_html(r.get("pc_pct", 0), "#EC0677"),
-        "CF": lambda r: STATUS_LABEL.get(str(r.get("cf_st", "")), "—"),
+        "Periodo": lambda r: r.get("periodo_propuesto", "—"),
+        "% PC (AK)": lambda r: _pbar_html(r.get("pc_pct", 0), "#EC0677"),
     })
 
-    # R2 — Periodo 2026-2 con PC < 100 (excluye na)
+    # R2 — Lanzamiento en 2026-2 con Contenidos incompletos (periodo_propuesto=2026-2, excluye na)
     r2_df = df[
-        (df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2026-2", na=False)) &
+        (_pp == "2026-2") &
         (_pcs != "na") & (_pc < 100)
     ].sort_values("pc_pct" if "pc_pct" in df.columns else "avance_general")
     r2_rows = _r_rows(r2_df, {
         "% PC (AK)": lambda r: _pbar_html(r.get("pc_pct", 0), "#FBAF17"),
     })
 
-    # R3 — Banner > 0 y PC = 0 (excluye na)
-    r3_df = df[(_ban > 0) & (_pc == 0) & (_pcs != "na")].sort_values(
+    # R3 — Banner > 0 y PC = 0
+    r3_df = df[(_ban > 0) & (_pc == 0)].sort_values(
         "ban_pct" if "ban_pct" in df.columns else "avance_general", ascending=False)
     r3_rows = _r_rows(r3_df, {
-        "% Banner": lambda r: _pbar_html(r.get("ban_pct", 0), "#0F385A"),
+        "% Banner (BB)": lambda r: _pbar_html(r.get("ban_pct", 0), "#7c3aed"),
+        "% PC (AK)": lambda r: _pbar_html(r.get("pc_pct", 0), "#7c3aed"),
     })
 
     # R4 — Virtual/Híbrido con PC > 0 y Syllabus NO
@@ -726,40 +728,40 @@ with tab0:
         (_pc > 0) & (_syl == "NO")
     ].sort_values("pc_pct" if "pc_pct" in df.columns else "avance_general", ascending=False)
     r4_rows = _r_rows(r4_df, {
-        "% PC": lambda r: _pbar_html(r.get("pc_pct", 0), "#A6CE38"),
-        "Syllabus": lambda r: r.get("syl_val", "—"),
+        "Syllabus (AD)": lambda r: r.get("syl_val", "—"),
+        "% PC (AK)": lambda r: _pbar_html(r.get("pc_pct", 0), "#0d9488"),
     })
 
     # R5 — Banner > 0 y Convenios < 100
     r5_df = df[(_ban > 0) & (_con < 100)].sort_values(
         "conv_pct" if "conv_pct" in df.columns else "avance_general")
     r5_rows = _r_rows(r5_df, {
-        "% Banner": lambda r: _pbar_html(r.get("ban_pct", 0),  "#1FB2DE"),
-        "% Convenios": lambda r: _pbar_html(r.get("conv_pct", 0), "#1FB2DE"),
+        "% Convenios (AS)": lambda r: _pbar_html(r.get("conv_pct", 0), "#2563eb"),
+        "% Banner (BB)": lambda r: _pbar_html(r.get("ban_pct", 0),  "#2563eb"),
     })
 
     rc1, rc2 = st.columns(2)
     with rc1:
         st.markdown(_render_rcard(
-            "R1 · Producción sin Concepto Financiero",
-            "PC > 0% pero CF sin iniciar (col T vacía)",
+            "R1 · Producción virtual sin aval financiero",
+            "PC (AK) > 0% pero CF (T) sin iniciar o vacío",
             "#dc2626", r1_rows, {}), unsafe_allow_html=True)
         st.markdown(_render_rcard(
-            "R3 · Banner avanzado sin Producción",
-            "Banner > 0% pero PC = 0% (sin contenidos producidos)",
+            "R3 · Avance en Banner sin producción de contenidos",
+            "Banner (BB) > 0% pero PC (AK) = 0% (sin contenidos producidos)",
             "#7c3aed", r3_rows, {}), unsafe_allow_html=True)
         st.markdown(_render_rcard(
-            "R4 · Contenidos sin Syllabus (Virtual/Híbrido)",
-            "PC > 0% pero Syllabus incompleto (col AD = NO)",
+            "R4 · Avance en PC y Syllabus incompleto",
+            "Virtual/Híbrido con PC (AK) > 0% pero Syllabus (AD) = NO",
             "#0d9488", r4_rows, {}), unsafe_allow_html=True)
     with rc2:
         st.markdown(_render_rcard(
-            "R2 · Periodo 2026-2 con PC incompleta",
-            "Para 2026-2 con % avance contenidos < 100% (excluye Presencial)",
+            "R2 · Lanzamiento en 2026-2 con Contenidos incompletos",
+            "Propuestos 2026-2 con % PC (AK) < 100% — excluye No aplica",
             "#d97706", r2_rows, {}), unsafe_allow_html=True)
         st.markdown(_render_rcard(
-            "R5 · Banner configurado con Convenios pendientes",
-            "Banner > 0% pero Convenios Institucionales < 100%",
+            "R5 · Parametrización en Banner sin trámite de convenios",
+            "Banner (BB) > 0% pero Convenios (AS) < 100%",
             "#2563eb", r5_rows, {}), unsafe_allow_html=True)
 
     # ── SECCIÓN 3: Resumen por Etapa ──────────────────────────────────────────
