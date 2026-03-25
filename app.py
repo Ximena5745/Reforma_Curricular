@@ -173,7 +173,6 @@ with st.sidebar:
     st.page_link("app.py",                              label="Resumen General",      icon="📊")
     st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
     st.page_link("pages/2_Programa.py",                 label="Ficha de Programa",    icon="🔍")
-    st.page_link("pages/3_Riesgos.py",                  label="Riesgos",              icon="⚠️")
     st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
     st.page_link("pages/5_Periodo_Propuesto.py",        label="Periodo Propuesto",    icon="📅")
     st.page_link("pages/6_Plan_de_Trabajo.py",          label="Plan de Trabajo",      icon="🗓️")
@@ -714,8 +713,8 @@ with tab0:
         "% PC (AK)": lambda r: _pbar_html(r.get("pc_pct", 0), "#FBAF17"),
     })
 
-    # R3 — Banner > 0 y PC = 0
-    r3_df = df[(_ban > 0) & (_pc == 0)].sort_values(
+    # R3 — Banner > 0 y PC < 100 (contenidos incompletos)
+    r3_df = df[(_ban > 0) & (_pc < 100)].sort_values(
         "ban_pct" if "ban_pct" in df.columns else "avance_general", ascending=False)
     r3_rows = _r_rows(r3_df, {
         "% Banner (BB)": lambda r: _pbar_html(r.get("ban_pct", 0), "#7c3aed"),

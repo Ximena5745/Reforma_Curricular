@@ -82,7 +82,6 @@ with st.sidebar:
     st.page_link("app.py",                              label="Resumen General",      icon="📊")
     st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
     st.page_link("pages/2_Programa.py",                 label="Ficha de Programa",    icon="🔍")
-    st.page_link("pages/3_Riesgos.py",                  label="Riesgos",              icon="⚠️")
     st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
     st.page_link("pages/5_Periodo_Propuesto.py",        label="Periodo Propuesto",    icon="📅")
     st.page_link("pages/6_Plan_de_Trabajo.py",          label="Plan de Trabajo",      icon="🗓️")

@@ -82,7 +82,6 @@ with st.sidebar:
     st.page_link("app.py",                              label="Resumen General",      icon="📊")
     st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
     st.page_link("pages/2_Programa.py",                 label="Ficha de Programa",    icon="🔍")
-    st.page_link("pages/3_Riesgos.py",                  label="Riesgos",              icon="⚠️")
     st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
     st.page_link("pages/5_Periodo_Propuesto.py",        label="Periodo Propuesto",    icon="📅")
     st.page_link("pages/6_Plan_de_Trabajo.py",          label="Plan de Trabajo",      icon="🗓️")
@@ -249,20 +248,20 @@ else:
     )
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# RIESGO 3: Avance en Banner sin producción de contenidos virtuales
-# ban_pct (BB) > 0  Y  pc_pct (AK) = 0
+# RIESGO 3: Avance en Banner con producción de contenidos incompleta
+# ban_pct (BB) > 0  Y  pc_pct (AK) < 100
 # Tabla: Programa | % Banner (BB) | % PC (AK) | % Avance  — desc por BB
 # ═══════════════════════════════════════════════════════════════════════════════
 r3 = df_raw[
     (df_raw["ban_pct"] > 0) &
-    (df_raw["pc_pct"] == 0)
+    (df_raw["pc_pct"] < 100)
 ].copy()
 r3 = r3.sort_values("ban_pct", ascending=False)
 
 st.markdown(
     _risk_header(
         "Riesgo 3 — Avance en parametrización en Banner sin producción de contenidos virtuales",
-        "Programas con avance en Parametrizar Banner (BB > 0%) pero sin contenidos producidos (AK = 0%)",
+        "Programas con avance en Parametrizar Banner (BB > 0%) pero con producción de contenidos incompleta (AK < 100%)",
         "#7c3aed", len(r3),
     ),
     unsafe_allow_html=True,
