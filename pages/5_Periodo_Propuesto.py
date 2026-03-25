@@ -6,7 +6,7 @@ Periodo de implementación propuesto con lógica calculada + gráfico Gantt.
 import streamlit as st
 import pandas as pd
 import plotly.graph_objects as go
-from utils.data_loader import load_data, STATUS_LABEL
+from utils.data_loader import load_data, enrich_df, STATUS_LABEL
 
 st.set_page_config(
     page_title="Periodo Propuesto · Reforma Curricular",
@@ -62,7 +62,7 @@ footer { visibility: hidden; }
 st.markdown(CSS, unsafe_allow_html=True)
 
 # ── Datos ──────────────────────────────────────────────────────────────────────
-df_raw = load_data()
+df_raw = enrich_df(load_data())
 
 fac_abrev = {
     "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",

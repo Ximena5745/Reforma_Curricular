@@ -5,7 +5,7 @@ Análisis de riesgos: 5 secciones con criterios específicos de filtrado.
 
 import streamlit as st
 import pandas as pd
-from utils.data_loader import load_data, PROCESO_COLOR, STATUS_LABEL, STATUS_COLOR
+from utils.data_loader import load_data, enrich_df, PROCESO_COLOR, STATUS_LABEL, STATUS_COLOR
 
 st.set_page_config(
     page_title="Riesgos · Reforma Curricular",
@@ -62,7 +62,7 @@ footer { visibility: hidden; }
 st.markdown(CSS, unsafe_allow_html=True)
 
 # ── Datos ─────────────────────────────────────────────────────────────────────
-df_raw = load_data()
+df_raw = enrich_df(load_data())
 
 fac_abrev = {
     "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",

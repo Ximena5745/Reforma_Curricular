@@ -10,7 +10,7 @@ import plotly.express as px
 import numpy as np
 import math
 from utils.data_loader import (
-    load_data, apply_filters, ETAPAS_MAP, PROCESOS,
+    load_data, enrich_df, apply_filters, ETAPAS_MAP, PROCESOS,
     PROCESO_COLOR, STATUS_LABEL, STATUS_COLOR, color_for_pct,
 )
 
@@ -146,7 +146,7 @@ footer { visibility: hidden; }
 """, unsafe_allow_html=True)
 
 # ── Datos ──────────────────────────────────────────────────────────────────────
-df_raw = load_data()
+df_raw = enrich_df(load_data())
 
 fac_labels = {
     "Facultad de Sociedad, Cultura y Creatividad":    "Sociedad, Cultura y Creatividad",
@@ -552,136 +552,276 @@ tab0, tab1, tab2, tab3, tab4 = st.tabs(["🏆 Resumen Ejecutivo", "📊 Resumen 
 
 # ── Tab 0: Resumen Ejecutivo ───────────────────────────────────────────────────
 with tab0:
-    # KPIs principales
-    e1, e2, e3, e4, e5 = st.columns(5)
-    cnt_fin_total = sum(
-        int(df[f"cl_{i}"].eq("done").sum())
-        for i in range(len(ETAPAS_MAP))
+    # ── CSS propio del Resumen Ejecutivo (estilos del HTML de referencia) ──────
+    st.markdown("""
+    <style>
+    @import url('https://fonts.googleapis.com/css2?family=Barlow:wght@400;600;700;800&family=Barlow+Condensed:wght@600;700;800&display=swap');
+    .re-scard{background:#fff;border-radius:10px;padding:14px 16px;border-left:4px solid;
+      box-shadow:0 1px 4px rgba(0,0,0,.07);margin-bottom:4px;}
+    .re-snum{font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:800;
+      line-height:1;color:#0F385A;}
+    .re-slbl{font-size:.71rem;color:#475569;font-weight:700;text-transform:uppercase;
+      letter-spacing:.06em;margin-top:3px;}
+    .re-sec{font-family:'Barlow Condensed',sans-serif;font-size:1rem;font-weight:800;
+      text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;
+      gap:8px;margin:18px 0 10px;color:#0F385A;border-bottom:2px solid #e2e8f0;padding-bottom:6px;}
+    .re-rcard{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);
+      overflow:hidden;margin-bottom:12px;}
+    .re-rcard-hdr{padding:12px 16px;display:flex;align-items:flex-start;gap:10px;}
+    .re-rmeta h4{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:800;
+      text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;}
+    .re-rmeta p{font-size:.69rem;color:#475569;line-height:1.4;}
+    .re-rbadge{font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:800;
+      flex-shrink:0;line-height:1;}
+    .re-rtbl{width:100%;border-collapse:collapse;font-size:.77rem;}
+    .re-rtbl thead th{background:#f8fafc;padding:6px 12px;text-align:left;font-weight:700;
+      font-size:.67rem;text-transform:uppercase;letter-spacing:.05em;color:#475569;
+      border-bottom:1px solid #e2e8f0;}
+    .re-rtbl tbody tr:nth-child(even){background:#f8fafc;}
+    .re-rtbl tbody tr:hover{background:#e0f4fb;}
+    .re-rtbl td{padding:6px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+    .re-pbar{display:inline-flex;align-items:center;gap:4px;}
+    .re-pbar-w{width:50px;height:5px;background:#e2e8f0;border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle;}
+    .re-pbar-f{height:100%;border-radius:99px;}
+    .re-ecard{background:#fff;border-radius:10px;padding:14px 16px;
+      box-shadow:0 1px 4px rgba(0,0,0,.07);border-left:4px solid;}
+    .re-estats{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-bottom:9px;}
+    .re-estat{display:flex;flex-direction:column;align-items:center;padding:6px 4px;border-radius:7px;}
+    .re-estat-num{font-family:'Barlow Condensed',sans-serif;font-size:1.5rem;font-weight:800;line-height:1;}
+    .re-estat-lbl{font-size:.59rem;font-weight:700;text-transform:uppercase;letter-spacing:.03em;margin-top:2px;}
+    .re-ef{background:#dcfce7;}.re-ef .re-estat-num,.re-ef .re-estat-lbl{color:#15803d;}
+    .re-ep{background:#dbeafe;}.re-ep .re-estat-num,.re-ep .re-estat-lbl{color:#1d4ed8;}
+    .re-es{background:#fee2e2;}.re-es .re-estat-num,.re-es .re-estat-lbl{color:#dc2626;}
+    .re-ena{background:#f1f5f9;}.re-ena .re-estat-num,.re-ena .re-estat-lbl{color:#64748b;}
+    .re-ebar-row{display:flex;align-items:center;gap:8px;}
+    .re-ebar-w{flex:1;height:6px;background:#e2e8f0;border-radius:99px;overflow:hidden;}
+    .re-ebar-f{height:100%;border-radius:99px;}
+    .re-ebar-pct{font-family:'Barlow Condensed',sans-serif;font-size:.95rem;font-weight:800;
+      color:#0F385A;min-width:34px;text-align:right;}
+    .re-ok{padding:10px 14px;font-size:.78rem;color:#15803d;font-weight:600;background:#f0fdf4;
+      border-radius:0 0 10px 10px;}
+    </style>
+    """, unsafe_allow_html=True)
+
+    # ── SECCIÓN 1: Tarjetas resumen ────────────────────────────────────────────
+    _cnt_2027_2 = int(df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2027-2", na=False).sum())
+    _cnt_oferta = int(df["PERIODO DE IMPLEMENTACIÓN"].str.contains("oferta", case=False, na=False).sum())
+
+    def _re_scard(num, lbl, border_color):
+        return (
+            f'<div class="re-scard" style="border-color:{border_color}">'
+            f'<div class="re-snum">{num}</div>'
+            f'<div class="re-slbl">{lbl}</div></div>'
+        )
+
+    st.markdown(
+        '<div class="re-sec">📊 Resumen General '
+        f'<span style="font-size:.7rem;font-weight:400;color:#64748b;text-transform:none">'
+        f'— {n} programas con filtros activos</span></div>',
+        unsafe_allow_html=True,
     )
-    cnt_inp_total = sum(
-        int(df[f"cl_{i}"].eq("inprog").sum())
-        for i in range(len(ETAPAS_MAP))
-    )
-    cnt_nst_total = sum(
-        int(df[f"cl_{i}"].eq("nostart").sum())
-        for i in range(len(ETAPAS_MAP))
-    )
+    sc1, sc2, sc3, sc4 = st.columns(4)
+    sc1.markdown(_re_scard(n,         "Programas en reforma",    "#0F385A"), unsafe_allow_html=True)
+    sc2.markdown(_re_scard(f"{avg_av}%", "Avance promedio",      "#A6CE38"), unsafe_allow_html=True)
+    sc3.markdown(_re_scard(cnt_2026,  "Para periodo 2026-2",     "#EC0677"), unsafe_allow_html=True)
+    sc4.markdown(_re_scard(cnt_2027_1,"Para periodo 2027-1",     "#FBAF17"), unsafe_allow_html=True)
 
-    for col_e, lbl_e, val_e, color_e, pct_e in [
-        (e1, "Programas en reforma",   n,         "#0F385A", None),
-        (e2, "Avance promedio",        f"{avg_av}%","#A6CE38", avg_av),
-        (e3, "Urgentes / Prioritarios",cnt_crit,  "#EC0677", round(cnt_crit/n*100) if n else 0),
-        (e4, "Etapas finalizadas",     cnt_fin_total, "#1FB2DE", None),
-        (e5, "Para periodo 2026-2",    cnt_2026,  "#FBAF17", round(cnt_2026/n*100) if n else 0),
-    ]:
-        col_e.markdown(_kpi(lbl_e, val_e, "", color_e, pct_e), unsafe_allow_html=True)
+    sc5, sc6, sc7, sc8 = st.columns(4)
+    sc5.markdown(_re_scard(_cnt_2027_2, "Para periodo 2027-2",   "#1FB2DE"), unsafe_allow_html=True)
+    sc6.markdown(_re_scard(_cnt_oferta, "Ya en oferta",          "#A6CE38"), unsafe_allow_html=True)
+    sc7.markdown(_re_scard(cnt_urgente, "Urgentes",              "#EC0677"), unsafe_allow_html=True)
+    sc8.markdown(_re_scard(cnt_prioritario, "Prioritarios",      "#FBAF17"), unsafe_allow_html=True)
 
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    # ── SECCIÓN 2: Riesgos ────────────────────────────────────────────────────
+    st.markdown('<div class="re-sec">⚠️ Riesgos Activos</div>', unsafe_allow_html=True)
 
-    # Resumen de riesgos activos
-    st.markdown("#### 🔴 Alertas de Riesgo Activas")
-    _r1_n = int(((df["pc_pct"] > 0) & (df["cf_st"].isin(["nostart", "na"]))).sum()) if "pc_pct" in df.columns else 0
-    _r2_n = int(((df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2026-2", na=False)) & (df["pc_st"] != "na") & (df["pc_pct"] < 100)).sum()) if "pc_pct" in df.columns else 0
-    _r3_n = int(((df["ban_pct"] > 0) & (df["pc_pct"] == 0) & (df["pc_st"] != "na")).sum()) if "ban_pct" in df.columns else 0
-    _r4_n = int(((df["MODALIDAD"].isin(["Virtual", "Híbrido"])) & (df["pc_pct"] > 0) & (df["syl_val"] == "NO")).sum()) if "syl_val" in df.columns else 0
-    _r5_n = int(((df["ban_pct"] > 0) & (df["conv_pct"] < 100)).sum()) if "ban_pct" in df.columns else 0
+    # Calcular sets de programas por riesgo
+    def _r_rows(mask_df, cols):
+        rows = []
+        for _, r in mask_df.iterrows():
+            row_data = {"Programa": r["NOMBRE DEL PROGRAMA"],
+                        "Modalidad": r.get("MODALIDAD", "—"),
+                        "Periodo": r.get("PERIODO DE IMPLEMENTACIÓN", "—")}
+            for k, v in cols.items():
+                row_data[k] = v(r)
+            rows.append(row_data)
+        return rows
 
-    risk_cols = st.columns(5)
-    for rc, r_title, r_n, r_color in [
-        (risk_cols[0], "R1 · PC sin CF",      _r1_n, "#EC0677"),
-        (risk_cols[1], "R2 · 2026-2 PC < 100%",_r2_n,"#FBAF17"),
-        (risk_cols[2], "R3 · Banner sin PC",   _r3_n, "#0F385A"),
-        (risk_cols[3], "R4 · Sin Syllabus",    _r4_n, "#A6CE38"),
-        (risk_cols[4], "R5 · Banner sin Conv", _r5_n, "#1FB2DE"),
-    ]:
-        bg = "#fce8f2" if r_n > 0 else "#f0f8e8"
-        fg = r_color if r_n > 0 else "#5a7a2e"
-        icon = "⚠️" if r_n > 0 else "✅"
-        rc.markdown(
-            f'<div style="background:{bg};border-left:4px solid {fg};border-radius:10px;'
-            f'padding:10px 12px;box-shadow:0 2px 6px rgba(15,56,90,.06)">'
-            f'<div style="font-size:9px;color:#6a8a9e;text-transform:uppercase;letter-spacing:.5px">{r_title}</div>'
-            f'<div style="font-size:22px;font-weight:800;color:{fg}">{icon} {r_n}</div>'
-            f'</div>',
-            unsafe_allow_html=True,
+    def _pbar_html(pct, color):
+        pct = min(max(float(pct or 0), 0), 100)
+        clr = "#A6CE38" if pct >= 70 else ("#FBAF17" if pct >= 30 else "#EC0677")
+        return (f'<div class="re-pbar">'
+                f'<span style="font-weight:700;color:{clr};min-width:30px">{int(pct)}%</span>'
+                f'<div class="re-pbar-w"><div class="re-pbar-f" style="width:{pct}%;background:{clr}"></div></div>'
+                f'</div>')
+
+    def _render_rcard(title, desc, color, rows, col_defs):
+        """Renderiza un risk-card con tabla HTML inline."""
+        n_r = len(rows)
+        badge_color = color if n_r > 0 else "#15803d"
+        hdr = (
+            f'<div class="re-rcard" style="border-top:4px solid {badge_color}">'
+            f'<div class="re-rcard-hdr">'
+            f'<div class="re-rmeta" style="flex:1"><h4 style="color:{badge_color}">{title}</h4>'
+            f'<p>{desc}</p></div>'
+            f'<div class="re-rbadge" style="color:{badge_color}">{n_r}</div>'
+            f'</div>'
         )
+        if n_r == 0:
+            return hdr + '<div class="re-ok">✅ Sin programas en este riesgo</div></div>'
+        thead = '<table class="re-rtbl"><thead><tr>'
+        all_cols = ["Programa", "Modalidad", "Periodo"] + list(col_defs.keys())
+        for c in all_cols:
+            thead += f'<th>{c}</th>'
+        thead += '</tr></thead><tbody>'
+        tbody = ""
+        for row in rows:
+            tbody += "<tr>"
+            for c in all_cols:
+                val = row.get(c, "—")
+                if isinstance(val, str) and "%" in val and "re-pbar" in val:
+                    tbody += f'<td>{val}</td>'
+                else:
+                    tbody += f'<td>{val}</td>'
+            tbody += "</tr>"
+        return hdr + f'<div style="overflow-x:auto">{thead}{tbody}</tbody></table></div></div>'
 
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-    st.markdown("#### Avance por Proceso")
+    PERIODO_ORDER = {"2026-2": 0, "2027-1": 1, "2027-2": 2}
 
-    # Donuts (mismo código que tab1)
-    exec_row1 = st.columns(4)
-    exec_row2 = st.columns(4)
-    for idx, proc in enumerate(PROCESOS):
-        col = (exec_row1 + exec_row2)[idx]
-        with col:
-            st.markdown(
-                _donut_card(proc, pct_avgs[idx], done_l[idx], inp_l[idx], nst_l[idx], na_l[idx], PROCESO_COLOR[proc]),
-                unsafe_allow_html=True,
-            )
+    # R1 — pc_pct > 0 y CF sin iniciar, ordenar por periodo
+    _pc  = df["pc_pct"]  if "pc_pct"  in df.columns else pd.Series([0.0]*len(df), index=df.index)
+    _cf  = df["cf_st"]   if "cf_st"   in df.columns else pd.Series(["nostart"]*len(df), index=df.index)
+    _pcs = df["pc_st"]   if "pc_st"   in df.columns else pd.Series(["nostart"]*len(df), index=df.index)
+    _ban = df["ban_pct"] if "ban_pct" in df.columns else pd.Series([0.0]*len(df), index=df.index)
+    _con = df["conv_pct"]if "conv_pct"in df.columns else pd.Series([0.0]*len(df), index=df.index)
+    _syl = df["syl_val"] if "syl_val" in df.columns else pd.Series(["Si"]*len(df), index=df.index)
 
-    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
-    st.markdown("#### Distribución por Periodo y Modalidad")
-    dist_c1, dist_c2 = st.columns(2)
+    r1_df = df[(_pc > 0) & (_cf.isin(["nostart", "na"]))].copy()
+    r1_df["_ord"] = r1_df["PERIODO DE IMPLEMENTACIÓN"].map(PERIODO_ORDER).fillna(99)
+    r1_df = r1_df.sort_values("_ord")
+    r1_rows = _r_rows(r1_df, {
+        "% PC": lambda r: _pbar_html(r.get("pc_pct", 0), "#EC0677"),
+        "CF": lambda r: STATUS_LABEL.get(str(r.get("cf_st", "")), "—"),
+    })
 
-    with dist_c1:
-        per_counts = df["PERIODO DE IMPLEMENTACIÓN"].value_counts()
-        per_colors_map = {"2026-2": "#EC0677", "2027-1": "#FBAF17", "2027-2": "#A6CE38", "Ya está en oferta": "#1FB2DE"}
-        fig_per = go.Figure(go.Pie(
-            labels=per_counts.index.tolist(),
-            values=per_counts.values.tolist(),
-            marker_colors=[per_colors_map.get(p, "#9aabb5") for p in per_counts.index],
-            hole=0.55,
-            textinfo="label+value",
-            textfont=dict(size=11, family="Segoe UI"),
-        ))
-        fig_per.update_layout(
-            title=dict(text="Programas por Periodo", font=dict(size=12, color="#0F385A")),
-            height=280, margin=dict(l=10, r=10, t=40, b=10),
-            paper_bgcolor="rgba(0,0,0,0)", showlegend=False,
-            font=dict(family="Segoe UI"),
+    # R2 — Periodo 2026-2 con PC < 100 (excluye na)
+    r2_df = df[
+        (df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2026-2", na=False)) &
+        (_pcs != "na") & (_pc < 100)
+    ].sort_values("pc_pct" if "pc_pct" in df.columns else "avance_general")
+    r2_rows = _r_rows(r2_df, {
+        "% PC (AK)": lambda r: _pbar_html(r.get("pc_pct", 0), "#FBAF17"),
+    })
+
+    # R3 — Banner > 0 y PC = 0 (excluye na)
+    r3_df = df[(_ban > 0) & (_pc == 0) & (_pcs != "na")].sort_values(
+        "ban_pct" if "ban_pct" in df.columns else "avance_general", ascending=False)
+    r3_rows = _r_rows(r3_df, {
+        "% Banner": lambda r: _pbar_html(r.get("ban_pct", 0), "#0F385A"),
+    })
+
+    # R4 — Virtual/Híbrido con PC > 0 y Syllabus NO
+    r4_df = df[
+        (df["MODALIDAD"].isin(["Virtual", "Híbrido"])) &
+        (_pc > 0) & (_syl == "NO")
+    ].sort_values("pc_pct" if "pc_pct" in df.columns else "avance_general", ascending=False)
+    r4_rows = _r_rows(r4_df, {
+        "% PC": lambda r: _pbar_html(r.get("pc_pct", 0), "#A6CE38"),
+        "Syllabus": lambda r: r.get("syl_val", "—"),
+    })
+
+    # R5 — Banner > 0 y Convenios < 100
+    r5_df = df[(_ban > 0) & (_con < 100)].sort_values(
+        "conv_pct" if "conv_pct" in df.columns else "avance_general")
+    r5_rows = _r_rows(r5_df, {
+        "% Banner": lambda r: _pbar_html(r.get("ban_pct", 0),  "#1FB2DE"),
+        "% Convenios": lambda r: _pbar_html(r.get("conv_pct", 0), "#1FB2DE"),
+    })
+
+    rc1, rc2 = st.columns(2)
+    with rc1:
+        st.markdown(_render_rcard(
+            "R1 · Producción sin Concepto Financiero",
+            "PC > 0% pero CF sin iniciar (col T vacía)",
+            "#dc2626", r1_rows, {}), unsafe_allow_html=True)
+        st.markdown(_render_rcard(
+            "R3 · Banner avanzado sin Producción",
+            "Banner > 0% pero PC = 0% (sin contenidos producidos)",
+            "#7c3aed", r3_rows, {}), unsafe_allow_html=True)
+        st.markdown(_render_rcard(
+            "R4 · Contenidos sin Syllabus (Virtual/Híbrido)",
+            "PC > 0% pero Syllabus incompleto (col AD = NO)",
+            "#0d9488", r4_rows, {}), unsafe_allow_html=True)
+    with rc2:
+        st.markdown(_render_rcard(
+            "R2 · Periodo 2026-2 con PC incompleta",
+            "Para 2026-2 con % avance contenidos < 100% (excluye Presencial)",
+            "#d97706", r2_rows, {}), unsafe_allow_html=True)
+        st.markdown(_render_rcard(
+            "R5 · Banner configurado con Convenios pendientes",
+            "Banner > 0% pero Convenios Institucionales < 100%",
+            "#2563eb", r5_rows, {}), unsafe_allow_html=True)
+
+    # ── SECCIÓN 3: Resumen por Etapa ──────────────────────────────────────────
+    st.markdown('<div class="re-sec">📋 Estado por Etapa</div>', unsafe_allow_html=True)
+
+    ETAPA_INFO = [
+        ("Gestión Académica",                       "#0F385A"),
+        ("Gestión Financiera",                      "#FBAF17"),
+        ("Aseguramiento de la Calidad",             "#EC0677"),
+        ("Ger. Planeación y Gestión Institucional", "#1FB2DE"),
+        ("Producción de Contenidos",                "#A6CE38"),
+        ("Convenios Institucionales",               "#42B0B5"),
+        ("Parametrizar Reforma en Banner",          "#5C89B5"),
+        ("Publicación en Página Web",               "#F47B20"),
+    ]
+
+    SHORT_NAME = {
+        "Gestión Académica":                       "Gestión Académica",
+        "Gestión Financiera":                      "Concepto Financiero",
+        "Aseguramiento de la Calidad":             "Aseguramiento Calidad",
+        "Ger. Planeación y Gestión Institucional": "Ger. Planeación",
+        "Producción de Contenidos":                "Producción Contenidos",
+        "Convenios Institucionales":               "Convenios",
+        "Parametrizar Reforma en Banner":          "Banner",
+        "Publicación en Página Web":               "Publicación Web",
+    }
+
+    etapa_cols_row1 = st.columns(4)
+    etapa_cols_row2 = st.columns(4)
+    all_etapa_cols = etapa_cols_row1 + etapa_cols_row2
+
+    for ei, (proc, color) in enumerate(ETAPA_INFO):
+        idxs = [i for i, (p, _, _, _) in enumerate(ETAPAS_MAP) if p == proc]
+        done_e = sum(int(df[f"cl_{i}"].eq("done").sum())   for i in idxs)
+        inp_e  = sum(int(df[f"cl_{i}"].eq("inprog").sum()) for i in idxs)
+        nst_e  = sum(int(df[f"cl_{i}"].eq("nostart").sum())for i in idxs)
+        na_e   = sum(int(df[f"cl_{i}"].isin(["na","info"]).sum()) for i in idxs)
+        total_e = max(done_e + inp_e + nst_e, 1)
+        pct_e  = round(done_e / total_e * 100)
+        short  = SHORT_NAME.get(proc, proc)
+
+        card_html = (
+            f'<div class="re-ecard" style="border-color:{color}">'
+            f'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:.82rem;'
+            f'font-weight:800;color:#0F385A;text-transform:uppercase;letter-spacing:.04em;'
+            f'margin-bottom:10px">{short}</div>'
+            f'<div class="re-estats">'
+            f'<div class="re-estat re-ef"><div class="re-estat-num">{done_e}</div>'
+            f'<div class="re-estat-lbl">Final.</div></div>'
+            f'<div class="re-estat re-ep"><div class="re-estat-num">{inp_e}</div>'
+            f'<div class="re-estat-lbl">Proceso</div></div>'
+            f'<div class="re-estat re-es"><div class="re-estat-num">{nst_e}</div>'
+            f'<div class="re-estat-lbl">Sin ini.</div></div>'
+            f'<div class="re-estat re-ena"><div class="re-estat-num">{na_e}</div>'
+            f'<div class="re-estat-lbl">N/A</div></div>'
+            f'</div>'
+            f'<div class="re-ebar-row">'
+            f'<div class="re-ebar-w"><div class="re-ebar-f" style="width:{pct_e}%;background:{color}"></div></div>'
+            f'<div class="re-ebar-pct">{pct_e}%</div>'
+            f'</div></div>'
         )
-        st.plotly_chart(fig_per, use_container_width=True, config={"displayModeBar": False})
-
-    with dist_c2:
-        mod_counts = df["MODALIDAD"].value_counts()
-        mod_colors = {"Presencial": "#0F385A", "Virtual": "#1FB2DE", "Híbrido": "#A6CE38"}
-        fig_mod = go.Figure(go.Pie(
-            labels=mod_counts.index.tolist(),
-            values=mod_counts.values.tolist(),
-            marker_colors=[mod_colors.get(m, "#9aabb5") for m in mod_counts.index],
-            hole=0.55,
-            textinfo="label+value",
-            textfont=dict(size=11, family="Segoe UI"),
-        ))
-        fig_mod.update_layout(
-            title=dict(text="Programas por Modalidad", font=dict(size=12, color="#0F385A")),
-            height=280, margin=dict(l=10, r=10, t=40, b=10),
-            paper_bgcolor="rgba(0,0,0,0)", showlegend=False,
-            font=dict(family="Segoe UI"),
-        )
-        st.plotly_chart(fig_mod, use_container_width=True, config={"displayModeBar": False})
-
-    # Programas urgentes/prioritarios
-    if cnt_crit > 0:
-        st.markdown("#### Programas que Requieren Atención Inmediata")
-        df_urgent = df[df["_clasif"].isin(["Urgente", "Prioritario"])][
-            ["NOMBRE DEL PROGRAMA", "MODALIDAD", "avance_general", "_clasif", "PERIODO DE IMPLEMENTACIÓN"]
-        ].copy()
-        df_urgent["Facultad"] = df["FACULTAD"].map(fac_labels).fillna(df["FACULTAD"])
-        df_urgent["Avance %"] = df_urgent["avance_general"].apply(lambda x: f"{int(x)}%")
-        df_urgent = df_urgent.rename(columns={
-            "NOMBRE DEL PROGRAMA": "Programa",
-            "MODALIDAD": "Modalidad",
-            "_clasif": "Prioridad",
-            "PERIODO DE IMPLEMENTACIÓN": "Periodo",
-        })[["Programa", "Facultad", "Modalidad", "Avance %", "Prioridad", "Periodo"]]
-        st.dataframe(
-            df_urgent.style.applymap(_style_clasif_cell, subset=["Prioridad"])
-                           .applymap(_style_avance_cell, subset=["Avance %"]),
-            use_container_width=True, hide_index=True,
-            height=min(400, len(df_urgent) * 38 + 50),
-        )
+        all_etapa_cols[ei].markdown(card_html, unsafe_allow_html=True)
 
 # ── Tab 1: Resumen General ─────────────────────────────────────────────────────
 with tab1:

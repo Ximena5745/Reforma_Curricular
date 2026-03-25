@@ -7,7 +7,7 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 from utils.data_loader import (
-    load_data, apply_filters, ETAPAS_MAP, PROCESOS,
+    load_data, enrich_df, apply_filters, ETAPAS_MAP, PROCESOS,
     PROCESO_COLOR, STATUS_LABEL, STATUS_COLOR, color_for_pct,
 )
 
@@ -73,7 +73,7 @@ footer { visibility: hidden; }
 st.markdown(CSS, unsafe_allow_html=True)
 
 # ── Datos ─────────────────────────────────────────────────────────────────────
-df_raw = load_data()
+df_raw = enrich_df(load_data())
 
 fac_abrev = {
     "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",
