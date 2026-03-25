@@ -907,7 +907,7 @@ with tab1:
             '</table>'
             '</div>'
         )
-        st.markdown(tabla_html, unsafe_allow_html=True)
+    st.markdown(tabla_html, unsafe_allow_html=True)
     # KPI fila 1
     _cap_col, _btn_col = st.columns([5, 1])
     _cap_col.caption(f"Mostrando **{n}** de {len(df_raw)} programas")
