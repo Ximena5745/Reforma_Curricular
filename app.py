@@ -304,13 +304,12 @@ proc_short_map = {
 
 pct_avgs, done_l, inp_l, nst_l, na_l = [], [], [], [], []
 for proc in PROCESOS:
-    vals = df[f"proc_{proc}"].dropna()
-    pct_avgs.append(int(vals.mean()) if len(vals) > 0 else 0)
-    idxs = [i for i, (p, _, _, _) in enumerate(ETAPAS_MAP) if p == proc]
-    done_l.append(sum(int(df[f"cl_{i}"].eq("done").sum())    for i in idxs))
-    inp_l .append(sum(int(df[f"cl_{i}"].eq("inprog").sum())  for i in idxs))
-    nst_l .append(sum(int(df[f"cl_{i}"].eq("nostart").sum()) for i in idxs))
-    na_l  .append(sum(int(df[f"cl_{i}"].eq("na").sum()) + int(df[f"cl_{i}"].eq("info").sum()) for i in idxs))
+    p_vals = df[f"proc_{proc}"]
+    pct_avgs.append(int(p_vals.dropna().mean()) if p_vals.dropna().any() else 0)
+    done_l.append(int((p_vals == 100).sum()))
+    inp_l .append(int(((p_vals > 0) & (p_vals < 100)).sum()))
+    nst_l .append(int((p_vals == 0).sum()))
+    na_l  .append(int(p_vals.isna().sum()))
 
 # ── Helper functions ────────────────────────────────────────────────────────────
 def _arc(pct, color, r=22, sz=56):
@@ -353,8 +352,8 @@ def _donut_card(proc, pct, done, inp, nst, na_val, color, size=128, r=44, sw=13)
     cx    = size // 2
     total = max(done + inp + nst + na_val, 1)
     _tip  = (f"Proceso: {proc} · Avance promedio: {pct}% | "
-             f"De {done+inp+nst+na_val} registros de etapas: "
-             f"{done} Finalizadas · {inp} En Proceso · {nst} Sin iniciar · {na_val} N/A. "
+             f"De {done+inp+nst+na_val} programas: "
+             f"{done} Finalizados · {inp} En Proceso · {nst} Sin iniciar · {na_val} N/A. "
              f"El % es el promedio del avance de este proceso en todos los programas filtrados.")
     segs  = [(done, "#A6CE38"), (inp, "#1FB2DE"), (nst, "#EC0677"), (na_val, "#c8d8e0")]
     arcs  = f'<circle cx="{cx}" cy="{cx}" r="{r}" fill="none" stroke="#edf1f5" stroke-width="{sw}"/>'
@@ -799,13 +798,13 @@ with tab0:
     all_etapa_cols = etapa_cols_row1 + etapa_cols_row2
 
     for ei, (proc, color) in enumerate(ETAPA_INFO):
-        idxs = [i for i, (p, _, _, _) in enumerate(ETAPAS_MAP) if p == proc]
-        done_e = sum(int(df[f"cl_{i}"].eq("done").sum())   for i in idxs)
-        inp_e  = sum(int(df[f"cl_{i}"].eq("inprog").sum()) for i in idxs)
-        nst_e  = sum(int(df[f"cl_{i}"].eq("nostart").sum())for i in idxs)
-        na_e   = sum(int(df[f"cl_{i}"].isin(["na","info"]).sum()) for i in idxs)
+        p_vals  = df[f"proc_{proc}"]
+        done_e  = int((p_vals == 100).sum())
+        inp_e   = int(((p_vals > 0) & (p_vals < 100)).sum())
+        nst_e   = int((p_vals == 0).sum())
+        na_e    = int(p_vals.isna().sum())
         total_e = max(done_e + inp_e + nst_e, 1)
-        pct_e  = round(done_e / total_e * 100)
+        pct_e   = round(done_e / total_e * 100)
         short  = SHORT_NAME.get(proc, proc)
 
         card_html = (
