@@ -636,11 +636,18 @@ with tab0:
 
     # Calcular sets de programas por riesgo
     def _r_rows(mask_df, cols):
+        import math
         rows = []
         for _, r in mask_df.iterrows():
+            try:
+                av = int(float(r.get("avance_general", 0)))
+                av = 0 if math.isnan(float(av)) else av
+            except Exception:
+                av = 0
             row_data = {"Programa": r["NOMBRE DEL PROGRAMA"],
                         "Modalidad": r.get("MODALIDAD", "—"),
-                        "Periodo": r.get("PERIODO DE IMPLEMENTACIÓN", "—")}
+                        "Periodo": r.get("periodo_propuesto", r.get("PERIODO DE IMPLEMENTACIÓN", "—")),
+                        "% Avance": f"{av}%"}
             for k, v in cols.items():
                 row_data[k] = v(r)
             rows.append(row_data)
@@ -669,7 +676,7 @@ with tab0:
         if n_r == 0:
             return hdr + '<div class="re-ok">✅ Sin programas en este riesgo</div></div>'
         thead = '<table class="re-rtbl"><thead><tr>'
-        all_cols = ["Programa", "Modalidad", "Periodo"] + list(col_defs.keys())
+        all_cols = ["Programa", "Modalidad", "Periodo", "% Avance"] + list(col_defs.keys())
         for c in all_cols:
             thead += f'<th>{c}</th>'
         thead += '</tr></thead><tbody>'
@@ -700,7 +707,6 @@ with tab0:
     r1_df["_ord"] = r1_df["periodo_propuesto"].map(PERIODO_ORDER).fillna(99) if "periodo_propuesto" in r1_df.columns else 99
     r1_df = r1_df.sort_values("_ord")
     r1_rows = _r_rows(r1_df, {
-        "Periodo": lambda r: r.get("periodo_propuesto", "—"),
         "% PC (AK)": lambda r: _pbar_html(r.get("pc_pct", 0), "#EC0677"),
     })
 
