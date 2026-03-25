@@ -153,7 +153,7 @@ def _find_col(df, name):
 
 # ─── Carga y cálculo ──────────────────────────────────────────────────────────
 def _build_df():
-    df = pd.read_excel(DATA_PATH, sheet_name="Maestro", header=9, dtype=str).fillna("")
+    df = pd.read_excel(DATA_PATH, sheet_name="Borrador", header=9, dtype=str).fillna("")
 
     # Normalizar nombres de columnas (quitar espacios al inicio/fin)
     df.columns = [c.strip() if isinstance(c, str) else c for c in df.columns]
@@ -226,8 +226,10 @@ def _build_df():
     # Estado directo de Producción de Contenidos (col AK)
     df["pc_st"] = df["cl_9"]   # "na" = No aplica (Presencial)
 
-    # syl_val: buscar columna "Syllabus completos" o derivar de Número de syllabus
-    syl_col = (_find_col(df, "SYLLABUS COMPLETOS") or
+    # syl_val: columna AD = "SYLLABUS COMPLETOS.1" (segunda ocurrencia, la correcta)
+    # pandas renombra duplicados: la primera queda "SYLLABUS COMPLETOS", la segunda ".1"
+    syl_col = (_find_col(df, "SYLLABUS COMPLETOS.1") or
+               _find_col(df, "SYLLABUS COMPLETOS") or
                _find_col(df, "Syllabus completos") or
                _find_col(df, "Syllabus completados"))
     if syl_col:
@@ -307,8 +309,10 @@ def enrich_df(df):
     df["cf_st"]    = c3
     df["pc_st"]    = c9
 
-    # syl_val
-    syl_col = _find_col(df, "SYLLABUS COMPLETOS") or _find_col(df, "Syllabus completos")
+    # syl_val: columna AD = "SYLLABUS COMPLETOS.1" (segunda ocurrencia, la correcta)
+    syl_col = (_find_col(df, "SYLLABUS COMPLETOS.1") or
+               _find_col(df, "SYLLABUS COMPLETOS") or
+               _find_col(df, "Syllabus completos"))
     if syl_col:
         def _syl(v):
             s = str(v).strip().lower()
