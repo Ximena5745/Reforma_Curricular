@@ -216,14 +216,14 @@ _LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
 
 with st.container():
     st.markdown(
-        '<div style="background:#FFFFFF;border-radius:10px;margin:8px 0 6px;'
-        'padding:10px 16px 8px;border:1px solid rgba(15,56,90,0.10);'
-        'box-shadow:0 2px 8px rgba(15,56,90,0.06)">',
+        '<div style="background:#FFFFFF;border-radius:10px;margin:4px 0 2px;'
+        'padding:4px 8px 2px;border:1px solid rgba(15,56,90,0.10);'
+        'box-shadow:0 1px 4px rgba(15,56,90,0.04)">',
         unsafe_allow_html=True,
     )
 
     # Fila 1: MODALIDAD · FACULTAD
-    lb1, in1, _sp, lb2, in2 = st.columns([0.6, 2.5, 0.05, 0.6, 3.4])
+    lb1, in1, _sp, lb2, in2 = st.columns([0.5, 1.5, 0.01, 0.5, 1.5])
     with lb1:
         st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
     with in1:
@@ -244,7 +244,7 @@ with st.container():
                                      label_visibility="collapsed", placeholder="Todas")
 
     # Fila 2: PERÍODO · LIMPIAR · contador
-    lb3, in3, btn_col, cnt_col = st.columns([0.6, 4.1, 0.65, 1.5])
+    lb3, in3, btn_col, cnt_col = st.columns([0.5, 2.5, 0.5, 1])
     with lb3:
         st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
     with in3:
@@ -858,6 +858,56 @@ with tab0:
 
 # ── Tab 1: Resumen General ─────────────────────────────────────────────────────
 with tab1:
+        # Filtro de periodo de implementación
+        st.markdown('<div style="margin:10px 0 0 0;font-size:15px;font-weight:700;color:#0F385A">Implementación por periodo</div>', unsafe_allow_html=True)
+        periodos_disp = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
+        periodo_sel = st.selectbox("Filtrar por periodo de implementación", ["Todos"] + periodos_disp, key="filtro_periodo_tabla", index=0, help="Filtra la tabla por periodo de implementación")
+        if periodo_sel == "Todos":
+            df_impl = df.copy()
+        else:
+            df_impl = df[df["PERIODO DE IMPLEMENTACIÓN"] == periodo_sel].copy()
+
+        # Icono de prioridad
+        def _icono_prioridad(clasif):
+            if clasif == "Urgente":
+                return '<span title="Urgente" style="color:#EC0677;font-size:18px;font-weight:900">★</span>'
+            if clasif == "Prioritario":
+                return '<span title="Prioritario" style="color:#FBAF17;font-size:18px;font-weight:900">★</span>'
+            if clasif == "En seguimiento":
+                return '<span title="En seguimiento" style="color:#2980B9;font-size:18px;font-weight:900">★</span>'
+            return '<span title="En curso" style="color:#A6CE38;font-size:18px;font-weight:900">★</span>'
+
+        # Construir tabla HTML
+        tabla_rows = []
+        for _, row in df_impl.iterrows():
+            tabla_rows.append(
+                f'<tr>'
+                f'<td style="padding:7px 10px;font-size:13px;color:#0F385A;font-weight:600">{row["NOMBRE DEL PROGRAMA"]}</td>'
+                f'<td style="padding:7px 10px;text-align:center">{row["MODALIDAD"]}</td>'
+                f'<td style="padding:7px 10px;text-align:center">{row["SEDE"]}</td>'
+                f'<td style="padding:7px 10px;text-align:center">{row["PERIODO DE IMPLEMENTACIÓN"]}</td>'
+                f'<td style="padding:7px 10px;text-align:center">{int(row["avance_general"])}%</td>'
+                f'<td style="padding:7px 10px;text-align:center">{_icono_prioridad(row["_clasif"])} <span style="font-size:12px;color:#6a8a9e">{row["_clasif"]}</span></td>'
+                f'</tr>'
+            )
+        tabla_html = (
+            '<div style="overflow-x:auto;max-width:100vw;margin-top:10px">'
+            '<table style="width:100%;border-collapse:collapse;font-family:Segoe UI,sans-serif;background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(15,56,90,.08)">' 
+            '<thead>'
+            '<tr style="background:#0F385A;color:#fff;font-size:12px;font-weight:700">'
+            '<th style="padding:8px 10px;text-align:left;border-radius:10px 0 0 0">Programa</th>'
+            '<th style="padding:8px 10px;text-align:center">Modalidad</th>'
+            '<th style="padding:8px 10px;text-align:center">Sede</th>'
+            '<th style="padding:8px 10px;text-align:center">Periodo</th>'
+            '<th style="padding:8px 10px;text-align:center">Avance %</th>'
+            '<th style="padding:8px 10px;text-align:center;border-radius:0 10px 0 0">Prioridad</th>'
+            '</tr>'
+            '</thead>'
+            '<tbody>' + ''.join(tabla_rows) + '</tbody>'
+            '</table>'
+            '</div>'
+        )
+        st.markdown(tabla_html, unsafe_allow_html=True)
     # KPI fila 1
     _cap_col, _btn_col = st.columns([5, 1])
     _cap_col.caption(f"Mostrando **{n}** de {len(df_raw)} programas")

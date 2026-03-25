@@ -297,6 +297,9 @@ ETAPA_COLS = [
     ("PROD.CONT.",   "pc_pct",                                        "bar"),
     ("CONVENIOS",    f"proc_Convenios Institucionales",               "proc"),
     ("BANNER",       "ban_pct",                                       "bar"),
+    ("TIPO DE TRÁMITE", "Tipo de trámite de aseguramiento de la calidad", "text"),
+    ("FECHA NOTIF. MEN", "Fecha notif. MEN", "text"),
+    ("REQ. MINISTERIAL", "Req. Ministerial", "text"),
 ]
 
 rows_html = []
@@ -335,12 +338,15 @@ for idx, (_, row) in enumerate(df.iterrows()):
             etapa_cells.append(f'<td {TD}>{_proc_icon(v)}</td>')
         elif typ == "syl":
             etapa_cells.append(f'<td {TD}>{_syl_icon(str(val or "N/A"))}</td>')
-        else:
+        elif typ == "bar":
             try:
                 pct = float(val or 0)
             except Exception:
                 pct = 0.0
             etapa_cells.append(f'<td {TD}>{_pct_bar(pct)}</td>')
+        else:
+            # Para columnas de texto (aseguramiento de la calidad)
+            etapa_cells.append(f'<td {TD}><span style="font-size:11px;color:#0F385A">{val if val not in [None, "", "nan"] else "—"}</span></td>')
 
     rows_html.append(
         f'<tr>'
@@ -357,9 +363,9 @@ if n_show == 0:
 else:
     header_cells = "".join(f'<th {TH}>{h}</th>' for h, _, _ in ETAPA_COLS)
     table_html = (
-        '<div style="overflow-x:auto;overflow-y:auto;max-height:580px;border-radius:10px;'
-        'border:1px solid #dde8f0;box-shadow:0 2px 10px rgba(15,56,90,.08)">'
-        '<table style="width:100%;border-collapse:collapse;font-family:\'Segoe UI\',sans-serif">'
+        '<div style="overflow-x:auto;overflow-y:auto;max-height:580px;border-radius:12px;'
+        'border:1.5px solid #b5c9d8;box-shadow:0 2px 12px rgba(15,56,90,.10);background:#fafdff">'
+        '<table style="width:100%;border-collapse:separate;border-spacing:0;font-family:\'Segoe UI\',sans-serif">'
         '<thead><tr>'
         f'<th {TH_L}>PROGRAMA</th>'
         f'<th {TH}>MODALIDAD</th>'
