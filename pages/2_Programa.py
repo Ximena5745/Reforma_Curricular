@@ -119,9 +119,13 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
-    st.page_link("app.py",                          label="Resumen General",     icon="📊")
-    st.page_link("pages/1_Detalle_por_Etapa.py",    label="Detalle por Etapa",   icon="📋")
-    st.page_link("pages/2_Programa.py",             label="Ficha de Programa",   icon="🔍")
+    st.page_link("app.py",                              label="Resumen General",      icon="📊")
+    st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
+    st.page_link("pages/2_Programa.py",                 label="Ficha de Programa",    icon="🔍")
+    st.page_link("pages/3_Riesgos.py",                  label="Riesgos",              icon="⚠️")
+    st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
+    st.page_link("pages/5_Periodo_Propuesto.py",        label="Periodo Propuesto",    icon="📅")
+    st.page_link("pages/6_Plan_de_Trabajo.py",          label="Plan de Trabajo",      icon="🗓️")
     st.markdown(
         '<div style="padding:12px 6px;font-size:10px;color:rgba(255,255,255,0.40);text-align:center">'
         'POLI · 2025–2026</div>',

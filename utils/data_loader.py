@@ -204,6 +204,74 @@ def _build_df():
         return round(sum(vals) / len(vals)) if vals else 0
 
     df["avance_general"] = df.apply(_avg, axis=1)
+
+    # ── Columnas auxiliares para Riesgos / Periodo Propuesto ─────────────────
+    def _to_pct_num(v):
+        s = str(v).strip().lower()
+        if not s or s in ("none", "nan", "no aplica", "—", ""):
+            return 0.0
+        try:
+            f = float(s.replace("%", "").replace(",", "."))
+            return round(f if f > 1 else f * 100, 1)
+        except Exception:
+            return 0.0
+
+    # Porcentajes numéricos
+    df["pc_pct"]   = df["val_9"].apply(_to_pct_num)   # AK: % avance contenidos
+    df["conv_pct"] = df["val_12"].apply(_to_pct_num)  # AS: % avance convenios
+    df["ban_pct"]  = df["val_15"].apply(_to_pct_num)  # BB: % avance banner
+
+    # Estado directo de Concepto Financiero (col T)
+    df["cf_st"] = df["cl_3"]
+    # Estado directo de Producción de Contenidos (col AK)
+    df["pc_st"] = df["cl_9"]   # "na" = No aplica (Presencial)
+
+    # syl_val: buscar columna "Syllabus completos" o derivar de Número de syllabus
+    syl_col = (_find_col(df, "SYLLABUS COMPLETOS") or
+               _find_col(df, "Syllabus completos") or
+               _find_col(df, "Syllabus completados"))
+    if syl_col:
+        def _syl_from_col(v):
+            s = str(v).strip().lower()
+            if s in ("si", "sí", "yes", "1"):
+                return "Si"
+            if s in ("no aplica", "nan", "none", "—", ""):
+                return "N/A"
+            return "NO"
+        df["syl_val"] = df[syl_col].apply(_syl_from_col)
+        df.loc[df["MODALIDAD"] == "Presencial", "syl_val"] = "N/A"
+    else:
+        # Derivar desde "Número de syllabus" (val_7): si tiene valor positivo → Si
+        def _derive_syl(row):
+            if row.get("MODALIDAD", "") == "Presencial":
+                return "N/A"
+            v = str(row.get("val_7", "—")).strip()
+            if v in ("—", "no aplica", "None", "nan", ""):
+                return "NO"
+            try:
+                return "Si" if float(v) > 0 else "NO"
+            except Exception:
+                return "NO" if v.lower() in ("0", "no", "no aplica") else "Si"
+        df["syl_val"] = df.apply(_derive_syl, axis=1)
+
+    # periodo propuesto (lógica simplificada)
+    def _proposed_period(row):
+        per = str(row.get("PERIODO DE IMPLEMENTACIÓN", "")).strip()
+        if "oferta" in per.lower():
+            return "Ya está en oferta"
+        cf  = str(row.get("cf_st", "nostart"))
+        cf_done = cf in ("done", "inprog")
+        pc_pct  = float(row.get("pc_pct", 0) or 0)
+        pc_na   = str(row.get("pc_st", "nostart")) == "na"
+        if cf_done:
+            if not pc_na and pc_pct > 0:
+                return "2026-2"
+            else:
+                return "2027-1"
+        return per if per else "2027-2"
+
+    df["periodo_propuesto"] = df.apply(_proposed_period, axis=1)
+
     return df
 
 

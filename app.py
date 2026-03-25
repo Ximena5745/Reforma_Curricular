@@ -170,9 +170,13 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
-    st.page_link("app.py",                          label="Resumen General",     icon="📊")
-    st.page_link("pages/1_Detalle_por_Etapa.py",    label="Detalle por Etapa",   icon="📋")
-    st.page_link("pages/2_Programa.py",             label="Ficha de Programa",   icon="🔍")
+    st.page_link("app.py",                              label="Resumen General",      icon="📊")
+    st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
+    st.page_link("pages/2_Programa.py",                 label="Ficha de Programa",    icon="🔍")
+    st.page_link("pages/3_Riesgos.py",                  label="Riesgos",              icon="⚠️")
+    st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
+    st.page_link("pages/5_Periodo_Propuesto.py",        label="Periodo Propuesto",    icon="📅")
+    st.page_link("pages/6_Plan_de_Trabajo.py",          label="Plan de Trabajo",      icon="🗓️")
     st.markdown("<div style='flex:1'></div>", unsafe_allow_html=True)
     st.markdown(
         '<div style="padding:12px 6px;font-size:10px;color:rgba(255,255,255,0.40);text-align:center">'
@@ -544,7 +548,140 @@ def _excel_bytes(df_export):
     return buf.getvalue()
 
 # ── Tabs principales ────────────────────────────────────────────────────────────
-tab1, tab2, tab3, tab4 = st.tabs(["📊 Resumen General", "🏛️ Por Facultad y Programa", "📋 Tabla Resumen", "📖 Metodología"])
+tab0, tab1, tab2, tab3, tab4 = st.tabs(["🏆 Resumen Ejecutivo", "📊 Resumen General", "🏛️ Por Facultad y Programa", "📋 Tabla Resumen", "📖 Metodología"])
+
+# ── Tab 0: Resumen Ejecutivo ───────────────────────────────────────────────────
+with tab0:
+    # KPIs principales
+    e1, e2, e3, e4, e5 = st.columns(5)
+    cnt_fin_total = sum(
+        int(df[f"cl_{i}"].eq("done").sum())
+        for i in range(len(ETAPAS_MAP))
+    )
+    cnt_inp_total = sum(
+        int(df[f"cl_{i}"].eq("inprog").sum())
+        for i in range(len(ETAPAS_MAP))
+    )
+    cnt_nst_total = sum(
+        int(df[f"cl_{i}"].eq("nostart").sum())
+        for i in range(len(ETAPAS_MAP))
+    )
+
+    for col_e, lbl_e, val_e, color_e, pct_e in [
+        (e1, "Programas en reforma",   n,         "#0F385A", None),
+        (e2, "Avance promedio",        f"{avg_av}%","#A6CE38", avg_av),
+        (e3, "Urgentes / Prioritarios",cnt_crit,  "#EC0677", round(cnt_crit/n*100) if n else 0),
+        (e4, "Etapas finalizadas",     cnt_fin_total, "#1FB2DE", None),
+        (e5, "Para periodo 2026-2",    cnt_2026,  "#FBAF17", round(cnt_2026/n*100) if n else 0),
+    ]:
+        col_e.markdown(_kpi(lbl_e, val_e, "", color_e, pct_e), unsafe_allow_html=True)
+
+    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+    # Resumen de riesgos activos
+    st.markdown("#### 🔴 Alertas de Riesgo Activas")
+    _r1_n = int(((df["pc_pct"] > 0) & (df["cf_st"].isin(["nostart", "na"]))).sum()) if "pc_pct" in df.columns else 0
+    _r2_n = int(((df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2026-2", na=False)) & (df["pc_st"] != "na") & (df["pc_pct"] < 100)).sum()) if "pc_pct" in df.columns else 0
+    _r3_n = int(((df["ban_pct"] > 0) & (df["pc_pct"] == 0) & (df["pc_st"] != "na")).sum()) if "ban_pct" in df.columns else 0
+    _r4_n = int(((df["MODALIDAD"].isin(["Virtual", "Híbrido"])) & (df["pc_pct"] > 0) & (df["syl_val"] == "NO")).sum()) if "syl_val" in df.columns else 0
+    _r5_n = int(((df["ban_pct"] > 0) & (df["conv_pct"] < 100)).sum()) if "ban_pct" in df.columns else 0
+
+    risk_cols = st.columns(5)
+    for rc, r_title, r_n, r_color in [
+        (risk_cols[0], "R1 · PC sin CF",      _r1_n, "#EC0677"),
+        (risk_cols[1], "R2 · 2026-2 PC < 100%",_r2_n,"#FBAF17"),
+        (risk_cols[2], "R3 · Banner sin PC",   _r3_n, "#0F385A"),
+        (risk_cols[3], "R4 · Sin Syllabus",    _r4_n, "#A6CE38"),
+        (risk_cols[4], "R5 · Banner sin Conv", _r5_n, "#1FB2DE"),
+    ]:
+        bg = "#fce8f2" if r_n > 0 else "#f0f8e8"
+        fg = r_color if r_n > 0 else "#5a7a2e"
+        icon = "⚠️" if r_n > 0 else "✅"
+        rc.markdown(
+            f'<div style="background:{bg};border-left:4px solid {fg};border-radius:10px;'
+            f'padding:10px 12px;box-shadow:0 2px 6px rgba(15,56,90,.06)">'
+            f'<div style="font-size:9px;color:#6a8a9e;text-transform:uppercase;letter-spacing:.5px">{r_title}</div>'
+            f'<div style="font-size:22px;font-weight:800;color:{fg}">{icon} {r_n}</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    st.markdown("#### Avance por Proceso")
+
+    # Donuts (mismo código que tab1)
+    exec_row1 = st.columns(4)
+    exec_row2 = st.columns(4)
+    for idx, proc in enumerate(PROCESOS):
+        col = (exec_row1 + exec_row2)[idx]
+        with col:
+            st.markdown(
+                _donut_card(proc, pct_avgs[idx], done_l[idx], inp_l[idx], nst_l[idx], na_l[idx], PROCESO_COLOR[proc]),
+                unsafe_allow_html=True,
+            )
+
+    st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+    st.markdown("#### Distribución por Periodo y Modalidad")
+    dist_c1, dist_c2 = st.columns(2)
+
+    with dist_c1:
+        per_counts = df["PERIODO DE IMPLEMENTACIÓN"].value_counts()
+        per_colors_map = {"2026-2": "#EC0677", "2027-1": "#FBAF17", "2027-2": "#A6CE38", "Ya está en oferta": "#1FB2DE"}
+        fig_per = go.Figure(go.Pie(
+            labels=per_counts.index.tolist(),
+            values=per_counts.values.tolist(),
+            marker_colors=[per_colors_map.get(p, "#9aabb5") for p in per_counts.index],
+            hole=0.55,
+            textinfo="label+value",
+            textfont=dict(size=11, family="Segoe UI"),
+        ))
+        fig_per.update_layout(
+            title=dict(text="Programas por Periodo", font=dict(size=12, color="#0F385A")),
+            height=280, margin=dict(l=10, r=10, t=40, b=10),
+            paper_bgcolor="rgba(0,0,0,0)", showlegend=False,
+            font=dict(family="Segoe UI"),
+        )
+        st.plotly_chart(fig_per, use_container_width=True, config={"displayModeBar": False})
+
+    with dist_c2:
+        mod_counts = df["MODALIDAD"].value_counts()
+        mod_colors = {"Presencial": "#0F385A", "Virtual": "#1FB2DE", "Híbrido": "#A6CE38"}
+        fig_mod = go.Figure(go.Pie(
+            labels=mod_counts.index.tolist(),
+            values=mod_counts.values.tolist(),
+            marker_colors=[mod_colors.get(m, "#9aabb5") for m in mod_counts.index],
+            hole=0.55,
+            textinfo="label+value",
+            textfont=dict(size=11, family="Segoe UI"),
+        ))
+        fig_mod.update_layout(
+            title=dict(text="Programas por Modalidad", font=dict(size=12, color="#0F385A")),
+            height=280, margin=dict(l=10, r=10, t=40, b=10),
+            paper_bgcolor="rgba(0,0,0,0)", showlegend=False,
+            font=dict(family="Segoe UI"),
+        )
+        st.plotly_chart(fig_mod, use_container_width=True, config={"displayModeBar": False})
+
+    # Programas urgentes/prioritarios
+    if cnt_crit > 0:
+        st.markdown("#### Programas que Requieren Atención Inmediata")
+        df_urgent = df[df["_clasif"].isin(["Urgente", "Prioritario"])][
+            ["NOMBRE DEL PROGRAMA", "MODALIDAD", "avance_general", "_clasif", "PERIODO DE IMPLEMENTACIÓN"]
+        ].copy()
+        df_urgent["Facultad"] = df["FACULTAD"].map(fac_labels).fillna(df["FACULTAD"])
+        df_urgent["Avance %"] = df_urgent["avance_general"].apply(lambda x: f"{int(x)}%")
+        df_urgent = df_urgent.rename(columns={
+            "NOMBRE DEL PROGRAMA": "Programa",
+            "MODALIDAD": "Modalidad",
+            "_clasif": "Prioridad",
+            "PERIODO DE IMPLEMENTACIÓN": "Periodo",
+        })[["Programa", "Facultad", "Modalidad", "Avance %", "Prioridad", "Periodo"]]
+        st.dataframe(
+            df_urgent.style.applymap(_style_clasif_cell, subset=["Prioridad"])
+                           .applymap(_style_avance_cell, subset=["Avance %"]),
+            use_container_width=True, hide_index=True,
+            height=min(400, len(df_urgent) * 38 + 50),
+        )
 
 # ── Tab 1: Resumen General ─────────────────────────────────────────────────────
 with tab1:
