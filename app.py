@@ -722,10 +722,10 @@ with tab0:
         "% PC (AK)": lambda r: _pbar_html(r.get("pc_pct", 0), "#7c3aed"),
     })
 
-    # R4 — Virtual/Híbrido con PC > 0 y Syllabus NO
+    # R4 — Virtual/Híbrido con Syllabus NO (sin restricción de PC)
     r4_df = df[
-        (df["MODALIDAD"].isin(["Virtual", "Híbrido"])) &
-        (_pc > 0) & (_syl == "NO")
+        (df["MODALIDAD"].str.lower().str.strip().isin(["virtual", "híbrido", "hibrido"])) &
+        (_syl == "NO")
     ].sort_values("pc_pct" if "pc_pct" in df.columns else "avance_general", ascending=False)
     r4_rows = _r_rows(r4_df, {
         "Syllabus (AD)": lambda r: r.get("syl_val", "—"),

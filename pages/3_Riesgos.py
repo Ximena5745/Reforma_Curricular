@@ -127,11 +127,36 @@ def _empty_risk():
         unsafe_allow_html=True,
     )
 
+def _av(row):
+    """Retorna avance_general como int de forma segura."""
+    import math
+    v = row.get("avance_general", 0)
+    try:
+        f = float(v)
+        return 0 if math.isnan(f) else int(f)
+    except Exception:
+        return 0
+
 def _style_avance(val):
     if isinstance(val, (int, float)):
         if val >= 70: return "background:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
         if val >= 40: return "background:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
         return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
+    return ""
+
+def _style_pc(val):
+    if isinstance(val, (int, float)):
+        if val >= 100: return "background:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
+        if val >= 50:  return "background:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
+        if val > 0:    return "background:#fde8f4;color:#7a0050;font-weight:700;text-align:center"
+        return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
+    return ""
+
+def _style_ban(val):
+    if isinstance(val, (int, float)):
+        if val >= 100: return "background:#f0f0fa;color:#3a1a9e;font-weight:700;text-align:center"
+        if val >= 50:  return "background:#ece8fc;color:#5a3aae;font-weight:700;text-align:center"
+        return "background:#f5f0fe;color:#7c3aed;font-weight:700;text-align:center"
     return ""
 
 PERIODO_ORDER = {"2026-2": 0, "2027-1": 1, "2027-2": 2, "Ya está en oferta": 3}
@@ -163,16 +188,16 @@ else:
     rows_r1 = []
     for _, row in r1.iterrows():
         rows_r1.append({
-            "Programa":    row["NOMBRE DEL PROGRAMA"],
-            "Periodo":     row.get("periodo_propuesto", row.get("PERIODO DE IMPLEMENTACIÓN", "—")),
-            "% PC (AK)":  int(row["pc_pct"]),
-            "% Avance":   int(row.get("avance_general", 0)),
+            "Programa":   row["NOMBRE DEL PROGRAMA"],
+            "Periodo":    row.get("periodo_propuesto", row.get("PERIODO DE IMPLEMENTACIÓN", "—")),
+            "% PC (AK)":  int(float(row["pc_pct"])),
+            "% Avance":   _av(row),
         })
     df_r1 = pd.DataFrame(rows_r1)
     st.dataframe(
         df_r1.style
-            .applymap(_style_avance, subset=["% Avance"])
-            .background_gradient(subset=["% PC (AK)"], cmap="Reds"),
+            .applymap(_style_pc,     subset=["% PC (AK)"])
+            .applymap(_style_avance, subset=["% Avance"]),
         use_container_width=True, hide_index=True,
     )
 
@@ -204,8 +229,8 @@ else:
     for _, row in r2.iterrows():
         rows_r2.append({
             "Programa":   row["NOMBRE DEL PROGRAMA"],
-            "% PC (AK)":  int(row["pc_pct"]),
-            "% Avance":   int(row.get("avance_general", 0)),
+            "% PC (AK)":  int(float(row["pc_pct"])),
+            "% Avance":   _av(row),
         })
     df_r2 = pd.DataFrame(rows_r2)
 
@@ -250,26 +275,26 @@ else:
     for _, row in r3.iterrows():
         rows_r3.append({
             "Programa":      row["NOMBRE DEL PROGRAMA"],
-            "% Banner (BB)": int(row["ban_pct"]),
-            "% PC (AK)":     int(row["pc_pct"]),
-            "% Avance":      int(row.get("avance_general", 0)),
+            "% Banner (BB)": int(float(row["ban_pct"])),
+            "% PC (AK)":     int(float(row["pc_pct"])),
+            "% Avance":      _av(row),
         })
     df_r3 = pd.DataFrame(rows_r3)
     st.dataframe(
         df_r3.style
-            .background_gradient(subset=["% Banner (BB)"], cmap="Purples")
+            .applymap(_style_ban,    subset=["% Banner (BB)"])
+            .applymap(_style_pc,     subset=["% PC (AK)"])
             .applymap(_style_avance, subset=["% Avance"]),
         use_container_width=True, hide_index=True,
     )
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# RIESGO 4: Avance en PC y Syllabus incompleto (Virtual/Híbrido)
-# Modalidad Virtual/Híbrido  Y  pc_pct > 0  Y  syl_val = "NO"
+# RIESGO 4: Syllabus incompleto en programas Virtual/Híbrido
+# Modalidad Virtual/Híbrido  Y  syl_val (AD) = "NO"
 # Tabla: Programa | Estado Syllabus (AD) | % AK | % Avance  — desc por AK
 # ═══════════════════════════════════════════════════════════════════════════════
 r4 = df_raw[
-    (df_raw["MODALIDAD"].isin(["Virtual", "Híbrido"])) &
-    (df_raw["pc_pct"] > 0) &
+    (df_raw["MODALIDAD"].str.lower().str.strip().isin(["virtual", "híbrido", "hibrido"])) &
     (df_raw["syl_val"] == "NO")
 ].copy()
 r4 = r4.sort_values("pc_pct", ascending=False)
@@ -289,10 +314,10 @@ else:
     rows_r4 = []
     for _, row in r4.iterrows():
         rows_r4.append({
-            "Programa":           row["NOMBRE DEL PROGRAMA"],
+            "Programa":             row["NOMBRE DEL PROGRAMA"],
             "Estado Syllabus (AD)": row.get("syl_val", "—"),
-            "% PC (AK)":          int(row["pc_pct"]),
-            "% Avance":           int(row.get("avance_general", 0)),
+            "% PC (AK)":            int(float(row["pc_pct"])),
+            "% Avance":             _av(row),
         })
     df_r4 = pd.DataFrame(rows_r4)
 
@@ -303,8 +328,8 @@ else:
 
     st.dataframe(
         df_r4.style
-            .applymap(_style_syl,   subset=["Estado Syllabus (AD)"])
-            .background_gradient(subset=["% PC (AK)"],  cmap="Greens")
+            .applymap(_style_syl,    subset=["Estado Syllabus (AD)"])
+            .applymap(_style_pc,     subset=["% PC (AK)"])
             .applymap(_style_avance, subset=["% Avance"]),
         use_container_width=True, hide_index=True,
     )
@@ -335,10 +360,10 @@ else:
     rows_r5 = []
     for _, row in r5.iterrows():
         rows_r5.append({
-            "Programa":          row["NOMBRE DEL PROGRAMA"],
-            "% Convenios (AS)":  int(row["conv_pct"]),
-            "% Banner (BB)":     int(row["ban_pct"]),
-            "% Avance":          int(row.get("avance_general", 0)),
+            "Programa":         row["NOMBRE DEL PROGRAMA"],
+            "% Convenios (AS)": int(float(row["conv_pct"])),
+            "% Banner (BB)":    int(float(row["ban_pct"])),
+            "% Avance":         _av(row),
         })
     df_r5 = pd.DataFrame(rows_r5)
 
@@ -352,8 +377,8 @@ else:
     st.dataframe(
         df_r5.style
             .applymap(_style_conv,   subset=["% Convenios (AS)"])
-            .background_gradient(subset=["% Banner (BB)"], cmap="Blues")
-            .applymap(_style_avance,  subset=["% Avance"]),
+            .applymap(_style_ban,    subset=["% Banner (BB)"])
+            .applymap(_style_avance, subset=["% Avance"]),
         use_container_width=True, hide_index=True,
     )
 
