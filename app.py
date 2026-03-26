@@ -209,7 +209,6 @@ with st.sidebar:
     st.page_link("pages/2_Programa.py",                 label="Ficha de Programa",    icon="🔍")
     st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
     st.page_link("pages/5_Periodo_Propuesto.py",        label="Periodo Propuesto",    icon="📅")
-    st.page_link("pages/6_Plan_de_Trabajo.py",          label="Plan de Trabajo",      icon="🗓️")
     st.markdown("<div style='flex:1'></div>", unsafe_allow_html=True)
     st.markdown(
         '<div style="padding:12px 6px;font-size:10px;color:rgba(255,255,255,0.40);text-align:center">'
@@ -553,7 +552,7 @@ def _excel_bytes(df_export):
     return buf.getvalue()
 
 # ── Tabs principales ────────────────────────────────────────────────────────────
-tab0, tab1, tab2, tab_prio = st.tabs(["🏆 Resumen Ejecutivo", "📊 Resumen General", "🏛️ Por Facultad y Programa", "🎯 Priorización"])
+tab0, tab_prio, tab2 = st.tabs(["🏆 Resumen Ejecutivo", "🎯 Priorización", "🏛️ Por Facultad y Programa"])
 
 # ── Tab 0: Resumen Ejecutivo ───────────────────────────────────────────────────
 with tab0:
@@ -576,7 +575,7 @@ with tab0:
         with _in3:
             if _use_pills: st.pills("per", _pers_ops, selection_mode="multi", key="flt_per", label_visibility="collapsed")
             else: st.multiselect("per", _pers_ops, key="flt_per", label_visibility="collapsed", placeholder="Todos")
-        with _btn0: st.button("🔄 LIMPIAR", on_click=_clear_app, use_container_width=True, type="primary", key="app_clear")
+        with _btn0: st.button("✕ LIMPIAR", on_click=_clear_app, use_container_width=True, type="primary", key="app_clear")
         with _cnt0:
             st.markdown(f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right">'
                         f'Mostrando <b style="color:#0F385A">{n}</b> de '
@@ -597,20 +596,16 @@ with tab0:
       text-transform:uppercase;letter-spacing:.06em;display:flex;align-items:center;
       gap:8px;margin:18px 0 10px;color:#0F385A;border-bottom:2px solid #e2e8f0;padding-bottom:6px;}
     .re-rcard{background:#fff;border-radius:10px;box-shadow:0 1px 4px rgba(0,0,0,.08);
-      overflow:hidden;margin-bottom:12px;}
-    .re-rcard-hdr{padding:12px 16px;display:flex;align-items:flex-start;gap:10px;}
-    .re-rmeta h4{font-family:'Barlow Condensed',sans-serif;font-size:.88rem;font-weight:800;
-      text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;}
-    .re-rmeta p{font-size:.69rem;color:#475569;line-height:1.4;}
-    .re-rbadge{font-family:'Barlow Condensed',sans-serif;font-size:2.2rem;font-weight:800;
-      flex-shrink:0;line-height:1;}
-    .re-rtbl{width:100%;border-collapse:collapse;font-size:.77rem;}
-    .re-rtbl thead th{background:#f8fafc;padding:6px 12px;text-align:left;font-weight:700;
-      font-size:.67rem;text-transform:uppercase;letter-spacing:.05em;color:#475569;
-      border-bottom:1px solid #e2e8f0;}
+      overflow:hidden;margin-bottom:8px;display:flex;flex-direction:column;height:100%;}
+    .re-rcard-hdr{padding:9px 12px 7px;display:flex;align-items:flex-start;gap:8px;}
+    .re-rtbl{width:100%;border-collapse:collapse;font-size:.74rem;}
+    .re-rtbl thead th{background:#f1f5f9;padding:5px 8px;text-align:left;font-weight:700;
+      font-size:.63rem;text-transform:uppercase;letter-spacing:.05em;color:#475569;
+      border-bottom:1px solid #e2e8f0;position:sticky;top:0;z-index:1;}
     .re-rtbl tbody tr:nth-child(even){background:#f8fafc;}
     .re-rtbl tbody tr:hover{background:#e0f4fb;}
-    .re-rtbl td{padding:6px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+    .re-rtbl td{padding:5px 8px;border-bottom:1px solid #f1f5f9;vertical-align:middle;}
+    .re-rtbl-wrap{flex:1;overflow-x:auto;overflow-y:auto;max-height:320px;}
     .re-pbar{display:inline-flex;align-items:center;gap:4px;}
     .re-pbar-w{width:50px;height:5px;background:#e2e8f0;border-radius:99px;overflow:hidden;display:inline-block;vertical-align:middle;}
     .re-pbar-f{height:100%;border-radius:99px;}
@@ -723,31 +718,52 @@ with tab0:
             rows.append(row_data)
         return rows
 
-    def _render_rcard(title, desc, color, rows, show_cols):
-        """Renderiza un risk-card con tabla HTML inline."""
+    def _rpct(pct):
+        """Porcentaje coloreado compacto para tablas de riesgo."""
+        v = min(max(float(pct or 0), 0), 100)
+        clr = "#15803d" if v >= 70 else ("#d97706" if v >= 30 else "#dc2626")
+        disp = f"{v:.1f}%" if v % 1 != 0 else f"{int(v)}%"
+        return f'<span style="font-weight:700;color:{clr};font-size:12px">{disp}</span>'
+
+    def _render_rcard(title, desc, color, rows, show_cols, icon="⚠️"):
+        """Renderiza un risk-card compacto con cabecera visual y tabla scrollable."""
         n_r = len(rows)
         badge_color = color if n_r > 0 else "#15803d"
+        r, g, b = int(color[1:3],16), int(color[3:5],16), int(color[5:7],16)
+        hdr_bg = f"rgba({r},{g},{b},0.06)"
+        hdr_bd = f"rgba({r},{g},{b},0.18)"
         hdr = (
-            f'<div class="re-rcard" style="border-top:4px solid {badge_color}">'
-            f'<div class="re-rcard-hdr">'
-            f'<div class="re-rmeta" style="flex:1"><h4 style="color:{badge_color}">{title}</h4>'
-            f'<p>{desc}</p></div>'
-            f'<div class="re-rbadge" style="color:{badge_color}">{n_r}</div>'
-            f'</div>'
+            f'<div class="re-rcard" style="border-top:3px solid {badge_color}">'
+            f'<div style="background:{hdr_bg};padding:9px 12px 7px;'
+            f'border-bottom:1px solid {hdr_bd}">'
+            f'<div style="display:flex;align-items:flex-start;'
+            f'justify-content:space-between;gap:6px">'
+            f'<div style="flex:1">'
+            f'<div style="font-size:10px;font-weight:800;color:{badge_color};'
+            f'text-transform:uppercase;letter-spacing:.04em;line-height:1.3">'
+            f'{icon}&nbsp;{title}</div>'
+            f'<div style="font-size:8.5px;color:#64748b;margin-top:2px;line-height:1.4">'
+            f'{desc}</div></div>'
+            f'<div style="font-family:\'Barlow Condensed\',sans-serif;font-size:1.8rem;'
+            f'font-weight:800;color:{badge_color};line-height:1;flex-shrink:0;'
+            f'padding-left:8px">{n_r}</div>'
+            f'</div></div>'
         )
         if n_r == 0:
             return hdr + '<div class="re-ok">✅ Sin programas en este riesgo</div></div>'
-        thead = '<table class="re-rtbl"><thead><tr>'
+        thead = '<div class="re-rtbl-wrap"><table class="re-rtbl"><thead><tr>'
         for c in show_cols:
-            thead += f'<th>{c}</th>'
+            align = "left" if c == "Programa" else "center"
+            thead += f'<th style="text-align:{align}">{c}</th>'
         thead += '</tr></thead><tbody>'
         tbody = ""
         for row in rows:
             tbody += "<tr>"
             for c in show_cols:
-                tbody += f'<td>{row.get(c, "—")}</td>'
+                align = "left" if c == "Programa" else "center"
+                tbody += f'<td style="text-align:{align}">{row.get(c, "—")}</td>'
             tbody += "</tr>"
-        return hdr + f'<div style="overflow-x:auto">{thead}{tbody}</tbody></table></div></div>'
+        return hdr + f'{thead}{tbody}</tbody></table></div></div>'
 
     PERIODO_ORDER = {"2026-2": 0, "2027-1": 1, "2027-2": 2}
 
@@ -777,19 +793,19 @@ with tab0:
     # R1 — Producción virtual sin aval financiero
     r1_df   = _sort_risk(df_risk[(_pc > 0) & (_cf.isin(["nostart", "na"]))])
     r1_rows = _r_rows(r1_df, {
-        "% Avance de Producción": lambda r: _pbar_html(r.get("pc_pct", 0), "#EC0677"),
+        "% Contenidos": lambda r: _rpct(r.get("pc_pct", 0)),
     })
 
     # R2 — Lanzamiento 2026-2 con contenidos incompletos
     r2_df   = _sort_risk(df_risk[(_pp == "2026-2") & (_pcs != "na") & (_pc < 100)])
     r2_rows = _r_rows(r2_df, {
-        "% Avance de Producción": lambda r: _pbar_html(r.get("pc_pct", 0), "#FBAF17"),
+        "% Contenidos": lambda r: _rpct(r.get("pc_pct", 0)),
     })
 
     # R3 — Parametrización en Banner sin producción de contenidos
     r3_df   = _sort_risk(df_risk[(_ban > 0) & (_pc < 100)])
     r3_rows = _r_rows(r3_df, {
-        "% Avance Banner": lambda r: _pbar_html(r.get("ban_pct", 0), "#7c3aed"),
+        "% Banner": lambda r: _rpct(r.get("ban_pct", 0)),
     })
 
     # R4 — Avance en producción — Syllabus incompleto
@@ -798,47 +814,50 @@ with tab0:
         (_syl == "NO")
     ])
     r4_rows = _r_rows(r4_df, {
-        "% Avance Contenidos": lambda r: _pbar_html(r.get("pc_pct", 0), "#0d9488"),
+        "Syllabus":     lambda r: ('<span style="background:#fee2e2;color:#dc2626;font-size:10px;'
+                                   'font-weight:700;padding:2px 7px;border-radius:8px">NO</span>'),
+        "% Contenidos": lambda r: _rpct(r.get("pc_pct", 0)),
     })
 
     # R5 — Parametrización en Banner en proceso con trámite de convenios pendiente
     r5_df   = _sort_risk(df_risk[(_ban > 0) & (_con < 100)])
     r5_rows = _r_rows(r5_df, {
-        "% Avance Convenios": lambda r: _pbar_html(r.get("conv_pct", 0), "#2563eb"),
+        "% Convenios": lambda r: _rpct(r.get("conv_pct", 0)),
+        "% Banner":    lambda r: _rpct(r.get("ban_pct", 0)),
     })
 
     rr1, rr2, rr3 = st.columns(3)
     with rr1:
         st.markdown(_render_rcard(
             "R1 · Producción virtual sin aval financiero",
-            "Producción de contenidos virtuales iniciada sin concepto financiero aprobado",
+            "Virtual · % contenidos > 0 y sin concepto financiero",
             "#dc2626", r1_rows,
-            ["Programa", "Período", "% Avance de Producción"]), unsafe_allow_html=True)
+            ["Programa", "Período", "% Contenidos"], "⚠️"), unsafe_allow_html=True)
     with rr2:
         st.markdown(_render_rcard(
             "R2 · Lanzamiento 2026-2 con contenidos incompletos",
-            "Programas propuestos para lanzar en 2026-2 que aún no completan la producción de contenidos",
+            "Período 2026-2 · Producción < 100% · Menor avance primero",
             "#d97706", r2_rows,
-            ["Programa", "Modalidad", "% Avance de Producción"]), unsafe_allow_html=True)
+            ["Programa", "Modalidad", "% Contenidos"], "🔔"), unsafe_allow_html=True)
     with rr3:
         st.markdown(_render_rcard(
             "R3 · Parametrización en Banner sin producción de contenidos",
-            "Programas con avance en Banner pero sin producción de contenidos completada",
+            "Banner > 0% y Contenidos < 100%",
             "#7c3aed", r3_rows,
-            ["Programa", "Período", "% Avance Banner"]), unsafe_allow_html=True)
+            ["Programa", "Período", "% Banner"], "⚙️"), unsafe_allow_html=True)
     rr4, rr5, rr6 = st.columns(3)
     with rr4:
         st.markdown(_render_rcard(
             "R4 · Avance en producción — Syllabus incompleto",
-            "Programas virtuales o híbridos con producción avanzando pero sin syllabus completado",
+            "Virtual/Híbrido · Avance en contenidos y Syllabus = NO",
             "#0d9488", r4_rows,
-            ["Programa", "Modalidad", "Período", "% Avance Contenidos"]), unsafe_allow_html=True)
+            ["Programa", "Syllabus", "% Contenidos", "Período"], "📋"), unsafe_allow_html=True)
     with rr5:
         st.markdown(_render_rcard(
-            "R5 · Parametrización en Banner en proceso con trámite de convenios pendiente",
-            "Programas con avance en Banner pero con proceso de convenios sin completar",
+            "R5 · Banner con avance sin trámite de convenios",
+            "Banner > 0% y Convenios < 100%",
             "#2563eb", r5_rows,
-            ["Programa", "Período", "Modalidad", "% Avance Convenios"]), unsafe_allow_html=True)
+            ["Programa", "% Convenios", "% Banner"], "🤝"), unsafe_allow_html=True)
 
     # ── SECCIÓN 3: Resumen por Etapa ──────────────────────────────────────────
     st.markdown('<div class="re-sec">📋 Estado por Etapa</div>', unsafe_allow_html=True)
@@ -900,269 +919,6 @@ with tab0:
             f'</div></div>'
         )
         all_etapa_cols[ei].markdown(card_html, unsafe_allow_html=True)
-
-# ── Tab 1: Resumen General ─────────────────────────────────────────────────────
-with tab1:
-    # Filtro de periodo de implementación
-    st.markdown('<div style="margin:10px 0 0 0;font-size:15px;font-weight:700;color:#0F385A">Implementación por periodo</div>', unsafe_allow_html=True)
-    periodos_disp = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
-    periodo_sel = st.selectbox("Filtrar por periodo de implementación", ["Todos"] + periodos_disp, key="filtro_periodo_tabla", index=0, help="Filtra la tabla por periodo de implementación")
-    if periodo_sel == "Todos":
-        df_impl = df.copy()
-    else:
-        df_impl = df[df["PERIODO DE IMPLEMENTACIÓN"] == periodo_sel].copy()
-
-    # Icono de prioridad
-    def _icono_prioridad(clasif):
-        if clasif == "Urgente":
-            return '<span title="Urgente" style="color:#EC0677;font-size:18px;font-weight:900">★</span>'
-        if clasif == "Prioritario":
-            return '<span title="Prioritario" style="color:#FBAF17;font-size:18px;font-weight:900">★</span>'
-        if clasif == "En seguimiento":
-            return '<span title="En seguimiento" style="color:#2980B9;font-size:18px;font-weight:900">★</span>'
-        return '<span title="En curso" style="color:#A6CE38;font-size:18px;font-weight:900">★</span>'
-
-    # Construir tabla HTML
-    tabla_rows = []
-    for _, row in df_impl.iterrows():
-        tabla_rows.append(
-            f'<tr>'
-            f'<td style="padding:7px 10px;font-size:13px;color:#0F385A;font-weight:600">{row["NOMBRE DEL PROGRAMA"]}</td>'
-            f'<td style="padding:7px 10px;text-align:center">{row["MODALIDAD"]}</td>'
-            f'<td style="padding:7px 10px;text-align:center">{row["SEDE"]}</td>'
-            f'<td style="padding:7px 10px;text-align:center">{row["PERIODO DE IMPLEMENTACIÓN"]}</td>'
-            f'<td style="padding:7px 10px;text-align:center">{int(row["avance_general"])}%</td>'
-            f'<td style="padding:7px 10px;text-align:center">{_icono_prioridad(row["_clasif"])} <span style="font-size:12px;color:#6a8a9e">{row["_clasif"]}</span></td>'
-            f'</tr>'
-        )
-    tabla_html = (
-        '<div style="overflow-x:auto;max-width:100vw;margin-top:10px">'
-        '<table style="width:100%;border-collapse:collapse;font-family:Segoe UI,sans-serif;background:#fff;border-radius:10px;box-shadow:0 2px 10px rgba(15,56,90,.08)">'
-        '<thead>'
-        '<tr style="background:#0F385A;color:#fff;font-size:12px;font-weight:700">'
-        '<th style="padding:8px 10px;text-align:left;border-radius:10px 0 0 0">Programa</th>'
-        '<th style="padding:8px 10px;text-align:center">Modalidad</th>'
-        '<th style="padding:8px 10px;text-align:center">Sede</th>'
-        '<th style="padding:8px 10px;text-align:center">Periodo</th>'
-        '<th style="padding:8px 10px;text-align:center">Avance %</th>'
-        '<th style="padding:8px 10px;text-align:center;border-radius:0 10px 0 0">Prioridad</th>'
-        '</tr>'
-        '</thead>'
-        '<tbody>' + ''.join(tabla_rows) + '</tbody>'
-        '</table>'
-        '</div>'
-    )
-    st.markdown(tabla_html, unsafe_allow_html=True)
-    # KPI fila 1
-    _cap_col, _btn_col = st.columns([5, 1])
-    _cap_col.caption(f"Mostrando **{n}** de {len(df_raw)} programas")
-    with _btn_col:
-        if st.button("📋 Ver estados", use_container_width=True, help="Consulta los criterios de clasificación de prioridad de los programas"):
-            _dialog_estados()
-    c1, c2, c3, c4 = st.columns(4)
-    c1.markdown(_kpi("Programas en reforma",  n,          f"de {len(df_raw)} en total",                    "#0F385A", None, "📚",
-        tooltip="Total de programas académicos que están dentro del proceso de reforma curricular, aplicando los filtros activos."), unsafe_allow_html=True)
-    c2.markdown(_kpi("Avance promedio",        f"{avg_av}%", "sobre todos los procesos",                   "#A6CE38", avg_av,
-        tooltip=f"Promedio del avance general de los {n} programas filtrados. Se calcula como la media de todos los procesos de reforma de cada programa."), unsafe_allow_html=True)
-    c3.markdown(_kpi("Avanzados ≥ 70%",        cnt_adv,    f"de {n} programas",                            "#1FB2DE", round(cnt_adv/n*100) if n else 0,
-        tooltip="Programas cuyo avance general supera el 70% en todos los procesos. Se consideran 'En curso' y con menor riesgo de incumplimiento."), unsafe_allow_html=True)
-    c4.markdown(_kpi("Urgentes / Prioritarios",  cnt_crit,   f"{cnt_urgente} urgentes · {cnt_prioritario} prioritarios", "#EC0677", round(cnt_crit/n*100) if n else 0,
-        tooltip="Urgente: periodo 2026 con avance <70%. Prioritario: periodo 2027-1 con avance <40%. Estos programas requieren atención inmediata para cumplir los plazos de implementación."), unsafe_allow_html=True)
-
-    st.markdown("<div style='margin:6px 0'></div>", unsafe_allow_html=True)
-
-    # KPI fila 2
-    c5, c6, c7, c8 = st.columns(4)
-    c5.markdown(_kpi("Periodo 2026-2",       cnt_2026,       "programas más urgentes",       "#FBAF17", round(cnt_2026/n*100)   if n else 0,
-        tooltip="Programas cuyo periodo de implementación es 2026-2. Son los de mayor urgencia porque su fecha límite es el próximo semestre."), unsafe_allow_html=True)
-    c6.markdown(_kpi("Periodo 2027-1",       cnt_2027_1,     "programas próximo semestre",   "#FBAF17", round(cnt_2027_1/n*100) if n else 0,
-        tooltip="Programas con periodo de implementación 2027-1. Deben completar al menos el 40% del proceso para no considerarse prioritarios."), unsafe_allow_html=True)
-    c7.markdown(_kpi("Proceso rezagado",     f"{proc_min_pct}%", proc_short_map.get(proc_min, proc_min), "#EC0677", proc_min_pct,
-        tooltip=f"Proceso con el avance promedio más bajo entre todos los programas filtrados. Proceso: {proc_min} ({proc_min_pct}%). Indica el cuello de botella global de la reforma."), unsafe_allow_html=True)
-    c8.markdown(_kpi("Proceso más avanzado", f"{proc_max_pct}%", proc_short_map.get(proc_max, proc_max), "#A6CE38", proc_max_pct,
-        tooltip=f"Proceso con el avance promedio más alto entre todos los programas filtrados. Proceso: {proc_max} ({proc_max_pct}%)."), unsafe_allow_html=True)
-
-    st.markdown(
-        '#### Avance Consolidado por Proceso '
-        '<span title="Cada donut muestra el avance promedio de un proceso en todos los programas filtrados. '
-        'Los segmentos representan: verde=Finalizado, azul=En Proceso, rosa=Sin iniciar, gris=N/A. '
-        'El % central es el promedio ponderado del proceso." '
-        'style="cursor:help;color:#6a8a9e;font-size:14px">ⓘ</span>',
-        unsafe_allow_html=True,
-    )
-
-    # Donuts — 2 filas de 4
-    row1_cols = st.columns(4)
-    row2_cols = st.columns(4)
-    for idx, proc in enumerate(PROCESOS):
-        col = (row1_cols + row2_cols)[idx]
-        with col:
-            st.markdown(
-                _donut_card(proc, pct_avgs[idx], done_l[idx], inp_l[idx], nst_l[idx], na_l[idx], PROCESO_COLOR[proc]),
-                unsafe_allow_html=True,
-            )
-
-    st.markdown(
-        '#### Estado por Etapa '
-        '<span title="Gráfica de barras apiladas al 100%. Cada barra es una etapa del proceso de reforma. '
-        'Muestra qué proporción de programas está Finalizada, En Proceso, Sin iniciar o No aplica en esa etapa. '
-        'Haga clic en una barra para ver el listado de programas en ese estado." '
-        'style="cursor:help;color:#6a8a9e;font-size:14px">ⓘ</span>',
-        unsafe_allow_html=True,
-    )
-
-    cats       = ["done", "inprog", "nostart", "na"]
-    cat_labels = ["Finalizado", "En proceso", "Sin iniciar", "No aplica"]
-    cat_colors = ["#A6CE38", "#1FB2DE", "#EC0677", "#c8d8e0"]
-
-    # Construir lista de etapas agrupadas por proceso, con spacers entre grupos
-    # Solo incluir etapas con al menos un programa con datos
-    def _etapa_has_data(j):
-        # Solo mostrar etapas con al menos un programa en done/inprog/nostart
-        return sum(int(df[f"cl_{j}"].eq(c).sum()) for c in ["done", "inprog", "nostart"]) > 0
-
-    etapa_names, etapa_idxs, etapa_proc = [], [], []
-    for proc in PROCESOS:
-        items = [(i, em[1]) for i, em in enumerate(ETAPAS_MAP)
-                 if em[0] == proc and _etapa_has_data(i)]
-        if not items:
-            continue
-        # Spacer SIEMPRE antes de cada grupo → sirve como fila de encabezado del proceso
-        sp_key = f"__sp_{proc}__"
-        etapa_names.append(sp_key)
-        etapa_idxs.append(None)
-        etapa_proc.append(None)
-        for i, name in items:
-            etapa_names.append(name)
-            etapa_idxs.append(i)
-            etapa_proc.append(proc)
-
-    N = len(etapa_names)
-    totals = [
-        max(sum(int(df[f"cl_{j}"].eq(c).sum()) for c in cats) if j is not None else 1, 1)
-        for j in etapa_idxs
-    ]
-
-    col_chart, col_legend = st.columns([3, 2])
-    with col_chart:
-        fig_bar = go.Figure()
-        for cat, lbl, clr in zip(cats, cat_labels, cat_colors):
-            cnts = [int(df[f"cl_{j}"].eq(cat).sum()) if j is not None else 0 for j in etapa_idxs]
-            pcts = [round(cnts[k] / totals[k] * 100, 1) for k in range(N)]
-            htxt = [
-                f"<b>{etapa_names[k]}</b><br>{lbl}: {cnts[k]} ({pcts[k]}%)"
-                if etapa_idxs[k] is not None else ""
-                for k in range(N)
-            ]
-            txt = [str(cnts[k]) if pcts[k] >= 9 and etapa_idxs[k] is not None else "" for k in range(N)]
-            fig_bar.add_trace(go.Bar(
-                name=lbl, y=etapa_names, x=pcts, orientation="h",
-                marker_color=clr, marker_line_width=0,
-                text=txt, textposition="inside", insidetextanchor="middle",
-                constraintext="none", textangle=0,
-                textfont=dict(size=10, color="white", family="Segoe UI"),
-                hovertext=htxt, hoverinfo="text",
-                showlegend=False,
-            ))
-
-        # Fondo de color suave + etiqueta en la parte superior del grupo (sin superposición)
-        for proc in PROCESOS:
-            color     = PROCESO_COLOR[proc]
-            grp_idxs  = [k for k, p in enumerate(etapa_proc) if p == proc]
-            if not grp_idxs:
-                continue
-            fig_bar.add_shape(
-                type="rect", layer="below",
-                x0=0, x1=100,
-                y0=etapa_names[grp_idxs[0]], y1=etapa_names[grp_idxs[-1]],
-                yref="y", xref="x",
-                fillcolor=color, opacity=0.06,
-                line_color=color, line_width=0.8,
-            )
-            # Etiqueta centrada en el spacer que precede al grupo (nunca superpuesto a las barras)
-            sp_idx = grp_idxs[0] - 1  # el spacer siempre está justo antes del grupo
-            fig_bar.add_annotation(
-                x=2, y=sp_idx,
-                xref="x", yref="y",
-                text=f"<b>{proc_short_map.get(proc, proc)}</b>",
-                showarrow=False,
-                font=dict(size=9, color=color, family="Segoe UI"),
-                xanchor="left", yanchor="middle",
-                bgcolor="rgba(255,255,255,0.0)",
-            )
-
-        tick_text = ["" if nm.startswith("__sp") else nm for nm in etapa_names]
-        fig_bar.update_layout(
-            barmode="stack", height=520,
-            margin=dict(l=190, r=10, t=6, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            uniformtext=dict(minsize=8, mode="hide"),
-            xaxis=dict(range=[0, 100], ticksuffix="%", showgrid=True,
-                       gridcolor="rgba(15,56,90,.07)", color="#6a8a9e", tickfont=dict(size=10)),
-            yaxis=dict(
-                color="#4a6a7e", tickfont=dict(size=9.5), autorange="reversed",
-                tickvals=etapa_names, ticktext=tick_text,
-                side="left", automargin=False, ticklabelposition="outside left",
-                ticklen=0,
-            ),
-            font=dict(family="Segoe UI"),
-            bargap=0.28,
-        )
-        sel_etapa = st.plotly_chart(
-            fig_bar, use_container_width=True,
-            on_select="rerun", key="sel_etapa",
-            config={"displayModeBar": False},
-        )
-
-    with col_legend:
-        st.markdown("<div style='height:30px'></div>", unsafe_allow_html=True)
-        for lbl, clr in zip(cat_labels, cat_colors):
-            st.markdown(
-                f'<div style="display:flex;align-items:center;gap:6px;margin-bottom:8px">'
-                f'<div style="width:12px;height:12px;border-radius:3px;background:{clr};flex-shrink:0"></div>'
-                f'<span style="font-size:11px;color:#4a6a7e">{lbl}</span></div>',
-                unsafe_allow_html=True,
-            )
-
-    # ── Panel de detalle al hacer clic en una barra ──────────────────────────
-    if sel_etapa.selection and sel_etapa.selection.points:
-        pt         = sel_etapa.selection.points[0]
-        y_name     = pt.get("y", "")
-        curve_n    = pt.get("curve_number", 0)
-        if y_name and not str(y_name).startswith("__sp") and curve_n < len(cats):
-            cat_sel   = cats[curve_n]
-            lbl_sel   = cat_labels[curve_n]
-            clr_sel   = cat_colors[curve_n]
-            try:
-                ej = etapa_idxs[etapa_names.index(y_name)]
-            except (ValueError, IndexError):
-                ej = None
-            if ej is not None:
-                mask   = df[f"cl_{ej}"].eq(cat_sel)
-                df_det = df[mask][["NOMBRE DEL PROGRAMA", "FACULTAD", "avance_general",
-                                   "_clasif", "PERIODO DE IMPLEMENTACIÓN"]].copy()
-                df_det["Facultad"] = df_det["FACULTAD"].map(fac_labels).fillna(df_det["FACULTAD"])
-                df_det["Avance %"] = df_det["avance_general"].apply(lambda x: f"{int(x)}%")
-                df_det = df_det.rename(columns={
-                    "NOMBRE DEL PROGRAMA": "Programa",
-                    "_clasif": "Prioridad",
-                    "PERIODO DE IMPLEMENTACIÓN": "Periodo",
-                })[["Programa", "Facultad", "Avance %", "Prioridad", "Periodo"]]
-                st.markdown(
-                    f'<div style="background:#FFFFFF;border:1px solid {clr_sel};'
-                    f'border-left:4px solid {clr_sel};border-radius:8px;'
-                    f'padding:10px 14px;margin-top:6px">'
-                    f'<span style="font-size:12px;font-weight:700;color:{clr_sel}">'
-                    f'📋 {len(df_det)} programas</span>'
-                    f'<span style="font-size:11px;color:#6a8a9e"> — {y_name} · {lbl_sel}</span></div>',
-                    unsafe_allow_html=True,
-                )
-                det_styled = df_det.style\
-                    .map(_style_clasif_cell, subset=["Prioridad"])\
-                    .map(_style_avance_cell, subset=["Avance %"])
-                st.dataframe(det_styled, use_container_width=True, hide_index=True,
-                             height=min(300, len(df_det) * 38 + 40))
 
 # ── Tab 2: Por facultad ────────────────────────────────────────────────────────
 with tab2:
@@ -1506,7 +1262,7 @@ with tab_prio:
         with _lp3: st.markdown(f'<div {_LBL_P}>📅 PERÍODO</div>', unsafe_allow_html=True)
         with _ip3: sel_pper = st.pills("pper", sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist()),
                                        selection_mode="multi", key="prio_per", label_visibility="collapsed")
-        with _btn_p: st.button("🔄 LIMPIAR", on_click=_clear_prio, use_container_width=True, type="primary", key="prio_clear")
+        with _btn_p: st.button("✕ LIMPIAR", on_click=_clear_prio, use_container_width=True, type="primary", key="prio_clear")
         with _cnt_p: _prio_cnt = st.empty()
         st.markdown("</div>", unsafe_allow_html=True)
 
@@ -1539,13 +1295,16 @@ with tab_prio:
         '</div>', unsafe_allow_html=True)
 
     _PRIO_ETAPAS = [
-        ("C.FINANCIERO", "proc_Gestión Financiera",                      "proc"),
-        ("SYLLABUS",     "syl_val",                                       "syl"),
-        ("% CONTENIDOS", "pc_pct",                                        "bar"),
-        ("% BANNER",     "ban_pct",                                       "bar"),
-        ("% CONVENIOS",  "conv_pct",                                      "bar"),
-        ("TIPO TRÁMITE", "Tipo de trámite de aseguramiento de la calidad","text"),
-        ("FECHA NOTIF. MEN","Fecha notif. MEN",                           "text"),
+        ("G.ACADÉMICA",  "proc_Gestión Académica",                       "proc"),
+        ("C.FINANCIERO", "proc_Gestión Financiera",                       "proc"),
+        ("ASEGURAMIENT", "proc_Aseguramiento de la Calidad",              "proc"),
+        ("PLANEACIÓN",   "proc_Ger. Planeación y Gestión Institucional",  "proc"),
+        ("SYLLABUS",     "syl_val",                                        "syl"),
+        ("PROD.CONT.",   "pc_pct",                                         "bar"),
+        ("CONVENIOS",    "proc_Convenios Institucionales",                "proc"),
+        ("BANNER",       "ban_pct",                                        "bar"),
+        ("TIPO TRÁMITE", "Tipo de trámite de aseguramiento de la calidad", "text"),
+        ("FECHA NOTIF.", "Fecha notif. MEN",                              "text"),
         ("REQ. MIN.",    "Req. Ministerial",                              "text"),
     ]
     _PRIO_CLR = {"Urgente":("#EC0677","#fce8f2"),"Prioritario":("#FBAF17","#fdf8e8"),

@@ -94,7 +94,6 @@ with st.sidebar:
     st.page_link("pages/2_Programa.py",                 label="Ficha de Programa",    icon="🔍")
     st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
     st.page_link("pages/5_Periodo_Propuesto.py",        label="Periodo Propuesto",    icon="📅")
-    st.page_link("pages/6_Plan_de_Trabajo.py",          label="Plan de Trabajo",      icon="🗓️")
     st.markdown(
         '<div style="padding:12px 6px;font-size:10px;color:rgba(255,255,255,0.40);text-align:center">'
         'POLI · 2025–2026</div>',
@@ -108,7 +107,7 @@ st.markdown(
     '<div style="font-size:21px;font-weight:700;color:#FFFFFF;letter-spacing:-.3px">'
     '📅 Periodo de Implementación Propuesto</div>'
     '<div style="font-size:12px;color:rgba(255,255,255,0.70);margin-top:5px">'
-    'Periodo calculado automáticamente según avance de CF y PC · Gráfico de ruta por periodo</div>'
+    'Periodo calculado automáticamente según avance de CF y PC</div>'
     '</div>',
     unsafe_allow_html=True,
 )
@@ -161,128 +160,7 @@ for col, label, val, color in [
 
 st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 
-# ── Gráfico Gantt agrupado por periodo propuesto ────────────────────────────────
-PERIOD_DATES = {
-    "2026-2":             ("2026-01-01", "2026-06-30"),
-    "2027-1":             ("2026-07-01", "2026-12-31"),
-    "2027-2":             ("2027-01-01", "2027-06-30"),
-    "Ya está en oferta":  ("2025-01-01", "2025-06-30"),
-}
-PERIOD_COLORS = {
-    "2026-2":             "#EC0677",
-    "2027-1":             "#FBAF17",
-    "2027-2":             "#A6CE38",
-    "Ya está en oferta":  "#1FB2DE",
-}
 
-st.markdown("#### Gráfico de Ruta por Periodo Propuesto")
-
-# Filtro inline por periodo en el gráfico
-_use_pills_p5 = hasattr(st, "pills")
-_gantt_opts   = ["2026-2", "2027-1", "2027-2", "Ya está en oferta"]
-_LBL_P5 = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
-           'letter-spacing:.4px;white-space:nowrap"')
-
-with st.container():
-    st.markdown(
-        '<div style="background:#FFFFFF;border-radius:10px;padding:10px 16px 8px;'
-        'border:1px solid rgba(15,56,90,0.10);box-shadow:0 2px 8px rgba(15,56,90,0.06);'
-        'margin-bottom:8px">',
-        unsafe_allow_html=True,
-    )
-    lb_g, in_g = st.columns([0.85, 5.5])
-    with lb_g:
-        st.markdown(f'<div {_LBL_P5}>📅 PERÍODOS EN GRÁFICO</div>', unsafe_allow_html=True)
-    with in_g:
-        if _use_pills_p5:
-            sel_per_gantt = st.pills(
-                "gantt", _gantt_opts, selection_mode="multi",
-                key="gantt_per", label_visibility="collapsed",
-                default=["2026-2", "2027-1"],
-            )
-        else:
-            sel_per_gantt = st.multiselect(
-                "gantt", _gantt_opts, default=["2026-2", "2027-1"],
-                key="gantt_per", label_visibility="collapsed",
-            )
-    st.markdown("</div>", unsafe_allow_html=True)
-
-df_gantt = df[df["periodo_propuesto"].isin(sel_per_gantt)].copy()
-df_gantt = df_gantt.sort_values(["periodo_propuesto", "avance_general"])
-
-fig = go.Figure()
-per_order = [p for p in ["2026-2", "2027-1", "2027-2", "Ya está en oferta"] if p in sel_per_gantt]
-
-for periodo in per_order:
-    sub = df_gantt[df_gantt["periodo_propuesto"] == periodo]
-    if sub.empty:
-        continue
-    color = PERIOD_COLORS.get(periodo, "#1FB2DE")
-    dates  = PERIOD_DATES.get(periodo, ("2026-01-01", "2026-06-30"))
-
-    for _, row in sub.iterrows():
-        prog  = row["NOMBRE DEL PROGRAMA"]
-        label = prog[:35] + ("…" if len(prog) > 35 else "")
-        avance = int(row["avance_general"])
-        cambio_txt = " ✦ Cambio de periodo" if row["Cambio"] else ""
-        hover = (
-            f"<b>{prog}</b><br>"
-            f"Modalidad: {row['MODALIDAD']}<br>"
-            f"Facultad: {row['Facultad']}<br>"
-            f"Periodo original: {row['PERIODO DE IMPLEMENTACIÓN']}<br>"
-            f"Periodo propuesto: <b>{periodo}</b>{cambio_txt}<br>"
-            f"Avance: {avance}%<br>"
-            f"CF: {STATUS_LABEL.get(str(row.get('cf_st','')), str(row.get('cf_st','—')))}<br>"
-            f"% PC: {int(row.get('pc_pct', 0))}%"
-        )
-        fig.add_trace(go.Bar(
-            name=periodo,
-            y=[label],
-            x=[1],
-            base=[dates[0]],
-            orientation="h",
-            marker_color=color,
-            marker_line_color=color,
-            marker_line_width=1,
-            marker_opacity=0.7 + avance / 1000,
-            hovertext=hover,
-            hoverinfo="text",
-            showlegend=False,
-            width=0.6,
-        ))
-
-# Leyenda manual
-for p in per_order:
-    fig.add_trace(go.Bar(
-        name=p, x=[None], y=[None], orientation="h",
-        marker_color=PERIOD_COLORS.get(p, "#1FB2DE"), showlegend=True,
-    ))
-
-chart_h = max(400, len(df_gantt) * 22 + 80)
-fig.update_layout(
-    barmode="overlay",
-    height=chart_h,
-    margin=dict(l=0, r=10, t=10, b=10),
-    paper_bgcolor="rgba(0,0,0,0)",
-    plot_bgcolor="rgba(0,0,0,0)",
-    xaxis=dict(
-        type="date",
-        tickformat="%b %Y",
-        showgrid=True, gridcolor="rgba(15,56,90,.08)",
-        color="#6a8a9e", tickfont=dict(size=10),
-    ),
-    yaxis=dict(
-        autorange="reversed", automargin=True,
-        color="#4a6a7e", tickfont=dict(size=9),
-    ),
-    legend=dict(
-        orientation="h", yanchor="bottom", y=1.01, xanchor="left", x=0,
-        font=dict(size=10, color="#4a6a7e"), bgcolor="rgba(0,0,0,0)",
-    ),
-    font=dict(family="Segoe UI"),
-    bargap=0.1,
-)
-st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
 
 # ── Tabla de periodo propuesto ─────────────────────────────────────────────────
 st.markdown("#### Detalle por Programa")
