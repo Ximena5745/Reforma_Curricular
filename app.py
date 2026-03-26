@@ -865,14 +865,7 @@ with tab0:
 
     PERIODO_ORDER = {"2026-2": 0, "2027-1": 1, "2027-2": 2}
 
-    # Excluir programas con aprobación ministerial requerida de los riesgos
-    _req_col = "¿Requiere aprobación ministerial?"
-    if _req_col in df.columns:
-        _req_lower = df[_req_col].astype(str).str.strip().str.lower()
-        _no_min = ~(_req_lower.str.startswith("si") | _req_lower.str.startswith("sí"))
-    else:
-        _no_min = pd.Series([True]*len(df), index=df.index)
-    df_risk = df[_no_min].copy()
+    df_risk = df.copy()
 
     _pc  = df_risk["pc_pct"]  if "pc_pct"  in df_risk.columns else pd.Series([0.0]*len(df_risk), index=df_risk.index)
     _cf  = df_risk["cf_st"]   if "cf_st"   in df_risk.columns else pd.Series(["nostart"]*len(df_risk), index=df_risk.index)
