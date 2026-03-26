@@ -66,6 +66,10 @@ footer { visibility: hidden; }
 [data-testid="stBaseButton-primary"]:hover {
     background: #1A5276 !important; border-color: #1A5276 !important;
 }
+/* Compact filter bar */
+.stVerticalBlock:has([data-testid="stPills"]) { gap: 0.1rem !important; row-gap: 0.1rem !important; }
+[data-testid="stPills"] { padding-bottom: 0 !important; margin-bottom: 0 !important; min-height: unset !important; }
+[data-testid="stHorizontalBlock"]:has([data-testid="stPills"]) { align-items: center !important; padding-bottom: 0 !important; margin-bottom: 0 !important; }
 [data-testid="stExpander"]         { background: #FFFFFF; border: 1px solid rgba(15,56,90,0.10); border-radius: 10px; }
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #0F385A 0%, #1A5276 45%, #1FB2DE 100%) !important;

@@ -141,6 +141,21 @@ footer { visibility: hidden; }
 [data-testid="stBaseButton-primary"]:hover {
     background: #1A5276 !important; border-color: #1A5276 !important;
 }
+/* ── Compact filter bar: collapse gap between pill rows ── */
+.stVerticalBlock:has([data-testid="stPills"]) {
+    gap: 0.1rem !important;
+    row-gap: 0.1rem !important;
+}
+[data-testid="stPills"] {
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+    min-height: unset !important;
+}
+[data-testid="stHorizontalBlock"]:has([data-testid="stPills"]) {
+    align-items: center !important;
+    padding-bottom: 0 !important;
+    margin-bottom: 0 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
