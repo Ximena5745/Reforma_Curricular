@@ -279,6 +279,10 @@ def _build_df():
     df["conv_pct"] = df["val_12"].apply(_to_pct_num)  # AS: % avance convenios
     df["ban_pct"]  = df["val_15"].apply(_to_pct_num)  # BB: % avance banner
 
+    # Presencial: ban_pct = 0 (No aplica — excluye de riesgos y cálculos)
+    _pres = df["MODALIDAD"].str.strip().str.lower() == "presencial"
+    df.loc[_pres, "ban_pct"] = 0.0
+
     # Estado directo de Concepto Financiero (col T)
     df["cf_st"] = df["cl_3"]
     # Estado directo de Producción de Contenidos (col AK)
