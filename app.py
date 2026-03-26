@@ -648,9 +648,8 @@ def _p_star(av, per, verde_2026=False):
     if "2026" in str(per):
         if av >= 40: return '<span style="color:#FBAF17;font-size:14px" title="Con esfuerzo podría implementarse">★</span>'
         return              '<span style="color:#EC0677;font-size:14px" title="No se podría implementar en 2026-2">★</span>'
-    # 2027-x
-    if av >= 40: return '<span style="color:#FBAF17;font-size:14px">★</span>'
-    return              '<span style="color:#EC0677;font-size:14px">★</span>'
+    # 2027-x: sin estrella (excepto los que tengan verde_2026=True, ya manejados arriba)
+    return ''
 
 # ── Tabs principales ────────────────────────────────────────────────────────────
 tab0, tab_prio, tab2 = st.tabs(["🏆 Resumen Ejecutivo", "🎯 Priorización", "🏛️ Por Facultad y Programa"])
@@ -1231,16 +1230,17 @@ with tab_prio:
 
     # Condición verde 2026-2: Z="Si" y AK>0
     _col_z = "¿Requiere informarse al MEN previa implementación?"
-    # Programas siempre verdes (excepción manual)
-    _SIEMPRE_VERDE = {"Técnica Profesional Judicial", "Tecnología en Gestión Ambiental"}
-
     def _es_verde(row):
         prog = str(row.get("NOMBRE DEL PROGRAMA", "")).strip()
-        if prog in _SIEMPRE_VERDE:
+        per  = str(row.get("PERIODO DE IMPLEMENTACIÓN","")).strip()
+        # Solo Tecnología en Gestión Ambiental mantiene estrella en cualquier período
+        if prog == "Tecnología en Gestión Ambiental":
             return True
-        per = str(row.get("PERIODO DE IMPLEMENTACIÓN","")).strip()
         if per != "2026-2":
             return False
+        # Técnica Profesional Judicial: verde en 2026-2 sin condiciones adicionales
+        if prog == "Técnica Profesional Judicial":
+            return True
         req = str(row.get(_col_z, "")).strip().lower() if _col_z in row.index else ""
         return req in ("si", "sí") and float(row.get("pc_pct", 0) or 0) > 0
 
