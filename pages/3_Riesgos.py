@@ -65,9 +65,14 @@ footer { visibility: hidden; }
     border-radius: 8px !important; letter-spacing:.3px !important;
     box-shadow: 0 2px 8px rgba(31,178,222,0.35) !important;
 }
-[data-testid="stBaseButton-primary"] > button {
+[data-testid="stBaseButton-primary"] > button,
+[data-testid="stBaseButton-primary"] button {
     height: 32px !important; min-height: 32px !important;
     padding: 0 10px !important; line-height: 1 !important;
+}
+/* Align button vertically */
+[data-testid="stColumn"]:has([data-testid="stBaseButton-primary"]) {
+    display: flex !important; flex-direction: column !important; justify-content: center !important;
 }
 [data-testid="stBaseButton-primary"]:hover {
     background: linear-gradient(135deg,#0891b2,#0F385A) !important;

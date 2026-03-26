@@ -54,7 +54,7 @@ li[aria-selected="true"]           { background: #d0ecf8 !important; font-weight
 button[data-baseweb="tab"]         { color: #6a8a9e !important; background: transparent !important; font-size: 13px !important; font-weight: 500 !important; }
 button[data-baseweb="tab"][aria-selected="true"] { color: #0F385A !important; border-bottom-color: #1FB2DE !important; font-weight: 700 !important; }
 [data-testid="stDataFrame"]        { border-radius: 10px; overflow: hidden; box-shadow: 0 1px 6px rgba(15,56,90,0.08); }
-hr                                  { border-color: rgba(15,56,90,0.10) !important; }
+hr                                  { border-color: rgba(15,56,90,0.10) !important; margin: 6px 0 !important; }
 footer { visibility: hidden; }
 #MainMenu { visibility: hidden; }
 [data-testid="stExpander"]         { background: #FFFFFF; border: 1px solid rgba(15,56,90,0.10); border-radius: 10px; }
@@ -140,9 +140,14 @@ footer { visibility: hidden; }
     border-radius: 8px !important; letter-spacing:.3px !important;
     box-shadow: 0 2px 8px rgba(31,178,222,0.35) !important;
 }
-[data-testid="stBaseButton-primary"] > button {
+[data-testid="stBaseButton-primary"] > button,
+[data-testid="stBaseButton-primary"] button {
     height: 32px !important; min-height: 32px !important;
     padding: 0 10px !important; line-height: 1 !important;
+}
+/* Align button vertically */
+[data-testid="stColumn"]:has([data-testid="stBaseButton-primary"]) {
+    display: flex !important; flex-direction: column !important; justify-content: center !important;
 }
 [data-testid="stBaseButton-primary"]:hover {
     background: linear-gradient(135deg,#0891b2,#0F385A) !important;
@@ -645,7 +650,7 @@ tab0, tab_prio, tab2 = st.tabs(["🏆 Resumen Ejecutivo", "🎯 Priorización", 
 with tab0:
     # ── Filtro dentro del tab ──────────────────────────────────────────────────
     with st.container():
-        _lb1, _in1, _sp0, _lb2, _in2 = st.columns([0.55, 2.2, 0.05, 0.65, 2.2])
+        _lb1, _in1, _sp0, _lb2, _in2, _btn0 = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
         with _lb1: st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
         with _in1:
             if _use_pills: st.pills("mod", _mods_ops, selection_mode="multi", key="flt_mod", label_visibility="collapsed")
@@ -654,12 +659,12 @@ with tab0:
         with _in2:
             if _use_pills: st.pills("fac", fac_ops, selection_mode="multi", key="flt_fac", label_visibility="collapsed")
             else: st.multiselect("fac", fac_ops, key="flt_fac", label_visibility="collapsed", placeholder="Todas")
-        _lb3, _in3, _sp0b, _btn0, _cnt0 = st.columns([0.55, 2.2, 0.05, 0.65, 2.2])
+        with _btn0: st.button("✕ LIMPIAR", on_click=_clear_app, type="primary", key="app_clear")
+        _lb3, _in3, _sp0b, _, _cnt0 = st.columns([0.55, 2.2, 0.05, 0.65, 2.55])
         with _lb3: st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
         with _in3:
             if _use_pills: st.pills("per", _pers_ops, selection_mode="multi", key="flt_per", label_visibility="collapsed")
             else: st.multiselect("per", _pers_ops, key="flt_per", label_visibility="collapsed", placeholder="Todos")
-        with _btn0: st.button("✕ LIMPIAR", on_click=_clear_app, use_container_width=True, type="primary", key="app_clear")
         with _cnt0:
             st.markdown(f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right">'
                         f'Mostrando <b style="color:#0F385A">{n}</b> de '
@@ -1171,18 +1176,18 @@ with tab_prio:
     _LBL_P = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
                'letter-spacing:.4px;white-space:nowrap"')
     with st.container():
-        _lp1, _ip1, _sp_p, _lp2, _ip2 = st.columns([0.55, 2.2, 0.05, 0.65, 2.2])
+        _lp1, _ip1, _sp_p, _lp2, _ip2, _btn_p = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
         with _lp1: st.markdown(f'<div {_LBL_P}>📋 MODALIDAD</div>', unsafe_allow_html=True)
         with _ip1: sel_pmod = st.pills("pmod", sorted(df_raw["MODALIDAD"].dropna().unique().tolist()),
                                        selection_mode="multi", key="prio_mod", label_visibility="collapsed")
         with _lp2: st.markdown(f'<div {_LBL_P}>🏛️ FACULTAD</div>', unsafe_allow_html=True)
         with _ip2: sel_pfac = st.pills("pfac", sorted([fac_abrev.get(f,f) for f in df_raw["FACULTAD"].dropna().unique()]),
                                        selection_mode="multi", key="prio_fac", label_visibility="collapsed")
-        _lp3, _ip3, _sp_p2, _btn_p, _cnt_p = st.columns([0.55, 2.2, 0.05, 0.65, 2.2])
+        with _btn_p: st.button("✕ LIMPIAR", on_click=_clear_prio, type="primary", key="prio_clear")
+        _lp3, _ip3, _sp_p2, _, _cnt_p = st.columns([0.55, 2.2, 0.05, 0.65, 2.55])
         with _lp3: st.markdown(f'<div {_LBL_P}>📅 PERÍODO</div>', unsafe_allow_html=True)
         with _ip3: sel_pper = st.pills("pper", sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist()),
                                        selection_mode="multi", key="prio_per", label_visibility="collapsed")
-        with _btn_p: st.button("✕ LIMPIAR", on_click=_clear_prio, use_container_width=True, type="primary", key="prio_clear")
         with _cnt_p: _prio_cnt = st.empty()
 
     # ── Filtrar datos ───────────────────────────────────────────────────────────

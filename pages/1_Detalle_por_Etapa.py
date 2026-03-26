@@ -66,9 +66,14 @@ footer { visibility: hidden; }
     border-radius: 8px !important; letter-spacing:.3px !important;
     box-shadow: 0 2px 8px rgba(31,178,222,0.35) !important;
 }
-[data-testid="stBaseButton-primary"] > button {
+[data-testid="stBaseButton-primary"] > button,
+[data-testid="stBaseButton-primary"] button {
     height: 32px !important; min-height: 32px !important;
     padding: 0 10px !important; line-height: 1 !important;
+}
+/* Align button vertically */
+[data-testid="stColumn"]:has([data-testid="stBaseButton-primary"]) {
+    display: flex !important; flex-direction: column !important; justify-content: center !important;
 }
 [data-testid="stBaseButton-primary"]:hover {
     background: linear-gradient(135deg,#0891b2,#0F385A) !important;
@@ -193,8 +198,8 @@ _LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
         'letter-spacing:.4px;white-space:nowrap"')
 
 with st.container():
-    # Fila 1: MODALIDAD · FACULTAD
-    lb1, in1, _sp, lb2, in2 = st.columns([0.6, 2.5, 0.05, 0.6, 3.4])
+    # Fila 1: MODALIDAD · FACULTAD · LIMPIAR
+    lb1, in1, _sp, lb2, in2, btn_col = st.columns([0.6, 2.5, 0.05, 0.6, 2.7, 0.8])
     with lb1:
         st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
     with in1:
@@ -213,9 +218,12 @@ with st.container():
         else:
             sel_fac = st.multiselect("fac", fac_ops, key="p1_fac",
                                      label_visibility="collapsed", placeholder="Todas")
+    with btn_col:
+        st.button("✕ LIMPIAR", on_click=_clear_p1,
+                  type="primary", key="p1_clear")
 
-    # Fila 2: PERÍODO · PROCESO · LIMPIAR · contador
-    lb3, in3, _sp2, lb4, in4, btn_col, cnt_col = st.columns([0.6, 2.5, 0.05, 0.6, 1.8, 0.65, 1.0])
+    # Fila 2: PERÍODO · PROCESO · contador
+    lb3, in3, _sp2, lb4, in4, cnt_col = st.columns([0.6, 2.5, 0.05, 0.6, 2.3, 1.15])
     with lb3:
         st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
     with in3:
@@ -230,9 +238,6 @@ with st.container():
     with in4:
         sel_proc = st.selectbox("proc", _proc_ops, key="p1_proc",
                                 label_visibility="collapsed")
-    with btn_col:
-        st.button("✕ LIMPIAR", on_click=_clear_p1, use_container_width=True,
-                  type="primary", key="p1_clear")
     with cnt_col:
         _p1_counter = st.empty()
 
@@ -434,9 +439,9 @@ st.divider()
 st.markdown("### Tabla Detalle por Programa")
 
 FAC_PALETTE = {
-    "Sociedad, Cultura y Creatividad":    "#EC0677",
-    "Ingeniería, Diseño e Innovación":    "#1FB2DE",
-    "Negocios, Gestión y Sostenibilidad": "#A6CE38",
+    "FSCC": "#EC0677",
+    "FIDI": "#1FB2DE",
+    "FNGS": "#A6CE38",
 }
 
 etapas_show = [(i, em) for i, em in enumerate(ETAPAS_MAP)
@@ -451,7 +456,7 @@ base_cols = {
 }
 df_base = df[list(base_cols.keys())].copy().reset_index(drop=True)
 df_det  = df_base.rename(columns=base_cols)
-df_det["Facultad"] = df_det["Facultad"].map(fac_labels).fillna(df_det["Facultad"])
+df_det["Facultad"] = df["FACULTAD"].map(fac_abrev).fillna("—").reset_index(drop=True)
 df_det["Avance %"] = df_det["Avance %"].apply(lambda x: f"{int(x)}%" if pd.notna(x) else "—")
 
 # Guardar cl_ para cada etapa (alineado con df_det tras reset_index)
@@ -489,7 +494,11 @@ for i, em in etapas_show:
     elif tipo == "date":
         df_det[col_label] = raw.apply(_fmt_date)
     else:
-        df_det[col_label] = raw.values
+        cl_col = df_cl[f"cl_{i}"]
+        df_det[col_label] = [
+            STATUS_LABEL.get(cl, (str(v)[:1].upper() + str(v)[1:]) if v and str(v) not in ("—","nan","None","") else "—")
+            for cl, v in zip(cl_col, raw)
+        ]
 
 # ── Colores semáforo (aplicados columna por columna para evitar KeyError) ────
 _CL_STYLE = {

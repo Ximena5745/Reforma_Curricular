@@ -72,9 +72,14 @@ footer { visibility: hidden; }
     border-radius: 8px !important; letter-spacing:.3px !important;
     box-shadow: 0 2px 8px rgba(31,178,222,0.35) !important;
 }
-[data-testid="stBaseButton-primary"] > button {
+[data-testid="stBaseButton-primary"] > button,
+[data-testid="stBaseButton-primary"] button {
     height: 32px !important; min-height: 32px !important;
     padding: 0 10px !important; line-height: 1 !important;
+}
+/* Align button vertically */
+[data-testid="stColumn"]:has([data-testid="stBaseButton-primary"]) {
+    display: flex !important; flex-direction: column !important; justify-content: center !important;
 }
 [data-testid="stBaseButton-primary"]:hover {
     background: linear-gradient(135deg,#0891b2,#0F385A) !important;
@@ -209,8 +214,8 @@ _LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
         'letter-spacing:.4px;white-space:nowrap"')
 
 with st.container():
-    # Fila 1: MODALIDAD · FACULTAD
-    lb1, in1, _sp, lb2, in2 = st.columns([0.6, 2.5, 0.05, 0.6, 3.4])
+    # Fila 1: MODALIDAD · FACULTAD · LIMPIAR
+    lb1, in1, _sp, lb2, in2, btn_col = st.columns([0.6, 2.5, 0.05, 0.6, 2.7, 0.8])
     with lb1:
         st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
     with in1:
@@ -229,9 +234,12 @@ with st.container():
         else:
             sel_fac = st.multiselect("fac", fac_ops, key="p2_fac",
                                      label_visibility="collapsed", placeholder="Todas")
+    with btn_col:
+        st.button("✕ LIMPIAR", on_click=_clear_p2,
+                  type="primary", key="p2_clear")
 
-    # Fila 2: PERÍODO · LIMPIAR · contador
-    lb3, in3, btn_col, cnt_col = st.columns([0.6, 4.1, 0.65, 1.5])
+    # Fila 2: PERÍODO · contador
+    lb3, in3, cnt_col = st.columns([0.6, 5.15, 1.65])
     with lb3:
         st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
     with in3:
@@ -241,9 +249,6 @@ with st.container():
         else:
             sel_per = st.multiselect("per", _pers_ops, key="p2_per",
                                      label_visibility="collapsed", placeholder="Todos")
-    with btn_col:
-        st.button("✕ LIMPIAR", on_click=_clear_p2, use_container_width=True,
-                  type="primary", key="p2_clear")
     with cnt_col:
         _p2_counter = st.empty()
 
@@ -282,7 +287,7 @@ for idx_r, (_, row) in enumerate(df.iterrows()):
     overview_rows.append({
         "_row_idx":        idx_r,
         "Programa":        row["NOMBRE DEL PROGRAMA"],
-        "Facultad":        FAC_LABELS.get(row["FACULTAD"], row["FACULTAD"]),
+        "Facultad":        FAC_ABREV.get(row["FACULTAD"], row["FACULTAD"]),
         "Modalidad":       row["MODALIDAD"],
         "Nivel":           row["NIVEL"],
         "Periodo":         row["PERIODO DE IMPLEMENTACIÓN"],
@@ -304,7 +309,7 @@ event = st.dataframe(
     selection_mode="single-row",
     column_config={
         "Programa":       st.column_config.TextColumn("Programa",      width="large"),
-        "Facultad":       st.column_config.TextColumn("Facultad",      width="medium"),
+        "Facultad":       st.column_config.TextColumn("Facultad",      width="small"),
         "Modalidad":      st.column_config.TextColumn("Modalidad",     width="small"),
         "Nivel":          st.column_config.TextColumn("Nivel",         width="small"),
         "Periodo":        st.column_config.TextColumn("Periodo",       width="small"),
@@ -463,9 +468,9 @@ for tab, proc in zip(tabs, PROCESOS):
 st.divider()
 
 FAC_PALETTE = {
-    "Sociedad, Cultura y Creatividad":    "#EC0677",
-    "Ingeniería, Diseño e Innovación":    "#1FB2DE",
-    "Negocios, Gestión y Sostenibilidad": "#A6CE38",
+    "FSCC": "#EC0677",
+    "FIDI": "#1FB2DE",
+    "FNGS": "#A6CE38",
 }
 
 def _fmt_val(val, tipo):

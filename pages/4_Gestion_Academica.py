@@ -82,9 +82,14 @@ footer { visibility: hidden; }
     background: linear-gradient(135deg,#0891b2,#0F385A) !important;
     border-color: #0891b2 !important;
 }
-[data-testid="stBaseButton-primary"] > button {
+[data-testid="stBaseButton-primary"] > button,
+[data-testid="stBaseButton-primary"] button {
     height: 32px !important; min-height: 32px !important;
     padding: 0 10px !important; line-height: 1 !important;
+}
+/* Align button vertically */
+[data-testid="stColumn"]:has([data-testid="stBaseButton-primary"]) {
+    display: flex !important; flex-direction: column !important; justify-content: center !important;
 }
 /* Compact filter bar */
 .stVerticalBlock:has([data-testid="stPills"]) { gap: 0.1rem !important; row-gap: 0.1rem !important; }
@@ -164,8 +169,8 @@ _LBL = (
 )
 
 with st.container():
-    # ── Fila 1: BUSCAR · MODALIDAD ─────────────────────────────────────────────
-    lb1, in1, _sp, lb2, in2 = st.columns([0.55, 2.6, 0.05, 0.7, 3.4])
+    # ── Fila 1: BUSCAR · MODALIDAD · LIMPIAR ───────────────────────────────────
+    lb1, in1, _sp, lb2, in2, btn_col = st.columns([0.55, 2.6, 0.05, 0.7, 2.75, 0.65])
     with lb1:
         st.markdown(f'<div {_LBL}>🔍 BUSCAR</div>', unsafe_allow_html=True)
     with in1:
@@ -180,9 +185,11 @@ with st.container():
         else:
             st.multiselect("mod", ["Virtual", "Presencial", "Híbrido"],
                            key="ga_mod", label_visibility="collapsed", placeholder="Todas")
+    with btn_col:
+        st.button("✕ LIMPIAR", on_click=_clear, type="primary")
 
-    # ── Fila 2: PERÍODO · LIMPIAR · Mostrando ──────────────────────────────────
-    lb3, in3, btn_col, cnt_col = st.columns([0.55, 3.6, 0.65, 1.5])
+    # ── Fila 2: PERÍODO · Mostrando ────────────────────────────────────────────
+    lb3, in3, cnt_col = st.columns([0.55, 3.6, 2.15])
     with lb3:
         st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
     with in3:
@@ -192,8 +199,6 @@ with st.container():
         else:
             st.multiselect("per", _per_opts,
                            key="ga_per", label_visibility="collapsed", placeholder="Todos")
-    with btn_col:
-        st.button("✕ LIMPIAR", on_click=_clear, use_container_width=True, type="primary")
     with cnt_col:
         _counter = st.empty()
 
@@ -294,8 +299,8 @@ ETAPA_COLS = [
     ("CONVENIOS",    f"proc_Convenios Institucionales",               "proc"),
     ("BANNER",       "ban_pct",                                       "bar"),
     ("TIPO DE TRÁMITE", "Tipo de trámite de aseguramiento de la calidad", "text"),
-    ("FECHA NOTIF. MEN", "Fecha notif. MEN", "text"),
-    ("REQ. MINISTERIAL", "Req. Ministerial", "text"),
+    ("FECHA NOTIF. MEN", "Fecha de\nDocumentos de notificación MEN", "text"),
+    ("REQ. MINISTERIAL", "¿Requiere aprobación ministerial?",      "text"),
 ]
 
 rows_html = []
