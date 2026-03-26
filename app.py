@@ -1375,9 +1375,12 @@ with tab_prio:
                 elif typ == "syl":
                     etapa_cells.append(f'<td {TD}>{_p_syl(str(val or "N/A"))}</td>')
                 elif typ == "bar":
-                    try: pct = float(val or 0)
-                    except: pct = 0.0
-                    etapa_cells.append(f'<td {TD}>{_p_bar(pct)}</td>')
+                    if col_key == "pc_pct" and mod == "Presencial":
+                        etapa_cells.append(f'<td {TD}><span style="font-size:9px;color:#94a3b8;font-style:italic">No aplica</span></td>')
+                    else:
+                        try: pct = float(val or 0)
+                        except: pct = 0.0
+                        etapa_cells.append(f'<td {TD}>{_p_bar(pct)}</td>')
                 elif typ == "tramite":
                     tv = val if val not in [None,"","nan"] else "—"
                     etapa_cells.append(f'<td style="padding:5px 4px;text-align:center;vertical-align:middle;'
