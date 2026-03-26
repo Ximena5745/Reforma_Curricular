@@ -67,6 +67,37 @@ footer { visibility: hidden; }
     background: rgba(255,255,255,0.22) !important; color: #FFFFFF !important;
     font-weight: 700 !important; border-left: 3px solid #42F2F2 !important;
 }
+/* LIMPIAR button */
+[data-testid="stBaseButton-primary"] {
+    background: linear-gradient(135deg,#1FB2DE,#0891b2) !important;
+    border-color: #1FB2DE !important;
+    color: #FFFFFF !important; font-size: 11px !important; font-weight: 700 !important;
+    border-radius: 8px !important; letter-spacing:.3px !important;
+    box-shadow: 0 2px 8px rgba(31,178,222,0.35) !important;
+}
+[data-testid="stBaseButton-primary"]:hover {
+    background: linear-gradient(135deg,#0891b2,#0F385A) !important;
+    border-color: #0891b2 !important;
+}
+/* Compact filter bar */
+.stVerticalBlock:has([data-testid="stPills"]) { gap: 0.1rem !important; row-gap: 0.1rem !important; }
+[data-testid="stPills"] { padding-bottom: 0 !important; margin-bottom: 0 !important; min-height: unset !important; }
+[data-testid="stHorizontalBlock"]:has([data-testid="stPills"]) { align-items: center !important; padding-bottom: 0 !important; margin-bottom: 0 !important; min-height: unset !important; height: auto !important; padding-top: 0 !important; }
+/* Sidebar toggle always visible */
+[data-testid="stSidebarCollapsedControl"] {
+    display: flex !important; visibility: visible !important;
+    opacity: 1 !important; position: fixed !important;
+    top: 0.5rem !important; left: 0.5rem !important; z-index: 999999 !important;
+}
+/* Pill colors */
+[data-testid="stPills"] button[aria-checked="false"]:nth-child(1),
+[data-testid="stPills"] button[aria-pressed="false"]:nth-child(1) { border-color: #FBAF17 !important; color: #d97706 !important; }
+[data-testid="stPills"] button[aria-checked="false"]:nth-child(2),
+[data-testid="stPills"] button[aria-pressed="false"]:nth-child(2) { border-color: #A6CE38 !important; color: #5a7a2e !important; }
+[data-testid="stPills"] button[aria-checked="false"]:nth-child(3),
+[data-testid="stPills"] button[aria-pressed="false"]:nth-child(3) { border-color: #1FB2DE !important; color: #0891b2 !important; }
+[data-testid="stPills"] button[aria-checked="false"]:nth-child(4),
+[data-testid="stPills"] button[aria-pressed="false"]:nth-child(4) { border-color: #7c3aed !important; color: #7c3aed !important; }
 </style>
 """
 st.markdown(CSS, unsafe_allow_html=True)

@@ -797,9 +797,10 @@ with tab0:
     PERIODO_ORDER = {"2026-2": 0, "2027-1": 1, "2027-2": 2}
 
     # Excluir programas con aprobación ministerial requerida de los riesgos
-    _req_col = "Req. Ministerial"
+    _req_col = "¿Requiere aprobación ministerial?"
     if _req_col in df.columns:
-        _no_min = ~df[_req_col].astype(str).str.strip().str.lower().str.startswith("si")
+        _req_lower = df[_req_col].astype(str).str.strip().str.lower()
+        _no_min = ~(_req_lower.str.startswith("si") | _req_lower.str.startswith("sí"))
     else:
         _no_min = pd.Series([True]*len(df), index=df.index)
     df_risk = df[_no_min].copy()
@@ -1003,263 +1004,99 @@ with tab2:
             unsafe_allow_html=True,
         )
 
-    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
-    col_l, col_r = st.columns(2)
+    # ── Filtro por facultad ────────────────────────────────────────────────────
+    _FAC_ABREV_LIST = ["FSCC", "FIDI", "FNGS"]
+    _FAC_CLR2 = {"FSCC": "#EC0677", "FIDI": "#1FB2DE", "FNGS": "#A6CE38"}
+    if "t2_fac" not in st.session_state: st.session_state["t2_fac"] = []
+    def _clear_t2(): st.session_state["t2_fac"] = []
 
-    with col_l:
-        st.markdown(
-            '##### Programas por nivel de prioridad y facultad '
-            '<span title="Cantidad de programas por facultad clasificados por nivel de prioridad. '
-            'Urgente=periodo 2026 con avance &lt;70%; Prioritario=2027-1 con avance &lt;40%; '
-            'En seguimiento=avance &lt;70%; En curso=avance ≥70%. '
-            'Haga clic en una barra para ver el detalle de programas." '
-            'style="cursor:help;color:#6a8a9e;font-size:13px">ⓘ</span>',
-            unsafe_allow_html=True,
-        )
-        df_fac = df[["FACULTAD", "avance_general", "PERIODO DE IMPLEMENTACIÓN", "_clasif"]].copy()
-        df_fac["Facultad"] = df_fac["FACULTAD"].map(fac_labels).fillna(df_fac["FACULTAD"])
-        df_fac["Rango"]    = df_fac["_clasif"]
-        fac_rango  = df_fac.groupby(["Facultad", "Rango"], observed=True).size().reset_index(name="n")
-        faculties  = sorted(df_fac["Facultad"].unique())
-        rangos       = ["Urgente", "Prioritario", "En seguimiento", "En curso"]
-        rango_colors = ["#EC0677", "#FBAF17", "#2980B9", "#A6CE38"]
+    _lt2, _it2, _bt2, _ct2 = st.columns([0.5, 2.0, 0.55, 1.5])
+    _LBL_T2 = 'style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px;white-space:nowrap"'
+    with _lt2: st.markdown(f'<div {_LBL_T2}>🏛️ FACULTAD</div>', unsafe_allow_html=True)
+    with _it2: sel_t2fac = st.pills("t2fac", _FAC_ABREV_LIST, selection_mode="multi",
+                                     key="t2_fac", label_visibility="collapsed")
+    with _bt2: st.button("✕ LIMPIAR", on_click=_clear_t2, use_container_width=True,
+                         type="primary", key="t2_clear")
+    with _ct2:
+        _t2_cnt = st.empty()
 
-        fig_fac = go.Figure()
-        # Fondo de color suave por facultad para diferenciarlas visualmente
-        for fi, fac in enumerate(faculties):
-            fc = FAC_PALETTE.get(fac, "#1FB2DE")
-            fig_fac.add_shape(
-                type="rect", layer="below",
-                x0=0, x1=1, xref="paper",
-                y0=fac, y1=fac, yref="y",
-                fillcolor=fc, opacity=0.07,
-                line_color=fc, line_width=1.5,
-            )
-        for rng, clr in zip(rangos, rango_colors):
-            sub    = fac_rango[fac_rango["Rango"] == rng]
-            counts = [int(sub[sub["Facultad"] == f]["n"].sum()) for f in faculties]
-            fig_fac.add_trace(go.Bar(
-                name=rng, y=faculties, x=counts, orientation="h",
-                marker_color=clr, marker_line_width=0,
-                text=[str(c) if c > 0 else "" for c in counts],
-                textposition="inside", insidetextanchor="middle",
-                textangle=0, textfont=dict(size=11, color="white", family="Segoe UI"),
-            ))
-        # Punto de color por facultad en el eje Y
-        tick_labels = [
-            f'<span style="color:{FAC_PALETTE.get(f,"#0F385A")};font-weight:700">◆</span> {f}'
-            for f in faculties
-        ]
-        fig_fac.update_layout(
-            barmode="stack", height=300,
-            margin=dict(l=10, r=10, t=10, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02, xanchor="left", x=0,
-                        font=dict(size=10, color="#4a6a7e"), bgcolor="rgba(0,0,0,0)"),
-            xaxis=dict(showgrid=True, gridcolor="rgba(15,56,90,.07)",
-                       color="#6a8a9e", tickfont=dict(size=10), dtick=5),
-            yaxis=dict(color="#0F385A", tickfont=dict(size=10), autorange="reversed",
-                       automargin=True),
-            font=dict(family="Segoe UI"),
-            bargap=0.35,
-        )
-        sel_fac = st.plotly_chart(
-            fig_fac, use_container_width=True,
-            on_select="rerun", key="sel_fac",
-            config={"displayModeBar": False},
+    # Preparar datos
+    df_t2 = df.copy()
+    if sel_t2fac:
+        df_t2 = df_t2[df_t2["FACULTAD"].isin([fac_abrev_inv.get(f, f) for f in sel_t2fac])]
+
+    # Sort by PERIODO DE IMPLEMENTACIÓN then program name
+    _per_ord = {"Ya está en oferta": 0, "2026-2": 1, "2027-1": 2, "2027-2": 3}
+    df_t2 = df_t2.copy()
+    df_t2["_per_sort"] = df_t2["PERIODO DE IMPLEMENTACIÓN"].map(_per_ord).fillna(99)
+    df_t2 = df_t2.sort_values(["_per_sort", "NOMBRE DEL PROGRAMA"]).reset_index(drop=True)
+
+    _t2_cnt.markdown(
+        f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right">'
+        f'Mostrando <b style="color:#0F385A">{len(df_t2)}</b> de '
+        f'<b style="color:#0F385A">{len(df)}</b></div>', unsafe_allow_html=True)
+
+    # Render HTML table
+    _PER_CLR2 = {"Ya está en oferta": "#1FB2DE", "2026-2": "#EC0677", "2027-1": "#d97706", "2027-2": "#2563eb"}
+    _MOD_CLR2 = {"Virtual": "#1FB2DE", "Presencial": "#A6CE38", "Híbrido": "#FBAF17"}
+    _TH2 = 'style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;padding:7px 8px;text-align:left;white-space:nowrap;border-right:1px solid rgba(255,255,255,0.10)"'
+    _THC2 = 'style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;padding:7px 8px;text-align:center;white-space:nowrap;border-right:1px solid rgba(255,255,255,0.10)"'
+
+    rows_t2 = []
+    for idx2, (_, row2) in enumerate(df_t2.iterrows()):
+        rbg2 = "#FFFFFF" if idx2 % 2 == 0 else "#f8fafc"
+        _TDL2 = f'style="padding:6px 8px;text-align:left;vertical-align:middle;border-bottom:1px solid #eef3f8;background:{rbg2}"'
+        _TDC2 = f'style="padding:6px 8px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;background:{rbg2}"'
+        prog2  = _p_esc(str(row2.get("NOMBRE DEL PROGRAMA","—")))
+        fac2   = fac_abrev.get(str(row2.get("FACULTAD","")), "—")
+        fac_c2 = _FAC_CLR2.get(fac2, "#9aabb5")
+        mod2   = str(row2.get("MODALIDAD","—"))
+        mod_c2 = _MOD_CLR2.get(mod2, "#9aabb5")
+        niv2   = _p_esc(str(row2.get("NIVEL","—")))
+        sed2   = _p_esc(str(row2.get("SEDE","—")))
+        per2   = str(row2.get("PERIODO DE IMPLEMENTACIÓN","—"))
+        per_c2 = _PER_CLR2.get(per2, "#9aabb5")
+        av2    = int(float(row2.get("avance_general",0) or 0))
+        av_c2  = "#15803d" if av2 >= 70 else ("#d97706" if av2 >= 40 else "#dc2626")
+        def _mk_badge2(txt, clr):
+            r2,g2,b2 = int(clr[1:3],16), int(clr[3:5],16), int(clr[5:7],16)
+            return (f'<span style="background:rgba({r2},{g2},{b2},0.12);color:{clr};font-size:10px;'
+                    f'font-weight:700;padding:2px 8px;border-radius:10px;white-space:nowrap">{txt}</span>')
+        rows_t2.append(
+            f'<tr>'
+            f'<td {_TDL2}><span style="font-size:11px;font-weight:600;color:#0F385A">{prog2}</span>'
+            f'<br><span style="font-size:9px;font-weight:700;color:{fac_c2}">{fac2}</span></td>'
+            f'<td {_TDC2}>{_mk_badge2(mod2, mod_c2)}</td>'
+            f'<td {_TDC2}><span style="font-size:10px;color:#4a6a7e">{niv2}</span></td>'
+            f'<td {_TDC2}><span style="font-size:10px;color:#4a6a7e">{sed2}</span></td>'
+            f'<td {_TDC2}>{_mk_badge2(per2, per_c2)}</td>'
+            f'<td {_TDC2}>'
+            f'<div style="font-size:11px;font-weight:700;color:{av_c2};margin-bottom:2px">{av2}%</div>'
+            f'<div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden;min-width:50px">'
+            f'<div style="width:{min(av2,100)}%;height:100%;background:{av_c2};border-radius:3px"></div>'
+            f'</div></td>'
+            f'</tr>'
         )
 
-        # Avance promedio por facultad — color propio de cada facultad
-        st.markdown(
-            '##### Avance promedio por facultad '
-            '<span title="Promedio del avance general de todos los programas de cada facultad. '
-            'El avance general de un programa es la media de sus avances por proceso. '
-            'El color de cada barra identifica la facultad según la paleta institucional." '
-            'style="cursor:help;color:#6a8a9e;font-size:13px">ⓘ</span>',
-            unsafe_allow_html=True,
-        )
-        fac_avg = df_fac.groupby("Facultad")["avance_general"].agg(["mean", "count"]).reset_index()
-        fac_avg.columns = ["Facultad", "avance", "total"]
-        fac_avg = fac_avg.sort_values("avance")
-        fac_avg_colors = [FAC_PALETTE.get(f, "#1FB2DE") for f in fac_avg["Facultad"]]
-        hover_avg = [
-            f"<b>{row.Facultad}</b><br>Avance: {int(row.avance)}%<br>Programas: {int(row.total)}"
-            for row in fac_avg.itertuples()
-        ]
-        fig_favg = go.Figure(go.Bar(
-            x=fac_avg["avance"].tolist(),
-            y=fac_avg["Facultad"].tolist(),
-            orientation="h",
-            marker_color=fac_avg_colors,
-            marker_line_color=[FAC_PALETTE.get(f, "#1FB2DE") for f in fac_avg["Facultad"]],
-            marker_line_width=2,
-            text=[f"  {int(v)}%  ({int(t)} prog.)" for v, t in zip(fac_avg["avance"], fac_avg["total"])],
-            textposition="outside",
-            textfont=dict(size=10, color="#4a6a7e"),
-            hovertext=hover_avg, hoverinfo="text",
-        ))
-        fig_favg.update_layout(
-            height=200,
-            margin=dict(l=10, r=10, t=6, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            xaxis=dict(range=[0, 128], showgrid=True, gridcolor="rgba(15,56,90,.07)",
-                       color="#6a8a9e", tickfont=dict(size=10)),
-            yaxis=dict(color="#0F385A", tickfont=dict(size=10, color="#0F385A"),
-                       autorange="reversed", automargin=True),
-            font=dict(family="Segoe UI"),
-            showlegend=False,
-            bargap=0.45,
-        )
-        st.plotly_chart(fig_favg, use_container_width=True, config={"displayModeBar": False})
-
-    with col_r:
-        st.markdown(
-            '##### Ranking de programas por avance '
-            '<span title="Programas ordenados por avance general (menor a mayor). '
-            'El color de cada barra identifica la facultad a la que pertenece el programa. '
-            'Use el filtro para ver los 15 más rezagados, los 15 más avanzados o todos. '
-            'Haga clic en una barra para ver el detalle del programa por proceso." '
-            'style="cursor:help;color:#6a8a9e;font-size:13px">ⓘ</span>',
-            unsafe_allow_html=True,
-        )
-        df_s = df[["NOMBRE DEL PROGRAMA", "avance_general", "FACULTAD", "_clasif",
-                   "PERIODO DE IMPLEMENTACIÓN"]].copy()
-        df_s["FacCorta"] = df_s["FACULTAD"].map(fac_labels).fillna(df_s["FACULTAD"])
-        df_s["label"]    = df_s["NOMBRE DEL PROGRAMA"].apply(lambda x: x[:32] + ("…" if len(x) > 32 else ""))
-        df_s = df_s.sort_values("avance_general").reset_index(drop=True)
-
-        # Control: mostrar top N o todos
-        rk_opts = st.radio(
-            "Mostrar", ["15 más rezagados", "15 más avanzados", "Todos"],
-            horizontal=True, key="rk_filter", label_visibility="collapsed",
-        )
-        if rk_opts == "15 más rezagados":
-            df_plot = df_s.head(15)
-        elif rk_opts == "15 más avanzados":
-            df_plot = df_s.tail(15)
-        else:
-            df_plot = df_s
-
-        # Color por facultad + indicador visual
-        bar_colors = [FAC_PALETTE.get(f, "#1FB2DE") for f in df_plot["FacCorta"]]
-        hover_prg  = [
-            f"<b>{row['NOMBRE DEL PROGRAMA']}</b><br>"
-            f"Facultad: {row['FacCorta']}<br>"
-            f"Avance: {int(row['avance_general'])}%<br>"
-            f"Prioridad: {row['_clasif']}<br>"
-            f"Periodo: {row['PERIODO DE IMPLEMENTACIÓN']}"
-            for _, row in df_plot.iterrows()
-        ]
-        fig_prg = go.Figure(go.Bar(
-            x=df_plot["avance_general"].tolist(),
-            y=df_plot["label"].tolist(),
-            orientation="h",
-            marker_color=bar_colors,
-            marker_line_color=[FAC_PALETTE.get(f, "#1FB2DE") for f in df_plot["FacCorta"]],
-            marker_line_width=1,
-            text=[f"{int(v)}%" for v in df_plot["avance_general"]],
-            textposition="outside",
-            textfont=dict(size=9, color="#4a6a7e"),
-            hovertext=hover_prg, hoverinfo="text",
-            showlegend=False,
-        ))
-        # Leyenda de facultades
-        for fac_name, fac_color in FAC_PALETTE.items():
-            fig_prg.add_trace(go.Bar(
-                x=[None], y=[None], name=fac_name[:22] + ("…" if len(fac_name) > 22 else ""),
-                marker_color=fac_color, showlegend=True,
-            ))
-        chart_h = max(320, len(df_plot) * 26 + 70)
-        fig_prg.update_layout(
-            height=chart_h,
-            margin=dict(l=0, r=55, t=10, b=10),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            xaxis=dict(range=[0, 118], showgrid=True, gridcolor="rgba(15,56,90,.07)",
-                       color="#6a8a9e", tickfont=dict(size=9)),
-            yaxis=dict(color="#4a6a7e", tickfont=dict(size=9), autorange="reversed"),
-            font=dict(family="Segoe UI"),
-            legend=dict(orientation="h", yanchor="top", y=-0.06, xanchor="left", x=0,
-                        font=dict(size=9, color="#4a6a7e"), bgcolor="rgba(0,0,0,0)"),
-            barmode="overlay",
-        )
-        sel_prg = st.plotly_chart(
-            fig_prg, use_container_width=True,
-            on_select="rerun", key="sel_prg",
-        )
-        # Detalle al hacer clic en un programa del ranking
-        if sel_prg.selection and sel_prg.selection.points:
-            pt_p   = sel_prg.selection.points[0]
-            y_prog = pt_p.get("y", "")
-            match  = df_plot[df_plot["label"] == y_prog]
-            if not match.empty:
-                row      = match.iloc[0]
-                clasif   = row["_clasif"]
-                fg_c, bg_c = CLASIF_COLORS.get(clasif, ("#0F385A", "#f0f4f8"))
-                av_pct   = int(row["avance_general"])
-                fac_label = fac_labels.get(row["FACULTAD"], row["FACULTAD"])
-                periodo  = row["PERIODO DE IMPLEMENTACIÓN"]
-                prog_name = row["NOMBRE DEL PROGRAMA"]
-                # buscar detalle por proceso
-                proc_rows = ""
-                for pi, proc in enumerate(PROCESOS):
-                    pv = df.loc[df["NOMBRE DEL PROGRAMA"] == prog_name, f"proc_{proc}"]
-                    pval = f"{int(pv.values[0])}%" if not pv.empty and pd.notna(pv.values[0]) else "N/A"
-                    pc   = PROCESO_COLOR[proc]
-                    proc_rows += (
-                        f'<div style="display:flex;justify-content:space-between;'
-                        f'padding:3px 0;border-bottom:1px solid #f0f4f8">'
-                        f'<span style="font-size:10px;color:#4a6a7e">{proc_short_map.get(proc,proc)}</span>'
-                        f'<span style="font-size:10px;font-weight:700;color:{pc}">{pval}</span></div>'
-                    )
-                st.markdown(
-                    f'<div style="background:#FFFFFF;border:1px solid {fg_c};'
-                    f'border-left:4px solid {fg_c};border-radius:8px;padding:12px 14px;margin-top:6px">'
-                    f'<div style="font-size:12px;font-weight:700;color:#0F385A;margin-bottom:6px">{prog_name}</div>'
-                    f'<div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:8px">'
-                    f'<span style="font-size:10px;background:#f0f4f8;color:#4a6a7e;padding:2px 8px;border-radius:4px">{fac_label}</span>'
-                    f'<span style="font-size:10px;background:{bg_c};color:{fg_c};padding:2px 8px;border-radius:4px;font-weight:700">{clasif}</span>'
-                    f'<span style="font-size:10px;background:#e8f6fc;color:#0a6a8e;padding:2px 8px;border-radius:4px">Avance: {av_pct}%</span>'
-                    f'<span style="font-size:10px;background:#f8f4e8;color:#6a4e00;padding:2px 8px;border-radius:4px">{periodo}</span>'
-                    f'</div>'
-                    f'<div>{proc_rows}</div></div>',
-                    unsafe_allow_html=True,
-                )
-
-    # ── Panel de detalle al hacer clic en gráfica de facultad ────────────────
-    if sel_fac.selection and sel_fac.selection.points:
-        pt_f   = sel_fac.selection.points[0]
-        fac_y  = pt_f.get("y", "")
-        rng_n  = pt_f.get("curve_number", 0)
-        if fac_y and rng_n < len(rangos):
-            rng_sel = rangos[rng_n]
-            clr_sel = rango_colors[rng_n]
-            fac_full = fac_inv.get(fac_y, fac_y)
-            mask_f   = (df["FACULTAD"] == fac_full) & (df["_clasif"] == rng_sel)
-            df_fd    = df[mask_f][["NOMBRE DEL PROGRAMA", "avance_general",
-                                   "_clasif", "PERIODO DE IMPLEMENTACIÓN"]].copy()
-            df_fd["Avance %"] = df_fd["avance_general"].apply(lambda x: f"{int(x)}%")
-            df_fd = df_fd.rename(columns={
-                "NOMBRE DEL PROGRAMA": "Programa",
-                "_clasif": "Prioridad",
-                "PERIODO DE IMPLEMENTACIÓN": "Periodo",
-            })[["Programa", "Avance %", "Prioridad", "Periodo"]]
-            st.markdown(
-                f'<div style="background:#FFFFFF;border:1px solid {clr_sel};'
-                f'border-left:4px solid {clr_sel};border-radius:8px;'
-                f'padding:10px 14px;margin-top:6px">'
-                f'<span style="font-size:12px;font-weight:700;color:{clr_sel}">'
-                f'📋 {len(df_fd)} programas</span>'
-                f'<span style="font-size:11px;color:#6a8a9e"> — {fac_y} · {rng_sel}</span></div>',
-                unsafe_allow_html=True,
-            )
-            fd_styled = df_fd.style\
-                .map(_style_clasif_cell, subset=["Prioridad"])\
-                .map(_style_avance_cell, subset=["Avance %"])
-            st.dataframe(fd_styled, use_container_width=True, hide_index=True,
-                         height=min(300, len(df_fd) * 38 + 40))
+    tabla_t2 = (
+        '<div style="overflow-x:auto;border-radius:12px;border:1.5px solid #b5c9d8;'
+        'box-shadow:0 2px 12px rgba(15,56,90,.10);background:#fafdff;margin-top:4px">'
+        '<table style="width:100%;border-collapse:separate;border-spacing:0;font-family:\'Segoe UI\',sans-serif">'
+        '<thead><tr>'
+        f'<th {_TH2} style="min-width:200px">Programa</th>'
+        f'<th {_THC2}>Modalidad</th>'
+        f'<th {_THC2}>Nivel</th>'
+        f'<th {_THC2}>Sede</th>'
+        f'<th {_THC2}>Período</th>'
+        f'<th {_THC2}>Avance</th>'
+        '</tr></thead><tbody>'
+        + "".join(rows_t2) +
+        '</tbody></table></div>'
+    )
+    st.markdown(tabla_t2, unsafe_allow_html=True)
+    st.markdown(f'<div style="font-size:11px;color:#6a8a9e;margin-top:4px;text-align:right">'
+                f'{len(df_t2)} programas · ordenados por período de implementación</div>',
+                unsafe_allow_html=True)
 
 # ── Tab Priorización ──────────────────────────────────────────────────────────
 with tab_prio:
@@ -1390,9 +1227,9 @@ with tab_prio:
         ("Prod.Cont.",   "pc_pct",                                         "bar"),
         ("Convenios",    "proc_Convenios Institucionales",                "proc"),
         ("Banner",       "ban_pct",                                        "bar"),
-        ("Tipo Trámite", "Tipo de trámite de aseguramiento de la calidad", "text"),
-        ("Fecha Notif.", "Fecha notif. MEN",                              "text"),
-        ("Req. Min.",    "Req. Ministerial",                              "text"),
+        ("Tipo Trámite", "Tipo de trámite de aseguramiento de la calidad", "tramite"),
+        ("Fecha Notif.", "Fecha de\nDocumentos de notificación MEN",       "text"),
+        ("Req. Min.",    "¿Requiere aprobación ministerial?",              "text"),
     ]
     _PRIO_CLR = {"Urgente":("#EC0677","#fce8f2"),"Prioritario":("#FBAF17","#fdf8e8"),
                  "En seguimiento":("#2980B9","#EBF5FB"),"En curso":("#A6CE38","#f0f8e8")}
@@ -1409,10 +1246,10 @@ with tab_prio:
         rows_p = []
         for idx, (_, row) in enumerate(df_p.iterrows()):
             rbg = "#FFFFFF" if idx % 2 == 0 else "#f8fafc"
-            TD  = (f'style="padding:5px 4px;text-align:center;vertical-align:middle;'
+            TD  = (f'style="padding:4px 3px;text-align:center;vertical-align:middle;'
                    f'border-bottom:1px solid #eef3f8;background:{rbg}"')
-            TDL = (f'style="padding:5px 7px;text-align:left;vertical-align:middle;'
-                   f'border-bottom:1px solid #eef3f8;background:{rbg};min-width:130px;max-width:170px"')
+            TDL = (f'style="padding:4px 6px;text-align:left;vertical-align:middle;'
+                   f'border-bottom:1px solid #eef3f8;background:{rbg};min-width:140px;max-width:200px"')
             prog   = _p_esc(row.get("NOMBRE DEL PROGRAMA","—"))
             fac_s  = fac_abrev.get(str(row.get("FACULTAD","")), "—")
             fac_c  = _P_FAC_CLR.get(fac_s, "#9aabb5")
@@ -1437,14 +1274,21 @@ with tab_prio:
                     try: pct = float(val or 0)
                     except: pct = 0.0
                     etapa_cells.append(f'<td {TD}>{_p_bar(pct)}</td>')
+                elif typ == "tramite":
+                    tv = val if val not in [None,"","nan"] else "—"
+                    etapa_cells.append(f'<td style="padding:5px 4px;text-align:center;vertical-align:middle;'
+                                      f'border-bottom:1px solid #eef3f8;background:{rbg};min-width:110px">'
+                                      f'<span style="font-size:9px;background:#eff6ff;color:#2563eb;'
+                                      f'padding:2px 5px;border-radius:6px;font-weight:600;'
+                                      f'display:inline-block;line-height:1.3;word-break:break-word">'
+                                      f'{_p_esc(str(tv))}</span></td>')
                 else:
                     tv = val if val not in [None,"","nan"] else "—"
-                    if col_key == "Tipo de trámite de aseguramiento de la calidad":
-                        etapa_cells.append(f'<td {TD}><span style="font-size:9px;background:#eff6ff;color:#2563eb;'
-                                          f'padding:2px 5px;border-radius:6px;font-weight:600;white-space:nowrap">'
-                                          f'{_p_esc(str(tv))}</span></td>')
-                    else:
-                        etapa_cells.append(f'<td {TD}><span style="font-size:10px;color:#0F385A">{_p_esc(str(tv))}</span></td>')
+                    etapa_cells.append(f'<td style="padding:5px 4px;text-align:center;vertical-align:middle;'
+                                      f'border-bottom:1px solid #eef3f8;background:{rbg};min-width:80px">'
+                                      f'<span style="font-size:10px;color:#4a6a7e;word-break:break-word;'
+                                      f'display:inline-block;line-height:1.3">'
+                                      f'{_p_esc(str(tv))}</span></td>')
 
             rows_p.append(
                 f'<tr>'
@@ -1456,22 +1300,20 @@ with tab_prio:
                 f'<td {TD}>{_p_badge(per, per_c)}</td>'
                 f'<td {TD}><span style="background:{bg_c};color:{fg_c};font-size:10px;font-weight:700;'
                 f'padding:2px 7px;border-radius:10px">{clasif}</span></td>'
-                f'<td {TD}>{_p_bar(av)}</td>'
                 + "".join(etapa_cells) +
                 f'</tr>'
             )
 
         hdrs = "".join(f'<th {TH_P}>{h}</th>' for h,_,_ in _PRIO_ETAPAS)
         tabla_p = (
-            '<div style="overflow-x:hidden;overflow-y:auto;max-height:65vh;border-radius:12px;'
+            '<div style="overflow-x:auto;border-radius:12px;'
             'border:1.5px solid #b5c9d8;box-shadow:0 2px 12px rgba(15,56,90,.10);background:#fafdff">'
-            '<table style="width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-family:\'Segoe UI\',sans-serif">'
+            '<table style="width:100%;table-layout:auto;border-collapse:separate;border-spacing:0;font-family:\'Segoe UI\',sans-serif">'
             '<thead><tr>'
-            f'<th {THL_P}>Programa</th>'
+            f'<th {THL_P} style="min-width:140px;max-width:200px">Programa</th>'
             f'<th {TH_P}>Modalidad</th>'
             f'<th {TH_P}>Período</th>'
             f'<th {TH_P}>Prioridad</th>'
-            f'<th {TH_P}>Avance</th>'
             + hdrs +
             '</tr></thead><tbody>'
             + "".join(rows_p) +
