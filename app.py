@@ -919,10 +919,12 @@ with tab0:
     })
 
     # R5 — Banner con avance pero convenios incompletos
-    _per_r5 = df_risk["PERIODO DE IMPLEMENTACIÓN"].str.strip()
+    _per_r5  = df_risk["PERIODO DE IMPLEMENTACIÓN"].str.strip()
+    _conv_cl = df_risk["cl_12"] if "cl_12" in df_risk.columns else pd.Series(["na"]*len(df_risk), index=df_risk.index)
     r5_df   = df_risk[
         (_ban > 0) & (_con < 100) &
-        (_per_r5 != "Ya está en oferta")
+        (_per_r5 != "Ya está en oferta") &
+        (_conv_cl != "na")
     ].copy()
     r5_df   = r5_df.sort_values("conv_pct", ascending=True)
     r5_rows = _r_rows(r5_df, {
