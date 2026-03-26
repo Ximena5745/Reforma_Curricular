@@ -196,10 +196,18 @@ def _build_df():
     df.loc[df["MODALIDAD"].str.strip().str.lower() == "presencial", f"cl_{_syl_idx}"] = "na"
 
     # ── Override Banner: Presencial → "na" en todos sus índices ──────────────
+    # También Virtual/Híbrido con "No aplica" en BB (cl_15="na") → todos "na"
     _ban_idxs = [i for i, (p,_,_,_) in enumerate(ETAPAS_MAP) if p == "Parametrizar Reforma en Banner"]
-    _pres_mask = df["MODALIDAD"].str.strip().str.lower() == "presencial"
+    _pres_mask   = df["MODALIDAD"].str.strip().str.lower() == "presencial"
+    _ban_pct_idx = next(i for i, (p,_,c,t) in enumerate(ETAPAS_MAP)
+                        if p == "Parametrizar Reforma en Banner" and t == "pct")
+    _noapl_mask  = (
+        ~_pres_mask &
+        (df["MODALIDAD"].str.strip().str.lower().isin(["virtual", "híbrido", "hibrido"])) &
+        (df[f"cl_{_ban_pct_idx}"] == "na")
+    )
     for _bi in _ban_idxs:
-        df.loc[_pres_mask, f"cl_{_bi}"] = "na"
+        df.loc[_pres_mask | _noapl_mask, f"cl_{_bi}"] = "na"
 
     # ── Override Aseguramiento de Calidad: lógica MEN ────────────────────────
     # Si col Z "¿Requiere informarse al MEN previa implementación?" = "Si"
