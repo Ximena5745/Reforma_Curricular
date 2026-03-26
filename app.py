@@ -995,7 +995,7 @@ with tab0:
         "Ger. Planeación y Gestión Institucional": "Ger. Planeación",
         "Producción de Contenidos":                "Producción Contenidos",
         "Convenios Institucionales":               "Convenios",
-        "Parametrizar Reforma en Banner":          "Banner",
+        "Parametrizar Reforma en Banner":          "Parametrización Banner",
         "Publicación en Página Web":               "Publicación Web",
     }
 

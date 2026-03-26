@@ -195,6 +195,12 @@ def _build_df():
     _syl_idx = next(i for i, (p,_,_,_) in enumerate(ETAPAS_MAP) if p == "Syllabus")
     df.loc[df["MODALIDAD"].str.strip().str.lower() == "presencial", f"cl_{_syl_idx}"] = "na"
 
+    # ── Override Banner: Presencial → "na" en todos sus índices ──────────────
+    _ban_idxs = [i for i, (p,_,_,_) in enumerate(ETAPAS_MAP) if p == "Parametrizar Reforma en Banner"]
+    _pres_mask = df["MODALIDAD"].str.strip().str.lower() == "presencial"
+    for _bi in _ban_idxs:
+        df.loc[_pres_mask, f"cl_{_bi}"] = "na"
+
     # ── Override Aseguramiento de Calidad: lógica MEN ────────────────────────
     # Si col Z "¿Requiere informarse al MEN previa implementación?" = "Si"
     #   → col X "Fecha de Documentos de notificación MEN" mes/año < hoy → done
