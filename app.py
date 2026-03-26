@@ -235,7 +235,7 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# ── Filtros ─────────────────────────────────────────────────────────────────────
+# ── Opciones y helpers de filtro (reutilizados en tabs) ─────────────────────────
 _use_pills = hasattr(st, "pills")
 _mods_ops  = sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
 fac_ops    = sorted([fac_abrev.get(f, f) for f in df_raw["FACULTAD"].dropna().unique()])
@@ -249,69 +249,15 @@ def _clear_app():
 _LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
         'letter-spacing:.4px;white-space:nowrap"')
 
-with st.container():
-    st.markdown(
-        '<div style="background:#FFFFFF;border-radius:10px;margin:4px 0 2px;'
-        'padding:4px 8px 2px;border:1px solid rgba(15,56,90,0.10);'
-        'box-shadow:0 1px 4px rgba(15,56,90,0.04)">',
-        unsafe_allow_html=True,
-    )
-
-    # Fila 1: MODALIDAD · FACULTAD  (5 col idénticas en ambas filas → alineación perfecta)
-    lb1, in1, _sp, lb2, in2 = st.columns([0.55, 2.2, 0.05, 0.65, 2.2])
-    with lb1:
-        st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
-    with in1:
-        if _use_pills:
-            sel_mod = st.pills("mod", _mods_ops, selection_mode="multi",
-                               key="flt_mod", label_visibility="collapsed")
-        else:
-            sel_mod = st.multiselect("mod", _mods_ops, key="flt_mod",
-                                     label_visibility="collapsed", placeholder="Todas")
-    with lb2:
-        st.markdown(f'<div {_LBL}>🏛️ FACULTAD</div>', unsafe_allow_html=True)
-    with in2:
-        if _use_pills:
-            sel_fac = st.pills("fac", fac_ops, selection_mode="multi",
-                               key="flt_fac", label_visibility="collapsed")
-        else:
-            sel_fac = st.multiselect("fac", fac_ops, key="flt_fac",
-                                     label_visibility="collapsed", placeholder="Todas")
-
-    # Fila 2: PERÍODO · LIMPIAR · contador  (mismas 5 proporciones → alineado con fila 1)
-    lb3, in3, _sp2, btn_col, cnt_col = st.columns([0.55, 2.2, 0.05, 0.65, 2.2])
-    with lb3:
-        st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
-    with in3:
-        if _use_pills:
-            sel_per = st.pills("per", _pers_ops, selection_mode="multi",
-                               key="flt_per", label_visibility="collapsed")
-        else:
-            sel_per = st.multiselect("per", _pers_ops, key="flt_per",
-                                     label_visibility="collapsed", placeholder="Todos")
-    with btn_col:
-        st.button("🔄 LIMPIAR", on_click=_clear_app, use_container_width=True,
-                  type="primary", key="app_clear")
-    with cnt_col:
-        _app_counter = st.empty()
-
-    st.markdown("</div>", unsafe_allow_html=True)
-
-# Convertir selecciones a listas para apply_filters
-modalidad_f = list(sel_mod) if sel_mod else []
-facultad_f  = [fac_abrev_inv.get(f, f) for f in sel_fac] if sel_fac else []
-periodo_f   = list(sel_per) if sel_per else []
+# ── Filtrar datos usando session_state (widgets se renderizan dentro de cada tab) ──
+_sel_mod = list(st.session_state.get("flt_mod") or [])
+_sel_fac = list(st.session_state.get("flt_fac") or [])
+_sel_per = list(st.session_state.get("flt_per") or [])
+modalidad_f = _sel_mod
+facultad_f  = [fac_abrev_inv.get(f, f) for f in _sel_fac]
+periodo_f   = _sel_per
 df = apply_filters(df_raw.copy(), modalidad_f, facultad_f, periodo_f)
 n  = len(df)
-
-_app_counter.markdown(
-    f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right;white-space:nowrap">'
-    f'Mostrando <b style="color:#0F385A">{n}</b> de '
-    f'<b style="color:#0F385A">{len(df_raw)}</b></div>',
-    unsafe_allow_html=True,
-)
-
-st.markdown('<hr style="margin:6px 0 4px;border-color:rgba(15,56,90,0.10)">', unsafe_allow_html=True)
 
 # ── Cálculos previos (no rendering) ────────────────────────────────────────────
 all_cl   = []
@@ -611,6 +557,32 @@ tab0, tab1, tab2, tab_prio = st.tabs(["🏆 Resumen Ejecutivo", "📊 Resumen Ge
 
 # ── Tab 0: Resumen Ejecutivo ───────────────────────────────────────────────────
 with tab0:
+    # ── Filtro dentro del tab ──────────────────────────────────────────────────
+    with st.container():
+        st.markdown('<div style="background:#FFFFFF;border-radius:10px;padding:6px 10px 4px;'
+                    'border:1px solid rgba(15,56,90,0.10);box-shadow:0 1px 4px rgba(15,56,90,0.04);'
+                    'margin-bottom:6px">', unsafe_allow_html=True)
+        _lb1, _in1, _sp0, _lb2, _in2 = st.columns([0.55, 2.2, 0.05, 0.65, 2.2])
+        with _lb1: st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
+        with _in1:
+            if _use_pills: st.pills("mod", _mods_ops, selection_mode="multi", key="flt_mod", label_visibility="collapsed")
+            else: st.multiselect("mod", _mods_ops, key="flt_mod", label_visibility="collapsed", placeholder="Todas")
+        with _lb2: st.markdown(f'<div {_LBL}>🏛️ FACULTAD</div>', unsafe_allow_html=True)
+        with _in2:
+            if _use_pills: st.pills("fac", fac_ops, selection_mode="multi", key="flt_fac", label_visibility="collapsed")
+            else: st.multiselect("fac", fac_ops, key="flt_fac", label_visibility="collapsed", placeholder="Todas")
+        _lb3, _in3, _sp0b, _btn0, _cnt0 = st.columns([0.55, 2.2, 0.05, 0.65, 2.2])
+        with _lb3: st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
+        with _in3:
+            if _use_pills: st.pills("per", _pers_ops, selection_mode="multi", key="flt_per", label_visibility="collapsed")
+            else: st.multiselect("per", _pers_ops, key="flt_per", label_visibility="collapsed", placeholder="Todos")
+        with _btn0: st.button("🔄 LIMPIAR", on_click=_clear_app, use_container_width=True, type="primary", key="app_clear")
+        with _cnt0:
+            st.markdown(f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right">'
+                        f'Mostrando <b style="color:#0F385A">{n}</b> de '
+                        f'<b style="color:#0F385A">{len(df_raw)}</b></div>', unsafe_allow_html=True)
+        st.markdown("</div>", unsafe_allow_html=True)
+
     # ── CSS propio del Resumen Ejecutivo (estilos del HTML de referencia) ──────
     st.markdown("""
     <style>
@@ -1440,26 +1412,37 @@ with tab_prio:
 
     def _p_icon(val):
         try: v = float(val)
-        except Exception: return '<span style="color:#9aabb5;font-weight:600">—</span>'
+        except Exception: return '<span style="color:#b0bec5;font-size:13px">—</span>'
         import math as _m
-        if _m.isnan(v): return '<span style="color:#9aabb5;font-weight:600">N/A</span>'
-        if v >= 100: return '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#f0f8e8;color:#5a7a2e;border-radius:50%;font-weight:700;font-size:13px">✓</span>'
-        if v > 0:   return '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#fef9e8;color:#d97706;border-radius:50%;font-weight:700;font-size:14px">⚠</span>'
-        return         '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#fce8f2;color:#EC0677;border-radius:50%;font-weight:700;font-size:13px">●</span>'
+        if _m.isnan(v): return '<span style="color:#b0bec5;font-size:11px;font-weight:600">N/A</span>'
+        if v >= 100: return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                             'width:24px;height:24px;background:#dcfce7;color:#16a34a;border-radius:50%;'
+                             'font-size:14px;box-shadow:0 1px 3px rgba(22,163,74,.25)">✅</span>')
+        if v > 0:    return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                             'width:24px;height:24px;background:#fef3c7;color:#d97706;border-radius:50%;'
+                             'font-size:13px;box-shadow:0 1px 3px rgba(217,119,6,.25)">⚠️</span>')
+        return              ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                             'width:24px;height:24px;background:#ffe4e6;color:#e11d48;border-radius:50%;'
+                             'font-size:13px;box-shadow:0 1px 3px rgba(225,29,72,.25)">🔴</span>')
 
     def _p_syl(s):
-        if s == "Si":  return '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#f0f8e8;color:#5a7a2e;border-radius:50%;font-weight:700;font-size:13px">✓</span>'
-        if s == "NO":  return '<span style="display:inline-flex;align-items:center;justify-content:center;width:22px;height:22px;background:#fce8f2;color:#EC0677;border-radius:50%;font-weight:700;font-size:13px">●</span>'
-        return '<span style="color:#9aabb5;font-weight:600">—</span>'
+        if s == "Si":  return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                               'width:24px;height:24px;background:#dcfce7;color:#16a34a;border-radius:50%;'
+                               'font-size:14px;box-shadow:0 1px 3px rgba(22,163,74,.25)">✅</span>')
+        if s == "NO":  return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                               'width:24px;height:24px;background:#ffe4e6;color:#e11d48;border-radius:50%;'
+                               'font-size:13px;box-shadow:0 1px 3px rgba(225,29,72,.25)">🔴</span>')
+        return '<span style="color:#b0bec5;font-size:11px;font-weight:600">N/A</span>'
 
     def _p_bar(pct):
         pct = float(pct or 0)
-        clr = "#5a7a2e" if pct >= 70 else ("#d97706" if pct >= 40 else "#EC0677")
-        bar = "#A6CE38" if pct >= 70 else ("#FBAF17" if pct >= 40 else "#EC0677")
-        return (f'<div style="min-width:64px;text-align:center">'
-                f'<div style="font-size:11px;font-weight:700;color:{clr};margin-bottom:3px">{int(pct)}%</div>'
-                f'<div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden">'
-                f'<div style="width:{min(pct,100):.0f}%;height:100%;background:{bar};border-radius:3px"></div>'
+        clr = "#15803d" if pct >= 70 else ("#d97706" if pct >= 40 else "#dc2626")
+        bar = "#22c55e" if pct >= 70 else ("#f59e0b" if pct >= 40 else "#ef4444")
+        return (f'<div style="min-width:70px;text-align:center">'
+                f'<div style="font-size:12px;font-weight:700;color:{clr};margin-bottom:3px">{int(pct)}%</div>'
+                f'<div style="height:6px;background:#e2e8f0;border-radius:4px;overflow:hidden">'
+                f'<div style="width:{min(pct,100):.0f}%;height:100%;background:{bar};border-radius:4px;'
+                f'box-shadow:0 1px 2px rgba(0,0,0,.15)"></div>'
                 f'</div></div>')
 
     def _p_badge(txt, clr):
@@ -1549,25 +1532,24 @@ with tab_prio:
     if len(df_p) == 0:
         st.info("Sin programas para los filtros seleccionados.")
     else:
-        TH_P  = ('style="background:#0F385A;color:#FFFFFF;font-size:11px;font-weight:700;'
-                 'padding:10px 8px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;'
+        TH_P  = ('style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;'
+                 'padding:8px 6px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;'
                  'border-right:1px solid rgba(255,255,255,0.10)"')
-        THL_P = ('style="background:#0F385A;color:#FFFFFF;font-size:11px;font-weight:700;'
-                 'padding:10px 14px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2;'
+        THL_P = ('style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;'
+                 'padding:8px 10px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2;'
                  'border-right:1px solid rgba(255,255,255,0.10)"')
         rows_p = []
         for idx, (_, row) in enumerate(df_p.iterrows()):
             rbg = "#FFFFFF" if idx % 2 == 0 else "#f8fafc"
-            TD  = (f'style="padding:8px;text-align:center;vertical-align:middle;'
+            TD  = (f'style="padding:6px 5px;text-align:center;vertical-align:middle;'
                    f'border-bottom:1px solid #eef3f8;background:{rbg}"')
-            TDL = (f'style="padding:8px 14px;text-align:left;vertical-align:middle;'
-                   f'border-bottom:1px solid #eef3f8;background:{rbg};min-width:200px;max-width:280px"')
+            TDL = (f'style="padding:6px 10px;text-align:left;vertical-align:middle;'
+                   f'border-bottom:1px solid #eef3f8;background:{rbg};min-width:160px;max-width:220px"')
             prog   = _p_esc(row.get("NOMBRE DEL PROGRAMA","—"))
             fac_s  = fac_abrev.get(str(row.get("FACULTAD","")), "—")
             fac_c  = _P_FAC_CLR.get(fac_s, "#9aabb5")
             mod    = str(row.get("MODALIDAD","—"))
             mod_c  = _P_MOD_CLR.get(mod, "#9aabb5")
-            sede   = _p_esc(str(row.get("SEDE","—")))
             per    = str(row.get("periodo_propuesto","—"))
             per_c  = _P_PER_CLR.get(per, "#9aabb5")
             av     = int(float(row.get("avance_general",0) or 0))
@@ -1589,19 +1571,18 @@ with tab_prio:
                     etapa_cells.append(f'<td {TD}>{_p_bar(pct)}</td>')
                 else:
                     tv = val if val not in [None,"","nan"] else "—"
-                    etapa_cells.append(f'<td {TD}><span style="font-size:11px;color:#0F385A">{_p_esc(str(tv))}</span></td>')
+                    etapa_cells.append(f'<td {TD}><span style="font-size:10px;color:#0F385A">{_p_esc(str(tv))}</span></td>')
 
             rows_p.append(
                 f'<tr>'
                 f'<td {TDL}>'
-                f'<span style="margin-right:4px">{_p_star(av,per)}</span>'
-                f'<span style="font-size:12px;font-weight:600;color:#0F385A">{prog}</span>'
+                f'<span style="margin-right:3px">{_p_star(av,per)}</span>'
+                f'<span style="font-size:11px;font-weight:600;color:#0F385A">{prog}</span>'
                 f'<br><span style="font-size:10px;font-weight:700;color:{fac_c}">{fac_s}</span></td>'
                 f'<td {TD}>{_p_badge(mod, mod_c)}</td>'
-                f'<td {TD}><span style="font-size:11px;color:#4a6a7e">{sede}</span></td>'
                 f'<td {TD}>{_p_badge(per, per_c)}</td>'
                 f'<td {TD}><span style="background:{bg_c};color:{fg_c};font-size:10px;font-weight:700;'
-                f'padding:3px 8px;border-radius:10px">{clasif}</span></td>'
+                f'padding:2px 7px;border-radius:10px">{clasif}</span></td>'
                 f'<td {TD}>{_p_bar(av)}</td>'
                 + "".join(etapa_cells) +
                 f'</tr>'
@@ -1609,13 +1590,12 @@ with tab_prio:
 
         hdrs = "".join(f'<th {TH_P}>{h}</th>' for h,_,_ in _PRIO_ETAPAS)
         tabla_p = (
-            '<div style="overflow-x:auto;overflow-y:auto;max-height:620px;border-radius:12px;'
+            '<div style="overflow-x:auto;overflow-y:auto;max-height:65vh;border-radius:12px;'
             'border:1.5px solid #b5c9d8;box-shadow:0 2px 12px rgba(15,56,90,.10);background:#fafdff">'
             '<table style="width:100%;border-collapse:separate;border-spacing:0;font-family:\'Segoe UI\',sans-serif">'
             '<thead><tr>'
             f'<th {THL_P}>PROGRAMA</th>'
             f'<th {TH_P}>MODALIDAD</th>'
-            f'<th {TH_P}>SEDE</th>'
             f'<th {TH_P}>PERÍODO</th>'
             f'<th {TH_P}>PRIORIDAD</th>'
             f'<th {TH_P}>AVANCE</th>'
