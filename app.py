@@ -977,6 +977,7 @@ with tab0:
         ("Gestión Académica",                       "#0F385A"),
         ("Gestión Financiera",                      "#FBAF17"),
         ("Aseguramiento de la Calidad",             "#EC0677"),
+        ("Syllabus",                                "#9333ea"),
         ("Ger. Planeación y Gestión Institucional", "#1FB2DE"),
         ("Producción de Contenidos",                "#A6CE38"),
         ("Convenios Institucionales",               "#42B0B5"),
@@ -988,6 +989,7 @@ with tab0:
         "Gestión Académica":                       "Gestión Académica",
         "Gestión Financiera":                      "Concepto Financiero",
         "Aseguramiento de la Calidad":             "Aseguramiento Calidad",
+        "Syllabus":                                "Syllabus",
         "Ger. Planeación y Gestión Institucional": "Ger. Planeación",
         "Producción de Contenidos":                "Producción Contenidos",
         "Convenios Institucionales":               "Convenios",
@@ -995,7 +997,7 @@ with tab0:
         "Publicación en Página Web":               "Publicación Web",
     }
 
-    etapa_cols_row1 = st.columns(4)
+    etapa_cols_row1 = st.columns(5)
     etapa_cols_row2 = st.columns(4)
     all_etapa_cols = etapa_cols_row1 + etapa_cols_row2
 

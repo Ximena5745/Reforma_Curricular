@@ -34,12 +34,14 @@ ETAPAS_MAP = [
     ("Publicación en Página Web",                "Publicar plan de estudios en web",                 "Publicar plan de estudios en Web",                          "status"),
     ("Publicación en Página Web",                "Fecha fin",                                        "FECHA FIN",                                                 "date"),
     ("Publicación en Página Web",                "Periodo de implementación",                        "PERIODO DE IMPLEMENTACIÓN",                                 "info"),
+    ("Syllabus",                                 "Syllabus completos",                               "SYLLABUS COMPLETOS.1",                                      "syllabus"),
 ]
 
 PROCESOS = [
     "Gestión Académica",
     "Gestión Financiera",
     "Aseguramiento de la Calidad",
+    "Syllabus",
     "Ger. Planeación y Gestión Institucional",
     "Producción de Contenidos",
     "Convenios Institucionales",
@@ -52,6 +54,7 @@ PROCESO_COLOR = {
     "Gestión Académica":                       "#0F385A",
     "Gestión Financiera":                      "#FBAF17",
     "Aseguramiento de la Calidad":             "#EC0677",
+    "Syllabus":                                "#9333ea",
     "Ger. Planeación y Gestión Institucional": "#1FB2DE",
     "Producción de Contenidos":                "#A6CE38",
     "Convenios Institucionales":               "#42B0B5",
@@ -137,6 +140,11 @@ def _classify(tipo, v):
         return _cls_num(s)
     if tipo in ("info", "date"):
         return "info" if s and s not in ("", "—", "None", "nan") else "na"
+    if tipo == "syllabus":
+        sl = s.lower()
+        if sl in ("si", "sí", "yes", "1"):      return "done"
+        if sl in ("no",):                        return "inprog"
+        return "na"
     return "na"
 
 
@@ -182,6 +190,10 @@ def _build_df():
         else:
             df[f"cl_{i}"]  = "na"
             df[f"val_{i}"] = "—"
+
+    # ── Override Syllabus: Presencial → "na" ─────────────────────────────────
+    _syl_idx = next(i for i, (p,_,_,_) in enumerate(ETAPAS_MAP) if p == "Syllabus")
+    df.loc[df["MODALIDAD"].str.strip().str.lower() == "presencial", f"cl_{_syl_idx}"] = "na"
 
     # ── Override Aseguramiento de Calidad: lógica MEN ────────────────────────
     # Si col Z "¿Requiere informarse al MEN previa implementación?" = "Si"
