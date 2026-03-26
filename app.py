@@ -813,7 +813,7 @@ with tab0:
     def _rpct(pct):
         """Porcentaje coloreado compacto para tablas de riesgo."""
         v = min(max(float(pct or 0), 0), 100)
-        clr = "#15803d" if v >= 100 else ("#d97706" if v >= 70 else "#dc2626")
+        clr = "#15803d" if v >= 90 else ("#d97706" if v >= 70 else "#dc2626")
         disp = f"{v:.1f}%" if v % 1 != 0 else f"{int(v)}%"
         return f'<span style="font-weight:700;color:{clr};font-size:12px">{disp}</span>'
 
@@ -900,7 +900,7 @@ with tab0:
 
     # R2 — Lanzamiento 2026-2 con contenidos incompletos
     r2_df   = df_risk[(_pp == "2026-2") & (_pcs != "na") & (_pc < 100)].copy()
-    r2_df   = r2_df.sort_values("pc_pct", ascending=False)
+    r2_df   = r2_df.sort_values("pc_pct", ascending=True)
     r2_rows = _r_rows(r2_df, {
         "% Contenidos": lambda r: _rpct(r.get("pc_pct", 0)),
     })
