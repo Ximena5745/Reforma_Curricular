@@ -258,7 +258,7 @@ with st.container():
     )
 
     # Fila 1: MODALIDAD · FACULTAD
-    lb1, in1, _sp, lb2, in2 = st.columns([0.5, 1.5, 0.01, 0.5, 1.5])
+    lb1, in1, _sp, lb2, in2 = st.columns([0.55, 2.2, 0.05, 0.6, 2.2], vertical_alignment="center")
     with lb1:
         st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
     with in1:
@@ -279,7 +279,7 @@ with st.container():
                                      label_visibility="collapsed", placeholder="Todas")
 
     # Fila 2: PERÍODO · LIMPIAR · contador
-    lb3, in3, btn_col, cnt_col = st.columns([0.5, 2.5, 0.5, 1])
+    lb3, in3, btn_col, cnt_col = st.columns([0.55, 3.2, 0.6, 1.2], vertical_alignment="center")
     with lb3:
         st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
     with in3:
@@ -290,7 +290,6 @@ with st.container():
             sel_per = st.multiselect("per", _pers_ops, key="flt_per",
                                      label_visibility="collapsed", placeholder="Todos")
     with btn_col:
-        st.markdown("<div style='height:3px'></div>", unsafe_allow_html=True)
         st.button("🔄 LIMPIAR", on_click=_clear_app, use_container_width=True,
                   type="primary", key="app_clear")
     with cnt_col:
@@ -608,7 +607,7 @@ def _excel_bytes(df_export):
     return buf.getvalue()
 
 # ── Tabs principales ────────────────────────────────────────────────────────────
-tab0, tab1, tab2 = st.tabs(["🏆 Resumen Ejecutivo", "📊 Resumen General", "🏛️ Por Facultad y Programa"])
+tab0, tab1, tab2, tab_prio = st.tabs(["🏆 Resumen Ejecutivo", "📊 Resumen General", "🏛️ Por Facultad y Programa", "🎯 Priorización"])
 
 # ── Tab 0: Resumen Ejecutivo ───────────────────────────────────────────────────
 with tab0:
@@ -785,15 +784,14 @@ with tab0:
 
     # R2 — Lanzamiento 2026-2 con producción de contenidos incompleta (más urgente → va primero)
     r2_df = df[(_pp == "2026-2") & (_pcs != "na") & (_pc < 100)].sort_values(
-        "pc_pct" if "pc_pct" in df.columns else "avance_general")
+        "avance_general", ascending=False)
     r2_rows = _r_rows(r2_df, {
         "% Avance de Producción": lambda r: _pbar_html(r.get("pc_pct", 0), "#FBAF17"),
     })
 
     # R1 — Virtual con producción iniciada pero sin concepto financiero aprobado
     r1_df = df[(_pc > 0) & (_cf.isin(["nostart", "na"]))].copy()
-    r1_df["_ord"] = r1_df["periodo_propuesto"].map(PERIODO_ORDER).fillna(99) if "periodo_propuesto" in r1_df.columns else 99
-    r1_df = r1_df.sort_values("_ord")
+    r1_df = r1_df.sort_values("avance_general", ascending=False)
     r1_rows = _r_rows(r1_df, {
         "% Avance de Producción": lambda r: _pbar_html(r.get("pc_pct", 0), "#EC0677"),
     })
@@ -802,21 +800,19 @@ with tab0:
     r4_df = df[
         (df["MODALIDAD"].str.lower().str.strip().isin(["virtual", "híbrido", "hibrido"])) &
         (_syl == "NO")
-    ].sort_values("pc_pct" if "pc_pct" in df.columns else "avance_general", ascending=False)
+    ].sort_values("avance_general", ascending=False)
     r4_rows = _r_rows(r4_df, {
         "% Avance Contenidos": lambda r: _pbar_html(r.get("pc_pct", 0), "#0d9488"),
     })
 
     # R3 — Parametrización en Banner iniciada sin producción de contenidos
-    r3_df = df[(_ban > 0) & (_pc < 100)].sort_values(
-        "ban_pct" if "ban_pct" in df.columns else "avance_general", ascending=False)
+    r3_df = df[(_ban > 0) & (_pc < 100)].sort_values("avance_general", ascending=False)
     r3_rows = _r_rows(r3_df, {
         "% Avance Banner": lambda r: _pbar_html(r.get("ban_pct", 0), "#7c3aed"),
     })
 
     # R5 — Banner con avance pero trámite de convenios pendiente
-    r5_df = df[(_ban > 0) & (_con < 100)].sort_values(
-        "conv_pct" if "conv_pct" in df.columns else "avance_general")
+    r5_df = df[(_ban > 0) & (_con < 100)].sort_values("avance_general", ascending=False)
     r5_rows = _r_rows(r5_df, {
         "% Avance Convenios": lambda r: _pbar_html(r.get("conv_pct", 0), "#2563eb"),
     })
@@ -1433,3 +1429,92 @@ with tab2:
             st.dataframe(fd_styled, use_container_width=True, hide_index=True,
                          height=min(300, len(df_fd) * 38 + 40))
 
+# ── Tab Priorización ──────────────────────────────────────────────────────────
+with tab_prio:
+    _PRIO_ORDER = {"Urgente": 0, "Prioritario": 1, "En seguimiento": 2, "En curso": 3}
+    _PRIO_CLR   = {
+        "Urgente":        ("#EC0677", "#fce8f2"),
+        "Prioritario":    ("#FBAF17", "#fdf8e8"),
+        "En seguimiento": ("#2980B9", "#EBF5FB"),
+        "En curso":       ("#A6CE38", "#f0f8e8"),
+    }
+    _FAC_CLR_P = {"FSCC": "#EC0677", "FIDI": "#1FB2DE", "FNGS": "#A6CE38"}
+
+    if n > 0 and "_clasif" in df.columns:
+        df_prio = df.copy()
+        df_prio["_prio_ord"] = df_prio["_clasif"].map(_PRIO_ORDER).fillna(4)
+        df_prio = df_prio.sort_values(["_prio_ord", "avance_general"], ascending=[True, True])
+
+        rows_html = ""
+        for _, r in df_prio.iterrows():
+            prog   = r["NOMBRE DEL PROGRAMA"]
+            fac_f  = r.get("FACULTAD", "")
+            fac_s  = fac_abrev.get(fac_f, "")
+            fac_c  = _FAC_CLR_P.get(fac_s, "#6a8a9e")
+            mod    = r.get("MODALIDAD", "—")
+            mod_bg = "#e0f2fe"; mod_fc = "#0369a1"
+            if str(mod).lower() == "presencial":
+                mod_bg = "#f0fdf4"; mod_fc = "#15803d"
+            elif str(mod).lower() in ("híbrido", "hibrido"):
+                mod_bg = "#fdf8e8"; mod_fc = "#d97706"
+            per    = str(r.get("periodo_propuesto", r.get("PERIODO DE IMPLEMENTACIÓN", "—")))
+            per_c, per_bg = {"2026-2": ("#dc2626","#fef2f2"), "2027-1": ("#d97706","#fffbeb"), "2027-2": ("#2563eb","#eff6ff")}.get(per, ("#64748b","#f1f5f9"))
+            clasif = r.get("_clasif", "En curso")
+            fg_c, bg_c = _PRIO_CLR.get(clasif, ("#0F385A", "#f0f4f8"))
+            av     = int(float(r.get("avance_general", 0) or 0))
+            av_clr = "#A6CE38" if av >= 70 else ("#FBAF17" if av >= 30 else "#EC0677")
+            pbar   = (f'<div style="display:flex;align-items:center;gap:6px">'
+                      f'<span style="font-weight:700;color:{av_clr};min-width:32px;font-size:12px">{av}%</span>'
+                      f'<div style="flex:1;background:#e8eef4;border-radius:4px;height:8px;min-width:60px">'
+                      f'<div style="width:{av}%;background:{av_clr};border-radius:4px;height:8px"></div></div></div>')
+            pc_pct = float(r.get("pc_pct", 0) or 0)
+            pc_clr = "#A6CE38" if pc_pct >= 70 else ("#FBAF17" if pc_pct >= 30 else "#EC0677")
+            pc_bar = (f'<div style="display:flex;align-items:center;gap:6px">'
+                      f'<span style="font-weight:700;color:{pc_clr};min-width:32px;font-size:12px">{int(pc_pct)}%</span>'
+                      f'<div style="flex:1;background:#e8eef4;border-radius:4px;height:8px;min-width:50px">'
+                      f'<div style="width:{pc_pct}%;background:{pc_clr};border-radius:4px;height:8px"></div></div></div>')
+
+            rows_html += (
+                f'<tr>'
+                f'<td style="padding:8px 10px;min-width:180px">'
+                f'<span style="font-weight:600;color:#0F385A;font-size:12px">{prog}</span>'
+                f'<br><span style="font-size:10px;font-weight:700;color:{fac_c}">{fac_s}</span></td>'
+                f'<td style="padding:8px 10px;text-align:center">'
+                f'<span style="background:{mod_bg};color:{mod_fc};border-radius:10px;padding:2px 8px;font-size:11px;font-weight:600">{mod}</span></td>'
+                f'<td style="padding:8px 10px;text-align:center">'
+                f'<span style="background:{per_bg};color:{per_c};border:1px solid {per_c};border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700">{per}</span></td>'
+                f'<td style="padding:8px 10px;text-align:center">'
+                f'<span style="background:{bg_c};color:{fg_c};border:1px solid {fg_c};border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700">{clasif}</span></td>'
+                f'<td style="padding:8px 14px;min-width:130px">{pbar}</td>'
+                f'<td style="padding:8px 14px;min-width:120px">{pc_bar}</td>'
+                f'</tr>'
+            )
+
+        tabla_prio = f"""
+        <table style="width:100%;border-collapse:collapse;font-family:'Segoe UI',sans-serif;font-size:12px">
+          <thead>
+            <tr style="background:#0F385A;color:#FFFFFF;text-transform:uppercase;font-size:11px;letter-spacing:.5px">
+              <th style="padding:10px 10px;text-align:left">Programa</th>
+              <th style="padding:10px 10px;text-align:center">Modalidad</th>
+              <th style="padding:10px 10px;text-align:center">Período</th>
+              <th style="padding:10px 10px;text-align:center">Prioridad</th>
+              <th style="padding:10px 14px;text-align:left">Avance General</th>
+              <th style="padding:10px 14px;text-align:left">Avance Producción</th>
+            </tr>
+          </thead>
+          <tbody>{rows_html}</tbody>
+        </table>"""
+
+        st.markdown(
+            f'<div style="background:#FFFFFF;border-radius:10px;padding:4px 0;'
+            f'border:1px solid rgba(15,56,90,0.10);overflow-x:auto;margin-top:4px">'
+            f'{tabla_prio}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'<div style="font-size:11px;color:#6a8a9e;margin-top:4px;text-align:right">'
+            f'{len(df_prio)} programas · ordenados por prioridad y avance</div>',
+            unsafe_allow_html=True,
+        )
+    else:
+        st.info("Sin datos para mostrar.")
