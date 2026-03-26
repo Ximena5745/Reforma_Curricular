@@ -200,12 +200,12 @@ PERIODO_ORDER = {"2026-2": 0, "2027-1": 1, "2027-2": 2, "Ya está en oferta": 3}
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # RIESGO 1: Producción virtual sin aval financiero
-# PC (AK) > 0 Y CF (T) sin iniciar / vacío
+# PC (AK) > 0 Y CF (T) = "Sin iniciar"
 # Tabla: Programa | Periodo | % AK | % Avance  — ordenar 2026-2 → 2027-1 → 2027-2
 # ═══════════════════════════════════════════════════════════════════════════════
 r1 = df_raw[
     (df_raw["pc_pct"] > 0) &
-    (df_raw["cf_st"].isin(["nostart", "na"]) | df_raw["cf_st"].isna())
+    (df_raw["cf_st"] == "nostart")
 ].copy()
 r1["_ord"] = r1["periodo_propuesto"].map(PERIODO_ORDER).fillna(99)
 r1 = r1.sort_values("_ord")
@@ -213,7 +213,7 @@ r1 = r1.sort_values("_ord")
 st.markdown(
     _risk_header(
         "Riesgo 1 — Producción virtual sin aval financiero",
-        "Programas con avance en Producción de Contenidos (AK > 0%) pero sin Concepto Financiero aprobado (col T sin iniciar o vacío)",
+        "Virtual - % contenidos > 0 y sin concepto financiero",
         "#dc2626", len(r1),
     ),
     unsafe_allow_html=True,
