@@ -906,14 +906,16 @@ with tab0:
     })
 
     # R4 — Avance en producción — Syllabus incompleto
-    r4_df   = _sort_risk(df_risk[
+    r4_df   = df_risk[
         (df_risk["MODALIDAD"].str.lower().str.strip().isin(["virtual", "híbrido", "hibrido"])) &
+        (_pc > 0) &
         (_syl == "NO")
-    ])
+    ].copy()
+    r4_df   = r4_df.sort_values("pc_pct", ascending=False)
     r4_rows = _r_rows(r4_df, {
-        "Syllabus":     lambda r: ('<span style="background:#fee2e2;color:#dc2626;font-size:10px;'
-                                   'font-weight:700;padding:2px 7px;border-radius:8px">NO</span>'),
-        "% Contenidos": lambda r: _rpct(r.get("pc_pct", 0)),
+        "Estado Syllabus": lambda r: ('<span style="background:#fee2e2;color:#dc2626;font-size:10px;'
+                                      'font-weight:700;padding:2px 7px;border-radius:8px">NO</span>'),
+        "% Contenidos":    lambda r: _rpct(r.get("pc_pct", 0)),
     })
 
     # R5 — Parametrización en Banner en proceso con trámite de convenios pendiente
@@ -949,9 +951,10 @@ with tab0:
     with rr4:
         st.markdown(_render_rcard(
             "Avance en producción — Syllabus incompleto",
-            "Virtual/Híbrido · Avance en contenidos y Syllabus = NO",
+            "Virtual/Híbrido · AK > 0% y Syllabus = NO · Mayor avance primero",
             "#0d9488", r4_rows,
-            ["Programa", "Syllabus", "% Contenidos", "Período"], "📋"), unsafe_allow_html=True)
+            ["Programa", "Estado Syllabus", "% Contenidos"], "📋",
+            tbl_max_height="none"), unsafe_allow_html=True)
     with rr5:
         st.markdown(_render_rcard(
             "Banner con avance sin trámite de convenios",
