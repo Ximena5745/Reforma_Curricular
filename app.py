@@ -152,7 +152,13 @@ fac_labels = {
     "Facultad de Ingeniería, Diseño e Innovación":    "Ingeniería, Diseño e Innovación",
     "Facultad de Negocios, Gestión y Sostenibilidad": "Negocios, Gestión y Sostenibilidad",
 }
-fac_inv  = {v: k for k, v in fac_labels.items()}
+fac_abrev = {
+    "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",
+    "Facultad de Ingeniería, Diseño e Innovación":    "FIDI",
+    "Facultad de Negocios, Gestión y Sostenibilidad": "FNGS",
+}
+fac_inv       = {v: k for k, v in fac_labels.items()}
+fac_abrev_inv = {v: k for k, v in fac_abrev.items()}
 FAC_LIST  = list(fac_labels.values())
 FAC_PALETTE = {
     "Sociedad, Cultura y Creatividad":   "#EC0677",
@@ -203,7 +209,7 @@ st.markdown(
 # ── Filtros ─────────────────────────────────────────────────────────────────────
 _use_pills = hasattr(st, "pills")
 _mods_ops  = sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
-fac_ops    = [fac_labels.get(f, f) for f in sorted(df_raw["FACULTAD"].dropna().unique())]
+fac_ops    = sorted([fac_abrev.get(f, f) for f in df_raw["FACULTAD"].dropna().unique()])
 _pers_ops  = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
 
 def _clear_app():
@@ -265,7 +271,7 @@ with st.container():
 
 # Convertir selecciones a listas para apply_filters
 modalidad_f = list(sel_mod) if sel_mod else []
-facultad_f  = [fac_inv.get(f, f) for f in sel_fac] if sel_fac else []
+facultad_f  = [fac_abrev_inv.get(f, f) for f in sel_fac] if sel_fac else []
 periodo_f   = list(sel_per) if sel_per else []
 df = apply_filters(df_raw.copy(), modalidad_f, facultad_f, periodo_f)
 n  = len(df)

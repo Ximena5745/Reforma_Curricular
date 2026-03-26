@@ -113,7 +113,13 @@ FAC_LABELS = {
     "Facultad de Ingeniería, Diseño e Innovación":    "Ingeniería, Diseño e Innovación",
     "Facultad de Negocios, Gestión y Sostenibilidad": "Negocios, Gestión y Sostenibilidad",
 }
-fac_inv = {v: k for k, v in FAC_LABELS.items()}
+FAC_ABREV = {
+    "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",
+    "Facultad de Ingeniería, Diseño e Innovación":    "FIDI",
+    "Facultad de Negocios, Gestión y Sostenibilidad": "FNGS",
+}
+fac_inv       = {v: k for k, v in FAC_LABELS.items()}
+fac_abrev_inv = {v: k for k, v in FAC_ABREV.items()}
 
 PROC_SHORT = {
     "Gestión Académica":                       "Gest. Académica",
@@ -166,7 +172,7 @@ st.markdown(
 
 # ── Filtros ─────────────────────────────────────────────────────────────────────
 _use_pills = hasattr(st, "pills")
-fac_ops    = [FAC_LABELS.get(f, f) for f in sorted(df_raw["FACULTAD"].dropna().unique())]
+fac_ops    = sorted([FAC_ABREV.get(f, f) for f in df_raw["FACULTAD"].dropna().unique()])
 _mods_ops  = sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
 _pers_ops  = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
 
@@ -229,7 +235,7 @@ with st.container():
 
 # Aplicar filtros
 modalidad_f = list(sel_mod) if sel_mod else []
-facultad_f  = [fac_inv.get(f, f) for f in sel_fac] if sel_fac else []
+facultad_f  = [fac_abrev_inv.get(f, f) for f in sel_fac] if sel_fac else []
 periodo_f   = list(sel_per) if sel_per else []
 df = apply_filters(df_raw.copy(), modalidad_f, facultad_f, periodo_f)
 
