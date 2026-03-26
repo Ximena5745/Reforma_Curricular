@@ -382,7 +382,7 @@ else:
 r5 = df_raw[
     (df_raw["ban_pct"] > 0) &
     (df_raw["conv_pct"] < 100) &
-    (df_raw["cl_12"] != "na")
+    (df_raw["val_12"].str.lower().str.strip() != "no aplica")
 ].copy()
 r5 = r5.sort_values("conv_pct", ascending=True)
 
