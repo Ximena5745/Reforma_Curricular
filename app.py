@@ -642,9 +642,11 @@ def _p_badge(txt, clr):
     return (f'<span style="background:rgba({r},{g},{b},0.12);color:{clr};font-size:10px;'
             f'font-weight:700;padding:3px 9px;border-radius:12px;white-space:nowrap">{_p_esc(txt)}</span>')
 
-def _p_star(av, per, verde_2026=False):
+def _p_star(av, per, verde_2026=False, amarillo_2026=False):
     if verde_2026:
         return '<span style="color:#22c55e;font-size:14px" title="Puede implementarse">★</span>'
+    if amarillo_2026:
+        return '<span style="color:#FBAF17;font-size:14px" title="Con esfuerzo podría implementarse">★</span>'
     if "2026" in str(per):
         if av >= 40: return '<span style="color:#FBAF17;font-size:14px" title="Con esfuerzo podría implementarse">★</span>'
         return              '<span style="color:#EC0677;font-size:14px" title="No se podría implementar en 2026-2">★</span>'
@@ -1230,11 +1232,17 @@ with tab_prio:
 
     # Condición verde 2026-2: Z="Si" y AK>0
     _col_z = "¿Requiere informarse al MEN previa implementación?"
+    _VERDE_2026_1   = {"Administración de Empresas", "Contaduría Pública"}
+    _AMARILLO_2026_1 = {"Ingeniería de Software", "Derecho"}
+
     def _es_verde(row):
         prog = str(row.get("NOMBRE DEL PROGRAMA", "")).strip()
         per  = str(row.get("PERIODO DE IMPLEMENTACIÓN","")).strip()
         # Solo Tecnología en Gestión Ambiental mantiene estrella en cualquier período
         if prog == "Tecnología en Gestión Ambiental":
+            return True
+        # Administración de Empresas y Contaduría Pública: verde en 2026-1
+        if prog in _VERDE_2026_1 and per == "2026-1":
             return True
         if per != "2026-2":
             return False
@@ -1244,12 +1252,18 @@ with tab_prio:
         req = str(row.get(_col_z, "")).strip().lower() if _col_z in row.index else ""
         return req in ("si", "sí") and float(row.get("pc_pct", 0) or 0) > 0
 
+    def _es_amarillo(row):
+        prog = str(row.get("NOMBRE DEL PROGRAMA", "")).strip()
+        per  = str(row.get("PERIODO DE IMPLEMENTACIÓN","")).strip()
+        return prog in _AMARILLO_2026_1 and per == "2026-1"
+
     # clasificar
     _PER_ORD = {"2026-2": 0, "2027-1": 1, "2027-2": 2}
     if len(df_p) > 0:
         df_p["_clasif"] = df_p.apply(
             lambda r: clasificar_programa(r["avance_general"], r["PERIODO DE IMPLEMENTACIÓN"]), axis=1)
-        df_p["_verde_2026"] = df_p.apply(_es_verde, axis=1)
+        df_p["_verde_2026"]   = df_p.apply(_es_verde,   axis=1)
+        df_p["_amarillo_2026"] = df_p.apply(_es_amarillo, axis=1)
         def _star_ord(row):
             av  = float(row.get("avance_general", 0) or 0)
             per = str(row.get("PERIODO DE IMPLEMENTACIÓN", "")).strip()
@@ -1369,7 +1383,7 @@ with tab_prio:
             rows_p.append(
                 f'<tr>'
                 f'<td {TDL}>'
-                f'<span style="margin-right:3px">{_p_star(av, per, row.get("_verde_2026", False))}</span>'
+                f'<span style="margin-right:3px">{_p_star(av, per, row.get("_verde_2026", False), row.get("_amarillo_2026", False))}</span>'
                 f'<span style="font-size:11px;font-weight:600;color:#0F385A">{prog}</span>'
                 f'<br><span style="font-size:10px;font-weight:700;color:{fac_c}">{fac_s}</span></td>'
                 f'<td {TD}>{_p_badge(mod, mod_c)}</td>'
