@@ -180,16 +180,15 @@ def _av(row):
 
 def _style_avance(val):
     if isinstance(val, (int, float)):
-        if val >= 70: return "background:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
-        if val >= 40: return "background:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
+        if val >= 100: return "background:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
+        if val >= 70:  return "background:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
         return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
     return ""
 
 def _style_pc(val):
     if isinstance(val, (int, float)):
         if val >= 100: return "background:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
-        if val >= 50:  return "background:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
-        if val > 0:    return "background:#fde8f4;color:#7a0050;font-weight:700;text-align:center"
+        if val >= 70:  return "background:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
         return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
     return ""
 
@@ -277,9 +276,9 @@ else:
 
     def _style_pc(val):
         if isinstance(val, (int, float)):
-            if val == 0:   return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
-            if val < 50:   return "background:#fdf8e8;color:#8a6000;font-weight:700;text-align:center"
-            return "text-align:center"
+            if val >= 100: return "background:#f0f8e8;color:#5a7a2e;font-weight:700;text-align:center"
+            if val >= 70:  return "background:#fef9e8;color:#8a6000;font-weight:700;text-align:center"
+            return "background:#fce8f2;color:#9a0050;font-weight:700;text-align:center"
         return ""
 
     st.dataframe(

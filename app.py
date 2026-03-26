@@ -813,19 +813,23 @@ with tab0:
     def _rpct(pct):
         """Porcentaje coloreado compacto para tablas de riesgo."""
         v = min(max(float(pct or 0), 0), 100)
-        clr = "#15803d" if v >= 70 else ("#d97706" if v >= 30 else "#dc2626")
+        clr = "#15803d" if v >= 100 else ("#d97706" if v >= 70 else "#dc2626")
         disp = f"{v:.1f}%" if v % 1 != 0 else f"{int(v)}%"
         return f'<span style="font-weight:700;color:{clr};font-size:12px">{disp}</span>'
 
-    def _render_rcard(title, desc, color, rows, show_cols, icon="⚠️"):
+    def _render_rcard(title, desc, color, rows, show_cols, icon="⚠️",
+                      tbl_max_height="320px", card_min_height=None):
         """Renderiza un risk-card compacto con cabecera visual y tabla scrollable."""
         n_r = len(rows)
         badge_color = color if n_r > 0 else "#15803d"
         r, g, b = int(color[1:3],16), int(color[3:5],16), int(color[5:7],16)
         hdr_bg = f"rgba({r},{g},{b},0.06)"
         hdr_bd = f"rgba({r},{g},{b},0.18)"
+        card_style = f"border-top:3px solid {badge_color}"
+        if card_min_height:
+            card_style += f";min-height:{card_min_height}"
         hdr = (
-            f'<div class="re-rcard" style="border-top:3px solid {badge_color}">'
+            f'<div class="re-rcard" style="{card_style}">'
             f'<div style="background:{hdr_bg};padding:9px 12px 7px;'
             f'border-bottom:1px solid {hdr_bd}">'
             f'<div style="display:flex;align-items:flex-start;'
@@ -843,7 +847,9 @@ with tab0:
         )
         if n_r == 0:
             return hdr + '<div class="re-ok">✅ Sin programas en este riesgo</div></div>'
-        thead = '<div class="re-rtbl-wrap"><table class="re-rtbl"><thead><tr>'
+        tbl_style = f"max-height:{tbl_max_height}" if tbl_max_height != "none" else "max-height:none"
+        thead = (f'<div class="re-rtbl-wrap" style="overflow-x:auto;overflow-y:auto;{tbl_style}">'
+                 f'<table class="re-rtbl"><thead><tr>')
         for c in show_cols:
             align = "left" if c == "Programa" else "center"
             thead += f'<th style="text-align:{align}">{c}</th>'
@@ -893,7 +899,8 @@ with tab0:
     })
 
     # R2 — Lanzamiento 2026-2 con contenidos incompletos
-    r2_df   = _sort_risk(df_risk[(_pp == "2026-2") & (_pcs != "na") & (_pc < 100)])
+    r2_df   = df_risk[(_pp == "2026-2") & (_pcs != "na") & (_pc < 100)].copy()
+    r2_df   = r2_df.sort_values("pc_pct", ascending=False)
     r2_rows = _r_rows(r2_df, {
         "% Contenidos": lambda r: _rpct(r.get("pc_pct", 0)),
     })
@@ -928,19 +935,22 @@ with tab0:
             "Producción virtual sin aval financiero",
             "Virtual · % contenidos > 0 y sin concepto financiero",
             "#dc2626", r1_rows,
-            ["Programa", "Período", "% Contenidos"], "⚠️"), unsafe_allow_html=True)
+            ["Programa", "Período", "% Contenidos"], "⚠️",
+            tbl_max_height="none", card_min_height="420px"), unsafe_allow_html=True)
     with rr2:
         st.markdown(_render_rcard(
             "Lanzamiento 2026-2 con contenidos incompletos",
             "Período 2026-2 · Producción < 100% · Menor avance primero",
             "#d97706", r2_rows,
-            ["Programa", "Modalidad", "% Contenidos"], "🔔"), unsafe_allow_html=True)
+            ["Programa", "Modalidad", "% Contenidos"], "🔔",
+            tbl_max_height="none"), unsafe_allow_html=True)
     with rr3:
         st.markdown(_render_rcard(
             "Parametrización en Banner sin producción de contenidos",
             "Banner > 0% y Contenidos < 100%",
             "#7c3aed", r3_rows,
-            ["Programa", "Período", "% Banner"], "⚙️"), unsafe_allow_html=True)
+            ["Programa", "Período", "% Banner"], "⚙️",
+            tbl_max_height="none", card_min_height="420px"), unsafe_allow_html=True)
     rr4, rr5, rr6 = st.columns(3)
     with rr4:
         st.markdown(_render_rcard(
