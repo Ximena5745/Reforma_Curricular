@@ -1241,8 +1241,9 @@ with tab_prio:
         # Solo Tecnología en Gestión Ambiental mantiene estrella en cualquier período
         if prog == "Tecnología en Gestión Ambiental":
             return True
-        # Administración de Empresas y Contaduría Pública: verde en 2026-1
-        if prog in _VERDE_2026_1 and per == "2026-1":
+        # Administración de Empresas y Contaduría Pública Presencial: verde en 2026-1
+        mod = str(row.get("MODALIDAD", "")).strip()
+        if prog in _VERDE_2026_1 and per == "2026-1" and mod == "Presencial":
             return True
         if per != "2026-2":
             return False
