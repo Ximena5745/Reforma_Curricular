@@ -919,11 +919,14 @@ with tab0:
     })
 
     # R5 — Banner con avance pero convenios incompletos
-    r5_df   = df_risk[(_ban > 0) & (_con < 100)].copy()
+    _per_r5 = df_risk["PERIODO DE IMPLEMENTACIÓN"].str.strip()
+    r5_df   = df_risk[
+        (_ban > 0) & (_con < 100) &
+        (_per_r5 != "Ya está en oferta")
+    ].copy()
     r5_df   = r5_df.sort_values("conv_pct", ascending=True)
     r5_rows = _r_rows(r5_df, {
         "% Convenios (AS)": lambda r: _rpct(r.get("conv_pct", 0)),
-        "% Banner (BB)":    lambda r: _rpct(r.get("ban_pct", 0)),
     })
 
     rr1, rr2, rr3 = st.columns(3)
@@ -961,7 +964,7 @@ with tab0:
             "Banner con avance sin trámite de convenios",
             "BB > 0% y AS < 100% · Menor avance en convenios primero",
             "#2563eb", r5_rows,
-            ["Programa", "% Convenios (AS)", "% Banner (BB)"], "🤝",
+            ["Programa", "% Convenios (AS)"], "🤝",
             tbl_max_height="none"), unsafe_allow_html=True)
 
     # ── SECCIÓN 3: Resumen por Etapa ──────────────────────────────────────────
