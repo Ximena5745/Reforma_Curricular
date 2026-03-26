@@ -72,12 +72,19 @@ footer { visibility: hidden; }
 }
 /* LIMPIAR button */
 [data-testid="stBaseButton-primary"] {
-    background: #0F385A !important; border-color: #0F385A !important;
-    color: #FFFFFF !important; font-size: 12px !important; font-weight: 700 !important;
-    border-radius: 8px !important;
+    background: linear-gradient(135deg,#1FB2DE,#0891b2) !important;
+    border-color: #1FB2DE !important;
+    color: #FFFFFF !important; font-size: 11px !important; font-weight: 700 !important;
+    border-radius: 8px !important; letter-spacing:.3px !important;
+    box-shadow: 0 2px 8px rgba(31,178,222,0.35) !important;
 }
 [data-testid="stBaseButton-primary"]:hover {
-    background: #1A5276 !important; border-color: #1A5276 !important;
+    background: linear-gradient(135deg,#0891b2,#0F385A) !important;
+    border-color: #0891b2 !important;
+}
+[data-testid="stBaseButton-primary"] > button {
+    height: 32px !important; min-height: 32px !important;
+    padding: 0 10px !important; line-height: 1 !important;
 }
 /* Compact filter bar */
 .stVerticalBlock:has([data-testid="stPills"]) { gap: 0.1rem !important; row-gap: 0.1rem !important; }

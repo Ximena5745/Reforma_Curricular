@@ -140,6 +140,10 @@ footer { visibility: hidden; }
     border-radius: 8px !important; letter-spacing:.3px !important;
     box-shadow: 0 2px 8px rgba(31,178,222,0.35) !important;
 }
+[data-testid="stBaseButton-primary"] > button {
+    height: 32px !important; min-height: 32px !important;
+    padding: 0 10px !important; line-height: 1 !important;
+}
 [data-testid="stBaseButton-primary"]:hover {
     background: linear-gradient(135deg,#0891b2,#0F385A) !important;
     border-color: #0891b2 !important;
@@ -583,6 +587,56 @@ def _excel_bytes(df_export):
     wb.save(buf)
     buf.seek(0)
     return buf.getvalue()
+
+# ── Helpers HTML compartidos (usados en tab2 y tab_prio) ───────────────────────
+def _p_esc(s): return str(s).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+
+def _p_icon(val):
+    try: v = float(val)
+    except Exception: return '<span style="color:#b0bec5;font-size:13px">—</span>'
+    import math as _m
+    if _m.isnan(v): return '<span style="color:#b0bec5;font-size:11px;font-weight:600">N/A</span>'
+    if v >= 100: return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                         'width:24px;height:24px;background:#dcfce7;color:#16a34a;border-radius:50%;'
+                         'font-size:14px;box-shadow:0 1px 3px rgba(22,163,74,.25)">✅</span>')
+    if v > 0:    return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                         'width:24px;height:24px;background:#fef3c7;color:#d97706;border-radius:50%;'
+                         'font-size:13px;box-shadow:0 1px 3px rgba(217,119,6,.25)">⚠️</span>')
+    return              ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                         'width:24px;height:24px;background:#ffe4e6;color:#e11d48;border-radius:50%;'
+                         'font-size:13px;box-shadow:0 1px 3px rgba(225,29,72,.25)">🔴</span>')
+
+def _p_syl(s):
+    if s == "Si":  return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                           'width:24px;height:24px;background:#dcfce7;color:#16a34a;border-radius:50%;'
+                           'font-size:14px;box-shadow:0 1px 3px rgba(22,163,74,.25)">✅</span>')
+    if s == "NO":  return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
+                           'width:24px;height:24px;background:#ffe4e6;color:#e11d48;border-radius:50%;'
+                           'font-size:13px;box-shadow:0 1px 3px rgba(225,29,72,.25)">🔴</span>')
+    return '<span style="color:#b0bec5;font-size:11px;font-weight:600">N/A</span>'
+
+def _p_bar(pct):
+    pct = float(pct or 0)
+    clr = "#15803d" if pct >= 70 else ("#d97706" if pct >= 40 else "#dc2626")
+    bar = "#22c55e" if pct >= 70 else ("#f59e0b" if pct >= 40 else "#ef4444")
+    return (f'<div style="min-width:70px;text-align:center">'
+            f'<div style="font-size:12px;font-weight:700;color:{clr};margin-bottom:3px">{int(pct)}%</div>'
+            f'<div style="height:6px;background:#e2e8f0;border-radius:4px;overflow:hidden">'
+            f'<div style="width:{min(pct,100):.0f}%;height:100%;background:{bar};border-radius:4px;'
+            f'box-shadow:0 1px 2px rgba(0,0,0,.15)"></div>'
+            f'</div></div>')
+
+def _p_badge(txt, clr):
+    r,g,b = int(clr[1:3],16), int(clr[3:5],16), int(clr[5:7],16)
+    return (f'<span style="background:rgba({r},{g},{b},0.12);color:{clr};font-size:10px;'
+            f'font-weight:700;padding:3px 9px;border-radius:12px;white-space:nowrap">{_p_esc(txt)}</span>')
+
+def _p_star(av, per):
+    if "2026" not in str(per) and "oferta" not in str(per).lower():
+        return '<span style="color:#FBAF17;font-size:14px">★</span>'
+    if av >= 70: return '<span style="color:#A6CE38;font-size:14px" title="Puede implementarse en 2026-2">★</span>'
+    if av >= 40: return '<span style="color:#FBAF17;font-size:14px" title="Con esfuerzo podría implementarse">★</span>'
+    return         '<span style="color:#EC0677;font-size:14px" title="No se podría implementar en 2026-2">★</span>'
 
 # ── Tabs principales ────────────────────────────────────────────────────────────
 tab0, tab_prio, tab2 = st.tabs(["🏆 Resumen Ejecutivo", "🎯 Priorización", "🏛️ Por Facultad y Programa"])
@@ -1100,59 +1154,9 @@ with tab2:
 
 # ── Tab Priorización ──────────────────────────────────────────────────────────
 with tab_prio:
-    # ── helpers ────────────────────────────────────────────────────────────────
     _P_FAC_CLR = {"FSCC": "#EC0677", "FIDI": "#1FB2DE", "FNGS": "#A6CE38"}
     _P_MOD_CLR = {"Virtual": "#1FB2DE", "Presencial": "#A6CE38", "Híbrido": "#FBAF17"}
     _P_PER_CLR = {"2026-2": "#EC0677", "2027-1": "#FBAF17", "2027-2": "#2563eb", "Ya está en oferta": "#1FB2DE"}
-
-    def _p_esc(s): return str(s).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
-
-    def _p_icon(val):
-        try: v = float(val)
-        except Exception: return '<span style="color:#b0bec5;font-size:13px">—</span>'
-        import math as _m
-        if _m.isnan(v): return '<span style="color:#b0bec5;font-size:11px;font-weight:600">N/A</span>'
-        if v >= 100: return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                             'width:24px;height:24px;background:#dcfce7;color:#16a34a;border-radius:50%;'
-                             'font-size:14px;box-shadow:0 1px 3px rgba(22,163,74,.25)">✅</span>')
-        if v > 0:    return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                             'width:24px;height:24px;background:#fef3c7;color:#d97706;border-radius:50%;'
-                             'font-size:13px;box-shadow:0 1px 3px rgba(217,119,6,.25)">⚠️</span>')
-        return              ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                             'width:24px;height:24px;background:#ffe4e6;color:#e11d48;border-radius:50%;'
-                             'font-size:13px;box-shadow:0 1px 3px rgba(225,29,72,.25)">🔴</span>')
-
-    def _p_syl(s):
-        if s == "Si":  return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                               'width:24px;height:24px;background:#dcfce7;color:#16a34a;border-radius:50%;'
-                               'font-size:14px;box-shadow:0 1px 3px rgba(22,163,74,.25)">✅</span>')
-        if s == "NO":  return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                               'width:24px;height:24px;background:#ffe4e6;color:#e11d48;border-radius:50%;'
-                               'font-size:13px;box-shadow:0 1px 3px rgba(225,29,72,.25)">🔴</span>')
-        return '<span style="color:#b0bec5;font-size:11px;font-weight:600">N/A</span>'
-
-    def _p_bar(pct):
-        pct = float(pct or 0)
-        clr = "#15803d" if pct >= 70 else ("#d97706" if pct >= 40 else "#dc2626")
-        bar = "#22c55e" if pct >= 70 else ("#f59e0b" if pct >= 40 else "#ef4444")
-        return (f'<div style="min-width:70px;text-align:center">'
-                f'<div style="font-size:12px;font-weight:700;color:{clr};margin-bottom:3px">{int(pct)}%</div>'
-                f'<div style="height:6px;background:#e2e8f0;border-radius:4px;overflow:hidden">'
-                f'<div style="width:{min(pct,100):.0f}%;height:100%;background:{bar};border-radius:4px;'
-                f'box-shadow:0 1px 2px rgba(0,0,0,.15)"></div>'
-                f'</div></div>')
-
-    def _p_badge(txt, clr):
-        r,g,b = int(clr[1:3],16), int(clr[3:5],16), int(clr[5:7],16)
-        return (f'<span style="background:rgba({r},{g},{b},0.12);color:{clr};font-size:10px;'
-                f'font-weight:700;padding:3px 9px;border-radius:12px;white-space:nowrap">{_p_esc(txt)}</span>')
-
-    def _p_star(av, per):
-        if "2026" not in str(per) and "oferta" not in str(per).lower():
-            return '<span style="color:#FBAF17;font-size:14px">★</span>'
-        if av >= 70: return '<span style="color:#A6CE38;font-size:14px" title="Puede implementarse en 2026-2">★</span>'
-        if av >= 40: return '<span style="color:#FBAF17;font-size:14px" title="Con esfuerzo podría implementarse">★</span>'
-        return         '<span style="color:#EC0677;font-size:14px" title="No se podría implementar en 2026-2">★</span>'
 
     # ── Filtro propio del tab ───────────────────────────────────────────────────
     if "prio_mod" not in st.session_state: st.session_state["prio_mod"] = []
