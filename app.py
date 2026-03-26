@@ -134,12 +134,15 @@ footer { visibility: hidden; }
 }
 /* LIMPIAR button */
 [data-testid="stBaseButton-primary"] {
-    background: #0F385A !important; border-color: #0F385A !important;
-    color: #FFFFFF !important; font-size: 12px !important; font-weight: 700 !important;
-    border-radius: 8px !important;
+    background: linear-gradient(135deg,#1FB2DE,#0891b2) !important;
+    border-color: #1FB2DE !important;
+    color: #FFFFFF !important; font-size: 11px !important; font-weight: 700 !important;
+    border-radius: 8px !important; letter-spacing:.3px !important;
+    box-shadow: 0 2px 8px rgba(31,178,222,0.35) !important;
 }
 [data-testid="stBaseButton-primary"]:hover {
-    background: #1A5276 !important; border-color: #1A5276 !important;
+    background: linear-gradient(135deg,#0891b2,#0F385A) !important;
+    border-color: #0891b2 !important;
 }
 /* ── Compact filter bar: collapse gap between pill rows ── */
 .stVerticalBlock:has([data-testid="stPills"]) {
@@ -170,6 +173,38 @@ footer { visibility: hidden; }
 /* Remove top margin on tabs bar */
 [data-testid="stTabs"] { margin-top: 0 !important; padding-top: 0 !important; }
 [data-baseweb="tab-list"] { margin-top: 0 !important; }
+/* Sidebar toggle always visible */
+[data-testid="stSidebarCollapsedControl"] {
+    display: flex !important; visibility: visible !important;
+    opacity: 1 !important; position: fixed !important;
+    top: 0.5rem !important; left: 0.5rem !important; z-index: 999999 !important;
+}
+/* Remove white divider between header elements */
+[data-testid="stHorizontalBlock"]:has([data-testid="stPills"]) + div {
+    margin-top: 0 !important;
+}
+/* Pill colors - Modalidad (nth-child per option) */
+[data-testid="stPills"] button[aria-checked="false"]:nth-child(1),
+[data-testid="stPills"] button[aria-pressed="false"]:nth-child(1) {
+    border-color: #FBAF17 !important; color: #d97706 !important;
+}
+[data-testid="stPills"] button[aria-checked="false"]:nth-child(2),
+[data-testid="stPills"] button[aria-pressed="false"]:nth-child(2) {
+    border-color: #A6CE38 !important; color: #5a7a2e !important;
+}
+[data-testid="stPills"] button[aria-checked="false"]:nth-child(3),
+[data-testid="stPills"] button[aria-pressed="false"]:nth-child(3) {
+    border-color: #1FB2DE !important; color: #0891b2 !important;
+}
+[data-testid="stPills"] button[aria-checked="false"]:nth-child(4),
+[data-testid="stPills"] button[aria-pressed="false"]:nth-child(4) {
+    border-color: #7c3aed !important; color: #7c3aed !important;
+}
+/* Compact filter - reduce height */
+[data-testid="stHorizontalBlock"]:has([data-testid="stPills"]) {
+    min-height: unset !important; height: auto !important;
+    padding-top: 0 !important; padding-bottom: 0 !important;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -206,9 +241,7 @@ with st.sidebar:
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
     st.page_link("app.py",                              label="Resumen General",      icon="📊")
     st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
-    st.page_link("pages/2_Programa.py",                 label="Ficha de Programa",    icon="🔍")
-    st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
-    st.page_link("pages/5_Periodo_Propuesto.py",        label="Periodo Propuesto",    icon="📅")
+    st.page_link("pages/2_Programa.py",                 label="Resumen Programa",     icon="🔍")
     st.markdown("<div style='flex:1'></div>", unsafe_allow_html=True)
     st.markdown(
         '<div style="padding:12px 6px;font-size:10px;color:rgba(255,255,255,0.40);text-align:center">'
@@ -558,9 +591,6 @@ tab0, tab_prio, tab2 = st.tabs(["🏆 Resumen Ejecutivo", "🎯 Priorización", 
 with tab0:
     # ── Filtro dentro del tab ──────────────────────────────────────────────────
     with st.container():
-        st.markdown('<div style="background:#FFFFFF;border-radius:10px;padding:6px 10px 4px;'
-                    'border:1px solid rgba(15,56,90,0.10);box-shadow:0 1px 4px rgba(15,56,90,0.04);'
-                    'margin-bottom:6px">', unsafe_allow_html=True)
         _lb1, _in1, _sp0, _lb2, _in2 = st.columns([0.55, 2.2, 0.05, 0.65, 2.2])
         with _lb1: st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
         with _in1:
@@ -580,7 +610,6 @@ with tab0:
             st.markdown(f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right">'
                         f'Mostrando <b style="color:#0F385A">{n}</b> de '
                         f'<b style="color:#0F385A">{len(df_raw)}</b></div>', unsafe_allow_html=True)
-        st.markdown("</div>", unsafe_allow_html=True)
 
     # ── CSS propio del Resumen Ejecutivo (estilos del HTML de referencia) ──────
     st.markdown("""
@@ -649,19 +678,19 @@ with tab0:
         return (f'<div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#94a3b8;'
                 f'text-transform:uppercase;margin:6px 0 3px;padding-left:2px">{txt}</div>')
 
-    st.markdown(_re_sec_lbl("DISTRIBUCIÓN POR MODALIDAD"), unsafe_allow_html=True)
+    st.markdown(_re_sec_lbl("Distribución por Modalidad"), unsafe_allow_html=True)
     sm1, sm2, sm3, sm4 = st.columns(4)
-    sm1.markdown(_re_scard(n,          "TOTAL",      "#0F385A", "#0F385A"), unsafe_allow_html=True)
-    sm2.markdown(_re_scard(_cnt_virt,  "VIRTUAL",    "#1FB2DE", "#1FB2DE"), unsafe_allow_html=True)
-    sm3.markdown(_re_scard(_cnt_pres,  "PRESENCIAL", "#A6CE38", "#A6CE38"), unsafe_allow_html=True)
-    sm4.markdown(_re_scard(_cnt_hibr,  "HÍBRIDO",    "#FBAF17", "#FBAF17"), unsafe_allow_html=True)
+    sm1.markdown(_re_scard(n,          "Total",      "#0F385A", "#0F385A"), unsafe_allow_html=True)
+    sm2.markdown(_re_scard(_cnt_virt,  "Virtual",    "#1FB2DE", "#1FB2DE"), unsafe_allow_html=True)
+    sm3.markdown(_re_scard(_cnt_pres,  "Presencial", "#A6CE38", "#A6CE38"), unsafe_allow_html=True)
+    sm4.markdown(_re_scard(_cnt_hibr,  "Híbrido",    "#FBAF17", "#FBAF17"), unsafe_allow_html=True)
 
-    st.markdown(_re_sec_lbl("DISTRIBUCIÓN POR PERÍODO"), unsafe_allow_html=True)
+    st.markdown(_re_sec_lbl("Distribución por Período"), unsafe_allow_html=True)
     sp1, sp2, sp3, sp4 = st.columns(4)
     sp1.markdown(_re_scard(cnt_2026,    "2026-2",       "#7c3aed", "#7c3aed"), unsafe_allow_html=True)
     sp2.markdown(_re_scard(cnt_2027_1,  "2027-1",       "#EC0677", "#EC0677"), unsafe_allow_html=True)
     sp3.markdown(_re_scard(_cnt_2027_2, "2027-2",       "#0891b2", "#0891b2"), unsafe_allow_html=True)
-    sp4.markdown(_re_scard(_cnt_oferta, "YA EN OFERTA", "#A6CE38", "#A6CE38"), unsafe_allow_html=True)
+    sp4.markdown(_re_scard(_cnt_oferta, "Ya en Oferta", "#A6CE38", "#A6CE38"), unsafe_allow_html=True)
 
     # ── SECCIÓN 2: Riesgos ────────────────────────────────────────────────────
     st.markdown('<div class="re-sec">⚠️ Riesgos Activos</div>', unsafe_allow_html=True)
@@ -829,32 +858,32 @@ with tab0:
     rr1, rr2, rr3 = st.columns(3)
     with rr1:
         st.markdown(_render_rcard(
-            "R1 · Producción virtual sin aval financiero",
+            "Producción virtual sin aval financiero",
             "Virtual · % contenidos > 0 y sin concepto financiero",
             "#dc2626", r1_rows,
             ["Programa", "Período", "% Contenidos"], "⚠️"), unsafe_allow_html=True)
     with rr2:
         st.markdown(_render_rcard(
-            "R2 · Lanzamiento 2026-2 con contenidos incompletos",
+            "Lanzamiento 2026-2 con contenidos incompletos",
             "Período 2026-2 · Producción < 100% · Menor avance primero",
             "#d97706", r2_rows,
             ["Programa", "Modalidad", "% Contenidos"], "🔔"), unsafe_allow_html=True)
     with rr3:
         st.markdown(_render_rcard(
-            "R3 · Parametrización en Banner sin producción de contenidos",
+            "Parametrización en Banner sin producción de contenidos",
             "Banner > 0% y Contenidos < 100%",
             "#7c3aed", r3_rows,
             ["Programa", "Período", "% Banner"], "⚙️"), unsafe_allow_html=True)
     rr4, rr5, rr6 = st.columns(3)
     with rr4:
         st.markdown(_render_rcard(
-            "R4 · Avance en producción — Syllabus incompleto",
+            "Avance en producción — Syllabus incompleto",
             "Virtual/Híbrido · Avance en contenidos y Syllabus = NO",
             "#0d9488", r4_rows,
             ["Programa", "Syllabus", "% Contenidos", "Período"], "📋"), unsafe_allow_html=True)
     with rr5:
         st.markdown(_render_rcard(
-            "R5 · Banner con avance sin trámite de convenios",
+            "Banner con avance sin trámite de convenios",
             "Banner > 0% y Convenios < 100%",
             "#2563eb", r5_rows,
             ["Programa", "% Convenios", "% Banner"], "🤝"), unsafe_allow_html=True)
@@ -922,6 +951,59 @@ with tab0:
 
 # ── Tab 2: Por facultad ────────────────────────────────────────────────────────
 with tab2:
+    # ── KPI cards por facultad ─────────────────────────────────────────────────
+    _FAC_DEFS = [
+        ("Sociedad, Cultura y Creatividad",    "FSCC", "#EC0677"),
+        ("Ingeniería, Diseño e Innovación",    "FIDI", "#1FB2DE"),
+        ("Negocios, Gestión y Sostenibilidad", "FNGS", "#A6CE38"),
+    ]
+    _kpi_cols = st.columns(3)
+    for _ki, (_fn, _fab, _fc) in enumerate(_FAC_DEFS):
+        _fdf = df[df["FACULTAD"].map(fac_labels) == _fn]
+        _ftot  = len(_fdf)
+        _favg  = int(_fdf["avance_general"].mean()) if _ftot else 0
+        _furg  = int((_fdf["_clasif"] == "Urgente").sum())
+        _fpri  = int((_fdf["_clasif"] == "Prioritario").sum())
+        _fok   = int((_fdf["_clasif"] == "En curso").sum())
+        _fseg  = int((_fdf["_clasif"] == "En seguimiento").sum())
+        r, g, b = int(_fc[1:3],16), int(_fc[3:5],16), int(_fc[5:7],16)
+        _kpi_cols[_ki].markdown(
+            f'<div style="background:#FFFFFF;border:1px solid rgba({r},{g},{b},0.30);'
+            f'border-top:4px solid {_fc};border-radius:12px;padding:14px 16px;'
+            f'box-shadow:0 2px 10px rgba(15,56,90,0.07);margin-bottom:10px">'
+            f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:10px">'
+            f'<div style="width:10px;height:10px;border-radius:50%;background:{_fc}"></div>'
+            f'<div style="font-size:11px;font-weight:700;color:{_fc};letter-spacing:.3px">{_fab}</div>'
+            f'<div style="font-size:10px;color:#8aabb0;flex:1;white-space:nowrap;overflow:hidden;'
+            f'text-overflow:ellipsis">{_fn}</div></div>'
+            f'<div style="display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px">'
+            f'<div><div style="font-size:32px;font-weight:800;color:#0F385A;line-height:1">{_ftot}</div>'
+            f'<div style="font-size:9px;color:#8aabb0;text-transform:uppercase;letter-spacing:.4px">Programas</div></div>'
+            f'<div style="text-align:right">'
+            f'<div style="font-size:22px;font-weight:700;color:{_fc};line-height:1">{_favg}%</div>'
+            f'<div style="font-size:9px;color:#8aabb0;text-transform:uppercase;letter-spacing:.4px">Avance prom.</div>'
+            f'</div></div>'
+            f'<div style="height:5px;background:#f0f4f8;border-radius:3px;overflow:hidden;margin-bottom:10px">'
+            f'<div style="width:{_favg}%;height:100%;background:{_fc};border-radius:3px;'
+            f'opacity:0.75"></div></div>'
+            f'<div style="display:grid;grid-template-columns:1fr 1fr;gap:4px">'
+            f'<div style="background:#fce8f2;border-radius:6px;padding:4px 8px;text-align:center">'
+            f'<div style="font-size:14px;font-weight:700;color:#EC0677">{_furg}</div>'
+            f'<div style="font-size:8px;color:#c0005a;text-transform:uppercase;letter-spacing:.3px">Urgentes</div></div>'
+            f'<div style="background:#fef9e8;border-radius:6px;padding:4px 8px;text-align:center">'
+            f'<div style="font-size:14px;font-weight:700;color:#d97706">{_fpri}</div>'
+            f'<div style="font-size:8px;color:#a05b00;text-transform:uppercase;letter-spacing:.3px">Prioritarios</div></div>'
+            f'<div style="background:#f0f8e8;border-radius:6px;padding:4px 8px;text-align:center">'
+            f'<div style="font-size:14px;font-weight:700;color:#5a7a2e">{_fok}</div>'
+            f'<div style="font-size:8px;color:#3a5a10;text-transform:uppercase;letter-spacing:.3px">En curso</div></div>'
+            f'<div style="background:#e8f6fc;border-radius:6px;padding:4px 8px;text-align:center">'
+            f'<div style="font-size:14px;font-weight:700;color:#0a6a8e">{_fseg}</div>'
+            f'<div style="font-size:8px;color:#06526e;text-transform:uppercase;letter-spacing:.3px">Seguimiento</div></div>'
+            f'</div></div>',
+            unsafe_allow_html=True,
+        )
+
+    st.markdown("<div style='height:6px'></div>", unsafe_allow_html=True)
     col_l, col_r = st.columns(2)
 
     with col_l:
@@ -1248,9 +1330,6 @@ with tab_prio:
     _LBL_P = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
                'letter-spacing:.4px;white-space:nowrap"')
     with st.container():
-        st.markdown('<div style="background:#FFFFFF;border-radius:10px;padding:8px 12px 6px;'
-                    'border:1px solid rgba(15,56,90,0.10);box-shadow:0 1px 4px rgba(15,56,90,0.04);'
-                    'margin-bottom:6px">', unsafe_allow_html=True)
         _lp1, _ip1, _sp_p, _lp2, _ip2 = st.columns([0.55, 2.2, 0.05, 0.65, 2.2])
         with _lp1: st.markdown(f'<div {_LBL_P}>📋 MODALIDAD</div>', unsafe_allow_html=True)
         with _ip1: sel_pmod = st.pills("pmod", sorted(df_raw["MODALIDAD"].dropna().unique().tolist()),
@@ -1264,7 +1343,6 @@ with tab_prio:
                                        selection_mode="multi", key="prio_per", label_visibility="collapsed")
         with _btn_p: st.button("✕ LIMPIAR", on_click=_clear_prio, use_container_width=True, type="primary", key="prio_clear")
         with _cnt_p: _prio_cnt = st.empty()
-        st.markdown("</div>", unsafe_allow_html=True)
 
     # ── Filtrar datos ───────────────────────────────────────────────────────────
     df_p = df_raw.copy()
@@ -1277,9 +1355,18 @@ with tab_prio:
     if len(df_p) > 0:
         df_p["_clasif"] = df_p.apply(
             lambda r: clasificar_programa(r["avance_general"], r["PERIODO DE IMPLEMENTACIÓN"]), axis=1)
-        _pord = {"Urgente":0,"Prioritario":1,"En seguimiento":2,"En curso":3}
-        df_p["_pord"] = df_p["_clasif"].map(_pord).fillna(4)
-        df_p = df_p.sort_values(["_pord","avance_general"], ascending=[True,True])
+        def _star_ord(row):
+            av = float(row.get("avance_general", 0) or 0)
+            per = str(row.get("periodo_propuesto", ""))
+            if "2026" not in per and "oferta" not in per.lower():
+                if av >= 70: return (1, -av)
+                if av >= 40: return (2, -av)
+                return (3, -av)
+            if av >= 70: return (0, -av)   # green - ready
+            if av >= 40: return (1, -av)   # yellow - with effort
+            return (2, -av)                # red - not ready
+        df_p["_sort_key"] = df_p.apply(lambda r: _star_ord(r), axis=1)
+        df_p = df_p.sort_values("_sort_key")
 
     _prio_cnt.markdown(
         f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right">'
@@ -1295,17 +1382,17 @@ with tab_prio:
         '</div>', unsafe_allow_html=True)
 
     _PRIO_ETAPAS = [
-        ("G.ACADÉMICA",  "proc_Gestión Académica",                       "proc"),
-        ("C.FINANCIERO", "proc_Gestión Financiera",                       "proc"),
-        ("ASEGURAMIENT", "proc_Aseguramiento de la Calidad",              "proc"),
-        ("PLANEACIÓN",   "proc_Ger. Planeación y Gestión Institucional",  "proc"),
-        ("SYLLABUS",     "syl_val",                                        "syl"),
-        ("PROD.CONT.",   "pc_pct",                                         "bar"),
-        ("CONVENIOS",    "proc_Convenios Institucionales",                "proc"),
-        ("BANNER",       "ban_pct",                                        "bar"),
-        ("TIPO TRÁMITE", "Tipo de trámite de aseguramiento de la calidad", "text"),
-        ("FECHA NOTIF.", "Fecha notif. MEN",                              "text"),
-        ("REQ. MIN.",    "Req. Ministerial",                              "text"),
+        ("G.Académica",  "proc_Gestión Académica",                       "proc"),
+        ("C.Financiero", "proc_Gestión Financiera",                       "proc"),
+        ("Aseguramient", "proc_Aseguramiento de la Calidad",              "proc"),
+        ("Planeación",   "proc_Ger. Planeación y Gestión Institucional",  "proc"),
+        ("Syllabus",     "syl_val",                                        "syl"),
+        ("Prod.Cont.",   "pc_pct",                                         "bar"),
+        ("Convenios",    "proc_Convenios Institucionales",                "proc"),
+        ("Banner",       "ban_pct",                                        "bar"),
+        ("Tipo Trámite", "Tipo de trámite de aseguramiento de la calidad", "text"),
+        ("Fecha Notif.", "Fecha notif. MEN",                              "text"),
+        ("Req. Min.",    "Req. Ministerial",                              "text"),
     ]
     _PRIO_CLR = {"Urgente":("#EC0677","#fce8f2"),"Prioritario":("#FBAF17","#fdf8e8"),
                  "En seguimiento":("#2980B9","#EBF5FB"),"En curso":("#A6CE38","#f0f8e8")}
@@ -1313,19 +1400,19 @@ with tab_prio:
     if len(df_p) == 0:
         st.info("Sin programas para los filtros seleccionados.")
     else:
-        TH_P  = ('style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;'
-                 'padding:8px 6px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;'
+        TH_P  = ('style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:700;'
+                 'padding:6px 4px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;'
                  'border-right:1px solid rgba(255,255,255,0.10)"')
-        THL_P = ('style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;'
-                 'padding:8px 10px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2;'
+        THL_P = ('style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:700;'
+                 'padding:6px 8px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2;'
                  'border-right:1px solid rgba(255,255,255,0.10)"')
         rows_p = []
         for idx, (_, row) in enumerate(df_p.iterrows()):
             rbg = "#FFFFFF" if idx % 2 == 0 else "#f8fafc"
-            TD  = (f'style="padding:6px 5px;text-align:center;vertical-align:middle;'
+            TD  = (f'style="padding:5px 4px;text-align:center;vertical-align:middle;'
                    f'border-bottom:1px solid #eef3f8;background:{rbg}"')
-            TDL = (f'style="padding:6px 10px;text-align:left;vertical-align:middle;'
-                   f'border-bottom:1px solid #eef3f8;background:{rbg};min-width:160px;max-width:220px"')
+            TDL = (f'style="padding:5px 7px;text-align:left;vertical-align:middle;'
+                   f'border-bottom:1px solid #eef3f8;background:{rbg};min-width:130px;max-width:170px"')
             prog   = _p_esc(row.get("NOMBRE DEL PROGRAMA","—"))
             fac_s  = fac_abrev.get(str(row.get("FACULTAD","")), "—")
             fac_c  = _P_FAC_CLR.get(fac_s, "#9aabb5")
@@ -1352,7 +1439,12 @@ with tab_prio:
                     etapa_cells.append(f'<td {TD}>{_p_bar(pct)}</td>')
                 else:
                     tv = val if val not in [None,"","nan"] else "—"
-                    etapa_cells.append(f'<td {TD}><span style="font-size:10px;color:#0F385A">{_p_esc(str(tv))}</span></td>')
+                    if col_key == "Tipo de trámite de aseguramiento de la calidad":
+                        etapa_cells.append(f'<td {TD}><span style="font-size:9px;background:#eff6ff;color:#2563eb;'
+                                          f'padding:2px 5px;border-radius:6px;font-weight:600;white-space:nowrap">'
+                                          f'{_p_esc(str(tv))}</span></td>')
+                    else:
+                        etapa_cells.append(f'<td {TD}><span style="font-size:10px;color:#0F385A">{_p_esc(str(tv))}</span></td>')
 
             rows_p.append(
                 f'<tr>'
@@ -1371,15 +1463,15 @@ with tab_prio:
 
         hdrs = "".join(f'<th {TH_P}>{h}</th>' for h,_,_ in _PRIO_ETAPAS)
         tabla_p = (
-            '<div style="overflow-x:auto;overflow-y:auto;max-height:65vh;border-radius:12px;'
+            '<div style="overflow-x:hidden;overflow-y:auto;max-height:65vh;border-radius:12px;'
             'border:1.5px solid #b5c9d8;box-shadow:0 2px 12px rgba(15,56,90,.10);background:#fafdff">'
-            '<table style="width:100%;border-collapse:separate;border-spacing:0;font-family:\'Segoe UI\',sans-serif">'
+            '<table style="width:100%;table-layout:fixed;border-collapse:separate;border-spacing:0;font-family:\'Segoe UI\',sans-serif">'
             '<thead><tr>'
-            f'<th {THL_P}>PROGRAMA</th>'
-            f'<th {TH_P}>MODALIDAD</th>'
-            f'<th {TH_P}>PERÍODO</th>'
-            f'<th {TH_P}>PRIORIDAD</th>'
-            f'<th {TH_P}>AVANCE</th>'
+            f'<th {THL_P}>Programa</th>'
+            f'<th {TH_P}>Modalidad</th>'
+            f'<th {TH_P}>Período</th>'
+            f'<th {TH_P}>Prioridad</th>'
+            f'<th {TH_P}>Avance</th>'
             + hdrs +
             '</tr></thead><tbody>'
             + "".join(rows_p) +

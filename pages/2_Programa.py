@@ -149,9 +149,7 @@ with st.sidebar:
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
     st.page_link("app.py",                              label="Resumen General",      icon="📊")
     st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
-    st.page_link("pages/2_Programa.py",                 label="Ficha de Programa",    icon="🔍")
-    st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
-    st.page_link("pages/5_Periodo_Propuesto.py",        label="Periodo Propuesto",    icon="📅")
+    st.page_link("pages/2_Programa.py",                 label="Resumen Programa",     icon="🔍")
     st.markdown(
         '<div style="padding:12px 6px;font-size:10px;color:rgba(255,255,255,0.40);text-align:center">'
         'POLI · 2025–2026</div>',
@@ -166,7 +164,7 @@ st.markdown(
     'border-radius:0 0 12px 12px;'
     'border-bottom:3px solid #42F2F2;">'
     '<div style="font-size:21px;font-weight:700;color:#FFFFFF;letter-spacing:-.3px">'
-    'Ficha de Programa</div>'
+    'Resumen Programa</div>'
     f'<div style="font-size:12px;color:rgba(255,255,255,0.70);margin-top:5px">'
     f'Vista general con conteo de etapas completadas · {len(df_raw)} programas totales</div>'
     '</div>',
@@ -229,7 +227,7 @@ with st.container():
                                      label_visibility="collapsed", placeholder="Todos")
     with btn_col:
         st.markdown("<div style='height:3px'></div>", unsafe_allow_html=True)
-        st.button("🔄 LIMPIAR", on_click=_clear_p2, use_container_width=True,
+        st.button("✕ LIMPIAR", on_click=_clear_p2, use_container_width=True,
                   type="primary", key="p2_clear")
     with cnt_col:
         _p2_counter = st.empty()
