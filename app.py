@@ -1313,7 +1313,7 @@ with tab_prio:
         ("Planeación",   "proc_Ger. Planeación y Gestión Institucional",  "proc"),
         ("Syllabus",     "syl_val",                                        "syl"),
         ("Prod.Cont.",   "pc_pct",                                         "bar"),
-        ("Convenios",    "proc_Convenios Institucionales",                "proc"),
+        ("Convenios",    "conv_pct",                                      "bar"),
         ("Banner",       "ban_pct",                                        "bar"),
         ("Tipo Trámite", "Tipo de trámite de aseguramiento de la calidad", "tramite"),
         ("Fecha Notif.", "Fecha de\nDocumentos de notificación MEN",       "text"),
