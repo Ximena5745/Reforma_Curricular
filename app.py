@@ -156,6 +156,20 @@ footer { visibility: hidden; }
     padding-bottom: 0 !important;
     margin-bottom: 0 !important;
 }
+/* Remove excess space below filter block and before tabs */
+.stVerticalBlock:has([data-testid="stPills"]) + .stVerticalBlock {
+    margin-top: 0 !important;
+    padding-top: 0 !important;
+}
+.stMainBlockContainer [data-testid="stVerticalBlock"] > [data-testid="stVerticalBlockBorderWrapper"]:has([data-testid="stPills"]) {
+    margin-bottom: 2px !important;
+    padding-bottom: 2px !important;
+}
+/* Tighten gap between top-level page blocks (header → filters → tabs) */
+.stMainBlockContainer > div > div > .stVerticalBlock { gap: 0.4rem !important; }
+/* Remove top margin on tabs bar */
+[data-testid="stTabs"] { margin-top: 0 !important; padding-top: 0 !important; }
+[data-baseweb="tab-list"] { margin-top: 0 !important; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -298,7 +312,7 @@ _app_counter.markdown(
     unsafe_allow_html=True,
 )
 
-st.divider()
+st.markdown('<hr style="margin:6px 0 4px;border-color:rgba(15,56,90,0.10)">', unsafe_allow_html=True)
 
 # ── Cálculos previos (no rendering) ────────────────────────────────────────────
 all_cl   = []
