@@ -103,6 +103,7 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 # ── Datos ─────────────────────────────────────────────────────────────────────
 df_raw = enrich_df(load_data())
+df_raw = df_raw[df_raw["PERIODO DE IMPLEMENTACIÓN"] != "Ya está en oferta"].copy()
 
 fac_abrev = {
     "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",
