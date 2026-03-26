@@ -26,7 +26,7 @@ ETAPAS_MAP = [
     ("Producción de Contenidos",                 "% avance contenidos virtuales",                    "% avance contenidos virtuales",                             "pct"),
     ("Convenios Institucionales",                "Acta de homologación",                             "Acta de homologación",                                      "status"),
     ("Convenios Institucionales",                "Ruta sugerida homologación/articulación",          "Ruta sugerida programa homologación/articulación convenio", "status"),
-    ("Convenios Institucionales",                "% avance",                                         "% avance .1",                                               "pct"),
+    ("Convenios Institucionales",                "% avance",                                         "% avance",                                                  "pct"),
     ("Parametrizar Reforma en Banner",           "Total aulas master",                               "Total Aulas Master",                                        "num"),
     ("Parametrizar Reforma en Banner",           "Avance de aulas master",                           "Avance de Aulas Master",                                    "num"),
     ("Parametrizar Reforma en Banner",           "% de avance",                                      "% de Avance",                                               "pct"),

@@ -928,7 +928,8 @@ with tab0:
     ].copy()
     r5_df   = r5_df.sort_values("conv_pct", ascending=True)
     r5_rows = _r_rows(r5_df, {
-        "% Convenios (AS)": lambda r: _rpct(r.get("conv_pct", 0)),
+        "% Avance Convenios": lambda r: _rpct(r.get("conv_pct", 0)),
+        "% Avance Banner":    lambda r: _rpct(r.get("ban_pct", 0)),
     })
 
     rr1, rr2, rr3 = st.columns(3)
@@ -966,7 +967,7 @@ with tab0:
             "Banner con avance sin trámite de convenios",
             "BB > 0% y AS < 100% · Menor avance en convenios primero",
             "#2563eb", r5_rows,
-            ["Programa", "% Convenios (AS)"], "🤝",
+            ["Programa", "% Avance Convenios", "% Avance Banner"], "🤝",
             tbl_max_height="none"), unsafe_allow_html=True)
 
     # ── SECCIÓN 3: Resumen por Etapa ──────────────────────────────────────────
