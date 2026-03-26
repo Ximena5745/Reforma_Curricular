@@ -399,15 +399,16 @@ def enrich_df(df):
 
 
 def load_data():
-    """Retorna DataFrame procesado, usando st.cache_data si Streamlit está disponible."""
+    """Retorna DataFrame procesado, usando st.cache_data si Streamlit está disponible.
+    El argumento _n_etapas fuerza la invalidación del caché cuando cambia ETAPAS_MAP."""
     try:
         import streamlit as st
 
         @st.cache_data
-        def _cached():
+        def _cached(_n_etapas: int):
             return _build_df()
 
-        return _cached()
+        return _cached(len(ETAPAS_MAP))
     except Exception:
         return _build_df()
 

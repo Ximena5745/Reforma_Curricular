@@ -307,7 +307,9 @@ n  = len(df)
 # ── Cálculos previos (no rendering) ────────────────────────────────────────────
 all_cl   = []
 for i in range(len(ETAPAS_MAP)):
-    all_cl.extend(df[f"cl_{i}"].tolist())
+    col = f"cl_{i}"
+    if col in df.columns:
+        all_cl.extend(df[col].tolist())
 avg_av   = int(df["avance_general"].mean()) if n > 0 else 0
 cnt_adv  = int((df["avance_general"] >= 70).sum())
 
