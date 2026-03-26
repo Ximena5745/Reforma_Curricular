@@ -183,6 +183,46 @@ def _build_df():
             df[f"cl_{i}"]  = "na"
             df[f"val_{i}"] = "—"
 
+    # ── Override Aseguramiento de Calidad: lógica MEN ────────────────────────
+    # Si col Z "¿Requiere informarse al MEN previa implementación?" = "Si"
+    #   → col X "Fecha de Documentos de notificación MEN" mes/año < hoy → done
+    #   → fecha >= hoy o vacía → inprog
+    # Si No / vacío → mantiene clasificación de cl_5 (Estado del trámite)
+    _col_req   = "¿Requiere informarse al MEN previa implementación?"
+    _col_fecha = "Fecha de\nDocumentos de notificación MEN"
+    _MESES_ES  = {
+        "enero":1,"febrero":2,"marzo":3,"abril":4,"mayo":5,"junio":6,
+        "julio":7,"agosto":8,"septiembre":9,"octubre":10,"noviembre":11,"diciembre":12,
+    }
+
+    def _parse_fecha_es(s):
+        """Parsea 'Mes de YYYY' en español. Retorna Timestamp o NaT."""
+        s = str(s).strip().lower()
+        for mes, num in _MESES_ES.items():
+            if mes in s:
+                parts = s.replace("de", "").split()
+                years = [p for p in parts if p.isdigit() and len(p) == 4]
+                if years:
+                    return pd.Timestamp(year=int(years[0]), month=num, day=1)
+        return pd.NaT
+
+    if _col_req in df.columns and _col_fecha in df.columns:
+        _today_m = pd.Timestamp.today().replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+        def _cls_men(row):
+            req = str(row[_col_req]).strip().lower()
+            if req not in ("si", "sí"):
+                return row["cl_5"]
+            fecha_raw = str(row[_col_fecha]).strip()
+            if not fecha_raw or fecha_raw in ("", "—", "None", "nan"):
+                return "inprog"
+            dt = _parse_fecha_es(fecha_raw)
+            if pd.isna(dt):
+                return "inprog"
+            return "done" if dt < _today_m else "inprog"
+
+        df["cl_5"] = df.apply(_cls_men, axis=1)
+
     # Avance por proceso
     for proc in PROCESOS:
         idxs = [i for i, (p, _, _, _) in enumerate(ETAPAS_MAP) if p == proc]
