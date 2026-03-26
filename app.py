@@ -799,7 +799,7 @@ with tab0:
                 f'<span style="font-weight:600;color:#0F385A;font-size:12px">{prog}</span>'
                 + (f'<br><span style="font-size:10px;font-weight:700;color:{fac_clr}">{fac_s}</span>' if fac_s else "")
             )
-            per = str(r.get("periodo_propuesto", r.get("PERIODO DE IMPLEMENTACIÓN", "—")))
+            per = str(r.get("PERIODO DE IMPLEMENTACIÓN", "—")).strip()
             row_data = {
                 "Programa":  prog_html,
                 "Modalidad": _mod_badge(r.get("MODALIDAD", "—")),
@@ -880,12 +880,13 @@ with tab0:
     _ban = df_risk["ban_pct"] if "ban_pct" in df_risk.columns else pd.Series([0.0]*len(df_risk), index=df_risk.index)
     _con = df_risk["conv_pct"]if "conv_pct"in df_risk.columns else pd.Series([0.0]*len(df_risk), index=df_risk.index)
     _syl = df_risk["syl_val"] if "syl_val" in df_risk.columns else pd.Series(["Si"]*len(df_risk), index=df_risk.index)
-    _pp  = df_risk["periodo_propuesto"] if "periodo_propuesto" in df_risk.columns else pd.Series([""]*len(df_risk), index=df_risk.index)
+    _per = df_risk["PERIODO DE IMPLEMENTACIÓN"].str.strip() if "PERIODO DE IMPLEMENTACIÓN" in df_risk.columns else pd.Series([""]*len(df_risk), index=df_risk.index)
 
     def _sort_risk(risk_df):
-        if "periodo_propuesto" in risk_df.columns:
+        per_col = "PERIODO DE IMPLEMENTACIÓN"
+        if per_col in risk_df.columns:
             tmp = risk_df.copy()
-            tmp["_por"] = tmp["periodo_propuesto"].map(PERIODO_ORDER).fillna(99)
+            tmp["_por"] = tmp[per_col].str.strip().map(PERIODO_ORDER).fillna(99)
             return tmp.sort_values(["_por", "avance_general"], ascending=[True, False]).drop(columns=["_por"])
         return risk_df.sort_values("avance_general", ascending=False)
 
@@ -899,7 +900,7 @@ with tab0:
     })
 
     # R2 — Lanzamiento 2026-2 con contenidos incompletos
-    r2_df   = df_risk[(_pp == "2026-2") & (_pcs != "na") & (_pc < 100)].copy()
+    r2_df   = df_risk[(_per == "2026-2") & (_pcs != "na") & (_pc < 100)].copy()
     r2_df   = r2_df.sort_values("pc_pct", ascending=True)
     r2_rows = _r_rows(r2_df, {
         "% Contenidos": lambda r: _rpct(r.get("pc_pct", 0)),
