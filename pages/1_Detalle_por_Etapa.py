@@ -189,13 +189,6 @@ _LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
         'letter-spacing:.4px;white-space:nowrap"')
 
 with st.container():
-    st.markdown(
-        '<div style="background:#FFFFFF;border-radius:10px;margin:8px 0 6px;'
-        'padding:10px 16px 8px;border:1px solid rgba(15,56,90,0.10);'
-        'box-shadow:0 2px 8px rgba(15,56,90,0.06)">',
-        unsafe_allow_html=True,
-    )
-
     # Fila 1: MODALIDAD · FACULTAD
     lb1, in1, _sp, lb2, in2 = st.columns([0.6, 2.5, 0.05, 0.6, 3.4])
     with lb1:
@@ -234,13 +227,10 @@ with st.container():
         sel_proc = st.selectbox("proc", _proc_ops, key="p1_proc",
                                 label_visibility="collapsed")
     with btn_col:
-        st.markdown("<div style='height:3px'></div>", unsafe_allow_html=True)
         st.button("✕ LIMPIAR", on_click=_clear_p1, use_container_width=True,
                   type="primary", key="p1_clear")
     with cnt_col:
         _p1_counter = st.empty()
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # Aplicar filtros
 modalidad_f = list(sel_mod) if sel_mod else []

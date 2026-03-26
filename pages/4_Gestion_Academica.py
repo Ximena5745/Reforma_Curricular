@@ -157,13 +157,6 @@ _LBL = (
 )
 
 with st.container():
-    st.markdown(
-        '<div style="background:#FFFFFF;border-radius:10px;padding:10px 16px 8px;'
-        'border:1px solid rgba(15,56,90,0.10);box-shadow:0 2px 8px rgba(15,56,90,0.06);'
-        'margin-bottom:6px">',
-        unsafe_allow_html=True,
-    )
-
     # ── Fila 1: BUSCAR · MODALIDAD ─────────────────────────────────────────────
     lb1, in1, _sp, lb2, in2 = st.columns([0.55, 2.6, 0.05, 0.7, 3.4])
     with lb1:
@@ -193,12 +186,9 @@ with st.container():
             st.multiselect("per", _per_opts,
                            key="ga_per", label_visibility="collapsed", placeholder="Todos")
     with btn_col:
-        st.markdown("<div style='height:3px'></div>", unsafe_allow_html=True)
         st.button("✕ LIMPIAR", on_click=_clear, use_container_width=True, type="primary")
     with cnt_col:
         _counter = st.empty()
-
-    st.markdown("</div>", unsafe_allow_html=True)
 
 # ── Aplicar filtros ────────────────────────────────────────────────────────────
 df = df_raw.copy()

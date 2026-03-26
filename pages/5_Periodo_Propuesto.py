@@ -195,12 +195,6 @@ st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 st.markdown("#### Detalle por Programa")
 
 with st.container():
-    st.markdown(
-        '<div style="background:#FFFFFF;border-radius:10px;padding:8px 16px;'
-        'border:1px solid rgba(15,56,90,0.10);box-shadow:0 2px 8px rgba(15,56,90,0.06);'
-        'margin-bottom:8px;display:inline-flex;align-items:center">',
-        unsafe_allow_html=True,
-    )
     lb_c, in_c = st.columns([0.65, 3])
     with lb_c:
         st.markdown(
@@ -210,7 +204,6 @@ with st.container():
     with in_c:
         show_cambios = st.checkbox("cambios", value=False, key="p5_cambios",
                                    label_visibility="collapsed")
-    st.markdown("</div>", unsafe_allow_html=True)
 
 df_table = df.copy() if not show_cambios else df[df["Cambio"]].copy()
 
