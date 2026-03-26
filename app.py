@@ -1251,6 +1251,9 @@ with tab_prio:
         # Tecnología en Gestión Ambiental: siempre verde
         if prog == "Tecnología en Gestión Ambiental":
             return True
+        # Programas forzados a amarillo: nunca verde
+        if (prog, mod, per) in _AMARILLO_FORZADO:
+            return False
         # Programas forzados a verde
         if (prog, mod, per) in _VERDE_FORZADO:
             return True
