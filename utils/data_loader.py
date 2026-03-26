@@ -291,6 +291,13 @@ def _build_df():
     _pres = df["MODALIDAD"].str.strip().str.lower() == "presencial"
     df.loc[_pres, "ban_pct"] = 0.0
 
+    # proc_Banner = ban_pct directamente (BB column determina el estado del proceso)
+    # Así 100% BB → Finalizado, aunque otras sub-columnas Banner no estén completas
+    _proc_ban = "proc_Parametrizar Reforma en Banner"
+    if _proc_ban in df.columns:
+        _ban_notna = df[_proc_ban].notna()
+        df.loc[_ban_notna, _proc_ban] = df.loc[_ban_notna, "ban_pct"]
+
     # Estado directo de Concepto Financiero (col T)
     df["cf_st"] = df["cl_3"]
     # Estado directo de Producción de Contenidos (col AK)
