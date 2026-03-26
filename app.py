@@ -907,7 +907,7 @@ with tab0:
     })
 
     # R3 — Parametrización en Banner sin producción de contenidos
-    r3_df   = _sort_risk(df_risk[(_ban > 0) & (_pc < 100)])
+    r3_df   = _sort_risk(df_risk[(_ban > 0) & (_pc > 0) & (_pc < 100)])
     r3_rows = _r_rows(r3_df, {
         "% Banner": lambda r: _rpct(r.get("ban_pct", 0)),
     })
