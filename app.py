@@ -643,12 +643,12 @@ def _p_badge(txt, clr):
             f'font-weight:700;padding:3px 9px;border-radius:12px;white-space:nowrap">{_p_esc(txt)}</span>')
 
 def _p_star(av, per, verde_2026=False):
+    if verde_2026:
+        return '<span style="color:#22c55e;font-size:14px" title="Puede implementarse">★</span>'
     if "2026" in str(per):
-        if verde_2026: return '<span style="color:#A6CE38;font-size:14px" title="Puede implementarse en 2026-2">★</span>'
-        if av >= 40:   return '<span style="color:#FBAF17;font-size:14px" title="Con esfuerzo podría implementarse">★</span>'
-        return                '<span style="color:#EC0677;font-size:14px" title="No se podría implementar en 2026-2">★</span>'
+        if av >= 40: return '<span style="color:#FBAF17;font-size:14px" title="Con esfuerzo podría implementarse">★</span>'
+        return              '<span style="color:#EC0677;font-size:14px" title="No se podría implementar en 2026-2">★</span>'
     # 2027-x
-    if av >= 70: return '<span style="color:#A6CE38;font-size:14px">★</span>'
     if av >= 40: return '<span style="color:#FBAF17;font-size:14px">★</span>'
     return              '<span style="color:#EC0677;font-size:14px">★</span>'
 
@@ -1231,8 +1231,15 @@ with tab_prio:
 
     # Condición verde 2026-2: Z="Si" y AK>0
     _col_z = "¿Requiere informarse al MEN previa implementación?"
-    def _es_verde_2026(row):
-        if str(row.get("PERIODO DE IMPLEMENTACIÓN","")).strip() != "2026-2":
+    # Programas siempre verdes (excepción manual)
+    _SIEMPRE_VERDE = {"Técnica Profesional Judicial", "Tecnología en Gestión Ambiental"}
+
+    def _es_verde(row):
+        prog = str(row.get("NOMBRE DEL PROGRAMA", "")).strip()
+        if prog in _SIEMPRE_VERDE:
+            return True
+        per = str(row.get("PERIODO DE IMPLEMENTACIÓN","")).strip()
+        if per != "2026-2":
             return False
         req = str(row.get(_col_z, "")).strip().lower() if _col_z in row.index else ""
         return req in ("si", "sí") and float(row.get("pc_pct", 0) or 0) > 0
@@ -1242,16 +1249,15 @@ with tab_prio:
     if len(df_p) > 0:
         df_p["_clasif"] = df_p.apply(
             lambda r: clasificar_programa(r["avance_general"], r["PERIODO DE IMPLEMENTACIÓN"]), axis=1)
-        df_p["_verde_2026"] = df_p.apply(_es_verde_2026, axis=1)
+        df_p["_verde_2026"] = df_p.apply(_es_verde, axis=1)
         def _star_ord(row):
             av  = float(row.get("avance_general", 0) or 0)
             per = str(row.get("PERIODO DE IMPLEMENTACIÓN", "")).strip()
+            if row.get("_verde_2026"):     return (0, -av)   # verde (cualquier período)
             if per == "2026-2":
-                if row.get("_verde_2026"): return (0, -av)   # verde: Z=Si y AK>0
                 if av >= 40:               return (1, -av)   # amarillo
                 return (2, -av)                              # rojo
             # 2027-x
-            if av >= 70: return (1, -av)
             if av >= 40: return (2, -av)
             return (3, -av)
         df_p["_sort_key"] = df_p.apply(lambda r: _star_ord(r), axis=1)
@@ -1298,7 +1304,7 @@ with tab_prio:
                  'padding:6px 8px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2;'
                  'border-right:1px solid rgba(255,255,255,0.10)"')
         _PER_HDR_CLR = {"2026-2": "#A6CE38", "2027-1": "#FBAF17", "2027-2": "#EC0677"}
-        _ncols = 4 + len(_PRIO_ETAPAS)
+        _ncols = 3 + len(_PRIO_ETAPAS)
         rows_p = []
         _cur_per = None
         _row_idx = 0
@@ -1368,8 +1374,6 @@ with tab_prio:
                 f'<br><span style="font-size:10px;font-weight:700;color:{fac_c}">{fac_s}</span></td>'
                 f'<td {TD}>{_p_badge(mod, mod_c)}</td>'
                 f'<td {TD}>{_p_badge(per, per_c)}</td>'
-                f'<td {TD}><span style="background:{bg_c};color:{fg_c};font-size:10px;font-weight:700;'
-                f'padding:2px 7px;border-radius:10px">{clasif}</span></td>'
                 + "".join(etapa_cells) +
                 f'</tr>'
             )
@@ -1383,7 +1387,6 @@ with tab_prio:
             f'<th {THL_P} style="min-width:140px;max-width:200px">Programa</th>'
             f'<th {TH_P}>Modalidad</th>'
             f'<th {TH_P}>Período</th>'
-            f'<th {TH_P}>Prioridad</th>'
             + hdrs +
             '</tr></thead><tbody>'
             + "".join(rows_p) +
