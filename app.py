@@ -634,34 +634,39 @@ with tab0:
     </style>
     """, unsafe_allow_html=True)
 
-    # ── SECCIÓN 1: Tarjetas resumen ────────────────────────────────────────────
+    # ── SECCIÓN 1: Distribución por modalidad y período ────────────────────────
     _cnt_2027_2 = int(df["PERIODO DE IMPLEMENTACIÓN"].str.contains("2027-2", na=False).sum())
     _cnt_oferta = int(df["PERIODO DE IMPLEMENTACIÓN"].str.contains("oferta", case=False, na=False).sum())
+    _mod_lower  = df["MODALIDAD"].str.lower().str.strip()
+    _cnt_virt   = int((_mod_lower == "virtual").sum())
+    _cnt_pres   = int((_mod_lower == "presencial").sum())
+    _cnt_hibr   = int((_mod_lower.isin(["híbrido", "hibrido"])).sum())
 
-    def _re_scard(num, lbl, border_color):
+    def _re_scard(num, lbl, border_color, lbl_color=None):
+        lc = lbl_color or border_color
         return (
             f'<div class="re-scard" style="border-color:{border_color}">'
             f'<div class="re-snum">{num}</div>'
-            f'<div class="re-slbl">{lbl}</div></div>'
+            f'<div class="re-slbl" style="color:{lc}">{lbl}</div></div>'
         )
 
-    st.markdown(
-        '<div class="re-sec">📊 Resumen General '
-        f'<span style="font-size:.7rem;font-weight:400;color:#64748b;text-transform:none">'
-        f'— {n} programas con filtros activos</span></div>',
-        unsafe_allow_html=True,
-    )
-    sc1, sc2, sc3, sc4 = st.columns(4)
-    sc1.markdown(_re_scard(n,         "Programas en reforma",    "#0F385A"), unsafe_allow_html=True)
-    sc2.markdown(_re_scard(f"{avg_av}%", "Avance promedio",      "#A6CE38"), unsafe_allow_html=True)
-    sc3.markdown(_re_scard(cnt_2026,  "Para periodo 2026-2",     "#EC0677"), unsafe_allow_html=True)
-    sc4.markdown(_re_scard(cnt_2027_1,"Para periodo 2027-1",     "#FBAF17"), unsafe_allow_html=True)
+    def _re_sec_lbl(txt):
+        return (f'<div style="font-size:9px;font-weight:700;letter-spacing:.08em;color:#94a3b8;'
+                f'text-transform:uppercase;margin:6px 0 3px;padding-left:2px">{txt}</div>')
 
-    sc5, sc6, sc7, sc8 = st.columns(4)
-    sc5.markdown(_re_scard(_cnt_2027_2, "Para periodo 2027-2",   "#1FB2DE"), unsafe_allow_html=True)
-    sc6.markdown(_re_scard(_cnt_oferta, "Ya en oferta",          "#A6CE38"), unsafe_allow_html=True)
-    sc7.markdown(_re_scard(cnt_urgente, "Urgentes",              "#EC0677"), unsafe_allow_html=True)
-    sc8.markdown(_re_scard(cnt_prioritario, "Prioritarios",      "#FBAF17"), unsafe_allow_html=True)
+    st.markdown(_re_sec_lbl("DISTRIBUCIÓN POR MODALIDAD"), unsafe_allow_html=True)
+    sm1, sm2, sm3, sm4 = st.columns(4)
+    sm1.markdown(_re_scard(n,          "TOTAL",      "#0F385A", "#0F385A"), unsafe_allow_html=True)
+    sm2.markdown(_re_scard(_cnt_virt,  "VIRTUAL",    "#1FB2DE", "#1FB2DE"), unsafe_allow_html=True)
+    sm3.markdown(_re_scard(_cnt_pres,  "PRESENCIAL", "#A6CE38", "#A6CE38"), unsafe_allow_html=True)
+    sm4.markdown(_re_scard(_cnt_hibr,  "HÍBRIDO",    "#FBAF17", "#FBAF17"), unsafe_allow_html=True)
+
+    st.markdown(_re_sec_lbl("DISTRIBUCIÓN POR PERÍODO"), unsafe_allow_html=True)
+    sp1, sp2, sp3, sp4 = st.columns(4)
+    sp1.markdown(_re_scard(cnt_2026,    "2026-2",       "#7c3aed", "#7c3aed"), unsafe_allow_html=True)
+    sp2.markdown(_re_scard(cnt_2027_1,  "2027-1",       "#EC0677", "#EC0677"), unsafe_allow_html=True)
+    sp3.markdown(_re_scard(_cnt_2027_2, "2027-2",       "#0891b2", "#0891b2"), unsafe_allow_html=True)
+    sp4.markdown(_re_scard(_cnt_oferta, "YA EN OFERTA", "#A6CE38", "#A6CE38"), unsafe_allow_html=True)
 
     # ── SECCIÓN 2: Riesgos ────────────────────────────────────────────────────
     st.markdown('<div class="re-sec">⚠️ Riesgos Activos</div>', unsafe_allow_html=True)
@@ -746,74 +751,91 @@ with tab0:
 
     PERIODO_ORDER = {"2026-2": 0, "2027-1": 1, "2027-2": 2}
 
-    _pc  = df["pc_pct"]  if "pc_pct"  in df.columns else pd.Series([0.0]*len(df), index=df.index)
-    _cf  = df["cf_st"]   if "cf_st"   in df.columns else pd.Series(["nostart"]*len(df), index=df.index)
-    _pcs = df["pc_st"]   if "pc_st"   in df.columns else pd.Series(["nostart"]*len(df), index=df.index)
-    _ban = df["ban_pct"] if "ban_pct" in df.columns else pd.Series([0.0]*len(df), index=df.index)
-    _con = df["conv_pct"]if "conv_pct"in df.columns else pd.Series([0.0]*len(df), index=df.index)
-    _syl = df["syl_val"] if "syl_val" in df.columns else pd.Series(["Si"]*len(df), index=df.index)
-    _pp  = df["periodo_propuesto"] if "periodo_propuesto" in df.columns else pd.Series([""]*len(df), index=df.index)
+    # Excluir programas con aprobación ministerial requerida de los riesgos
+    _req_col = "Req. Ministerial"
+    if _req_col in df.columns:
+        _no_min = ~df[_req_col].astype(str).str.strip().str.lower().str.startswith("si")
+    else:
+        _no_min = pd.Series([True]*len(df), index=df.index)
+    df_risk = df[_no_min].copy()
 
-    # R2 — Lanzamiento 2026-2 con producción de contenidos incompleta (más urgente → va primero)
-    r2_df = df[(_pp == "2026-2") & (_pcs != "na") & (_pc < 100)].sort_values(
-        "avance_general", ascending=False)
-    r2_rows = _r_rows(r2_df, {
-        "% Avance de Producción": lambda r: _pbar_html(r.get("pc_pct", 0), "#FBAF17"),
-    })
+    _pc  = df_risk["pc_pct"]  if "pc_pct"  in df_risk.columns else pd.Series([0.0]*len(df_risk), index=df_risk.index)
+    _cf  = df_risk["cf_st"]   if "cf_st"   in df_risk.columns else pd.Series(["nostart"]*len(df_risk), index=df_risk.index)
+    _pcs = df_risk["pc_st"]   if "pc_st"   in df_risk.columns else pd.Series(["nostart"]*len(df_risk), index=df_risk.index)
+    _ban = df_risk["ban_pct"] if "ban_pct" in df_risk.columns else pd.Series([0.0]*len(df_risk), index=df_risk.index)
+    _con = df_risk["conv_pct"]if "conv_pct"in df_risk.columns else pd.Series([0.0]*len(df_risk), index=df_risk.index)
+    _syl = df_risk["syl_val"] if "syl_val" in df_risk.columns else pd.Series(["Si"]*len(df_risk), index=df_risk.index)
+    _pp  = df_risk["periodo_propuesto"] if "periodo_propuesto" in df_risk.columns else pd.Series([""]*len(df_risk), index=df_risk.index)
 
-    # R1 — Virtual con producción iniciada pero sin concepto financiero aprobado
-    r1_df = df[(_pc > 0) & (_cf.isin(["nostart", "na"]))].copy()
-    r1_df = r1_df.sort_values("avance_general", ascending=False)
+    def _sort_risk(risk_df):
+        if "periodo_propuesto" in risk_df.columns:
+            tmp = risk_df.copy()
+            tmp["_por"] = tmp["periodo_propuesto"].map(PERIODO_ORDER).fillna(99)
+            return tmp.sort_values(["_por", "avance_general"], ascending=[True, False]).drop(columns=["_por"])
+        return risk_df.sort_values("avance_general", ascending=False)
+
+    # R1 — Producción virtual sin aval financiero
+    r1_df   = _sort_risk(df_risk[(_pc > 0) & (_cf.isin(["nostart", "na"]))])
     r1_rows = _r_rows(r1_df, {
         "% Avance de Producción": lambda r: _pbar_html(r.get("pc_pct", 0), "#EC0677"),
     })
 
-    # R4 — Programas virtuales o híbridos sin syllabus completado
-    r4_df = df[
-        (df["MODALIDAD"].str.lower().str.strip().isin(["virtual", "híbrido", "hibrido"])) &
-        (_syl == "NO")
-    ].sort_values("avance_general", ascending=False)
-    r4_rows = _r_rows(r4_df, {
-        "% Avance Contenidos": lambda r: _pbar_html(r.get("pc_pct", 0), "#0d9488"),
+    # R2 — Lanzamiento 2026-2 con contenidos incompletos
+    r2_df   = _sort_risk(df_risk[(_pp == "2026-2") & (_pcs != "na") & (_pc < 100)])
+    r2_rows = _r_rows(r2_df, {
+        "% Avance de Producción": lambda r: _pbar_html(r.get("pc_pct", 0), "#FBAF17"),
     })
 
-    # R3 — Parametrización en Banner iniciada sin producción de contenidos
-    r3_df = df[(_ban > 0) & (_pc < 100)].sort_values("avance_general", ascending=False)
+    # R3 — Parametrización en Banner sin producción de contenidos
+    r3_df   = _sort_risk(df_risk[(_ban > 0) & (_pc < 100)])
     r3_rows = _r_rows(r3_df, {
         "% Avance Banner": lambda r: _pbar_html(r.get("ban_pct", 0), "#7c3aed"),
     })
 
-    # R5 — Banner con avance pero trámite de convenios pendiente
-    r5_df = df[(_ban > 0) & (_con < 100)].sort_values("avance_general", ascending=False)
+    # R4 — Avance en producción — Syllabus incompleto
+    r4_df   = _sort_risk(df_risk[
+        (df_risk["MODALIDAD"].str.lower().str.strip().isin(["virtual", "híbrido", "hibrido"])) &
+        (_syl == "NO")
+    ])
+    r4_rows = _r_rows(r4_df, {
+        "% Avance Contenidos": lambda r: _pbar_html(r.get("pc_pct", 0), "#0d9488"),
+    })
+
+    # R5 — Parametrización en Banner en proceso con trámite de convenios pendiente
+    r5_df   = _sort_risk(df_risk[(_ban > 0) & (_con < 100)])
     r5_rows = _r_rows(r5_df, {
         "% Avance Convenios": lambda r: _pbar_html(r.get("conv_pct", 0), "#2563eb"),
     })
 
-    rc1, rc2 = st.columns(2)
-    with rc1:
+    rr1, rr2, rr3 = st.columns(3)
+    with rr1:
         st.markdown(_render_rcard(
-            "R1 · Producción de contenidos sin concepto financiero aprobado",
-            "Programas virtuales con producción de contenidos iniciada pero sin concepto financiero aprobado",
+            "R1 · Producción virtual sin aval financiero",
+            "Producción de contenidos virtuales iniciada sin concepto financiero aprobado",
             "#dc2626", r1_rows,
             ["Programa", "Período", "% Avance de Producción"]), unsafe_allow_html=True)
+    with rr2:
+        st.markdown(_render_rcard(
+            "R2 · Lanzamiento 2026-2 con contenidos incompletos",
+            "Programas propuestos para lanzar en 2026-2 que aún no completan la producción de contenidos",
+            "#d97706", r2_rows,
+            ["Programa", "Modalidad", "% Avance de Producción"]), unsafe_allow_html=True)
+    with rr3:
         st.markdown(_render_rcard(
             "R3 · Parametrización en Banner sin producción de contenidos",
             "Programas con avance en Banner pero sin producción de contenidos completada",
             "#7c3aed", r3_rows,
             ["Programa", "Período", "% Avance Banner"]), unsafe_allow_html=True)
+    rr4, rr5, rr6 = st.columns(3)
+    with rr4:
         st.markdown(_render_rcard(
-            "R4 · Producción de contenidos en curso sin syllabus completado",
-            "Programas virtuales o híbridos con producción de contenidos avanzando pero sin syllabus",
+            "R4 · Avance en producción — Syllabus incompleto",
+            "Programas virtuales o híbridos con producción avanzando pero sin syllabus completado",
             "#0d9488", r4_rows,
             ["Programa", "Modalidad", "Período", "% Avance Contenidos"]), unsafe_allow_html=True)
-    with rc2:
+    with rr5:
         st.markdown(_render_rcard(
-            "R2 · Lanzamiento en 2026-2 con producción de contenidos incompleta",
-            "Programas propuestos para lanzar en 2026-2 que aún no completan la producción de contenidos",
-            "#d97706", r2_rows,
-            ["Programa", "Modalidad", "% Avance de Producción"]), unsafe_allow_html=True)
-        st.markdown(_render_rcard(
-            "R5 · Parametrización en Banner con trámite de convenios pendiente",
+            "R5 · Parametrización en Banner en proceso con trámite de convenios pendiente",
             "Programas con avance en Banner pero con proceso de convenios sin completar",
             "#2563eb", r5_rows,
             ["Programa", "Período", "Modalidad", "% Avance Convenios"]), unsafe_allow_html=True)
