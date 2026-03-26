@@ -1232,22 +1232,31 @@ with tab_prio:
 
     # Condición verde 2026-2: Z="Si" y AK>0
     _col_z = "¿Requiere informarse al MEN previa implementación?"
-    _VERDE_2026_1   = {"Administración de Empresas", "Contaduría Pública"}
-    _AMARILLO_2026_1 = {"Ingeniería de Software", "Derecho"}
+
+    # (programa, modalidad, periodo) → estrella forzada
+    _VERDE_FORZADO = {
+        ("Administración de Empresas", "Presencial", "2026-2"),
+        ("Contaduría Pública",         "Presencial", "2026-2"),
+    }
+    _AMARILLO_FORZADO = {
+        ("Contaduría Pública",      "Virtual",  "2026-2"),
+        ("Ingeniería de Software",  "Virtual",  "2026-2"),
+        ("Derecho",                 "Virtual",  "2026-2"),
+    }
 
     def _es_verde(row):
         prog = str(row.get("NOMBRE DEL PROGRAMA", "")).strip()
         per  = str(row.get("PERIODO DE IMPLEMENTACIÓN","")).strip()
-        # Solo Tecnología en Gestión Ambiental mantiene estrella en cualquier período
+        mod  = str(row.get("MODALIDAD", "")).strip()
+        # Tecnología en Gestión Ambiental: siempre verde
         if prog == "Tecnología en Gestión Ambiental":
             return True
-        # Administración de Empresas y Contaduría Pública Presencial: verde en 2026-1
-        mod = str(row.get("MODALIDAD", "")).strip()
-        if prog in _VERDE_2026_1 and per == "2026-1" and mod == "Presencial":
+        # Programas forzados a verde
+        if (prog, mod, per) in _VERDE_FORZADO:
             return True
         if per != "2026-2":
             return False
-        # Técnica Profesional Judicial: verde en 2026-2 sin condiciones adicionales
+        # Técnica Profesional Judicial: verde en 2026-2
         if prog == "Técnica Profesional Judicial":
             return True
         req = str(row.get(_col_z, "")).strip().lower() if _col_z in row.index else ""
@@ -1256,7 +1265,8 @@ with tab_prio:
     def _es_amarillo(row):
         prog = str(row.get("NOMBRE DEL PROGRAMA", "")).strip()
         per  = str(row.get("PERIODO DE IMPLEMENTACIÓN","")).strip()
-        return prog in _AMARILLO_2026_1 and per == "2026-1"
+        mod  = str(row.get("MODALIDAD", "")).strip()
+        return (prog, mod, per) in _AMARILLO_FORZADO
 
     # clasificar
     _PER_ORD = {"2026-2": 0, "2027-1": 1, "2027-2": 2}
