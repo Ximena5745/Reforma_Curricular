@@ -695,24 +695,26 @@ with tab0:
     # ── SECCIÓN 2: Riesgos ────────────────────────────────────────────────────
     st.markdown('<div class="re-sec">⚠️ Riesgos Activos</div>', unsafe_allow_html=True)
 
-    # Calcular sets de programas por riesgo
-    def _r_rows(mask_df, cols):
-        import math
-        rows = []
-        for _, r in mask_df.iterrows():
-            try:
-                av = int(float(r.get("avance_general", 0)))
-                av = 0 if math.isnan(float(av)) else av
-            except Exception:
-                av = 0
-            row_data = {"Programa": r["NOMBRE DEL PROGRAMA"],
-                        "Modalidad": r.get("MODALIDAD", "—"),
-                        "Periodo": r.get("periodo_propuesto", r.get("PERIODO DE IMPLEMENTACIÓN", "—")),
-                        "% Avance": f"{av}%"}
-            for k, v in cols.items():
-                row_data[k] = v(r)
-            rows.append(row_data)
-        return rows
+    # ── Helpers de riesgo ───────────────────────────────────────────────────────
+    _PER_STYLE = {
+        "2026-2": ("#dc2626", "#fef2f2"),
+        "2027-1": ("#d97706", "#fffbeb"),
+        "2027-2": ("#2563eb", "#eff6ff"),
+    }
+
+    def _per_badge(per_val):
+        clr, bg = _PER_STYLE.get(str(per_val), ("#64748b", "#f1f5f9"))
+        return (f'<span style="background:{bg};color:{clr};border:1px solid {clr};'
+                f'border-radius:12px;padding:2px 9px;font-size:11px;font-weight:700;'
+                f'white-space:nowrap">{per_val}</span>')
+
+    def _av_badge(av):
+        clr = "#15803d" if av >= 70 else ("#d97706" if av >= 30 else "#dc2626")
+        return f'<span style="font-weight:700;color:{clr};font-size:13px">{av}%</span>'
+
+    def _mod_badge(mod):
+        return (f'<span style="background:#e0f2fe;color:#0369a1;border-radius:10px;'
+                f'padding:2px 8px;font-size:11px;font-weight:600">{mod}</span>')
 
     def _pbar_html(pct, color):
         pct = min(max(float(pct or 0), 0), 100)
@@ -722,7 +724,30 @@ with tab0:
                 f'<div class="re-pbar-w"><div class="re-pbar-f" style="width:{pct}%;background:{clr}"></div></div>'
                 f'</div>')
 
-    def _render_rcard(title, desc, color, rows, col_defs):
+    _FAC_CLR = {"FSCC": "#EC0677", "FIDI": "#1FB2DE", "FNGS": "#A6CE38"}
+
+    def _r_rows(mask_df, extra):
+        rows = []
+        for _, r in mask_df.iterrows():
+            fac_s = fac_abrev.get(r.get("FACULTAD", ""), "")
+            fac_clr = _FAC_CLR.get(fac_s, "#6a8a9e")
+            prog = r["NOMBRE DEL PROGRAMA"]
+            prog_html = (
+                f'<span style="font-weight:600;color:#0F385A;font-size:12px">{prog}</span>'
+                + (f'<br><span style="font-size:10px;font-weight:700;color:{fac_clr}">{fac_s}</span>' if fac_s else "")
+            )
+            per = str(r.get("periodo_propuesto", r.get("PERIODO DE IMPLEMENTACIÓN", "—")))
+            row_data = {
+                "Programa":  prog_html,
+                "Modalidad": _mod_badge(r.get("MODALIDAD", "—")),
+                "Período":   _per_badge(per),
+            }
+            for k, fn in extra.items():
+                row_data[k] = fn(r)
+            rows.append(row_data)
+        return rows
+
+    def _render_rcard(title, desc, color, rows, show_cols):
         """Renderiza un risk-card con tabla HTML inline."""
         n_r = len(rows)
         badge_color = color if n_r > 0 else "#15803d"
@@ -737,98 +762,93 @@ with tab0:
         if n_r == 0:
             return hdr + '<div class="re-ok">✅ Sin programas en este riesgo</div></div>'
         thead = '<table class="re-rtbl"><thead><tr>'
-        all_cols = ["Programa", "Modalidad", "Periodo", "% Avance"] + list(col_defs.keys())
-        for c in all_cols:
+        for c in show_cols:
             thead += f'<th>{c}</th>'
         thead += '</tr></thead><tbody>'
         tbody = ""
         for row in rows:
             tbody += "<tr>"
-            for c in all_cols:
-                val = row.get(c, "—")
-                if isinstance(val, str) and "%" in val and "re-pbar" in val:
-                    tbody += f'<td>{val}</td>'
-                else:
-                    tbody += f'<td>{val}</td>'
+            for c in show_cols:
+                tbody += f'<td>{row.get(c, "—")}</td>'
             tbody += "</tr>"
         return hdr + f'<div style="overflow-x:auto">{thead}{tbody}</tbody></table></div></div>'
 
     PERIODO_ORDER = {"2026-2": 0, "2027-1": 1, "2027-2": 2}
 
-    # R1 — pc_pct > 0 y CF sin iniciar, ordenar por periodo
     _pc  = df["pc_pct"]  if "pc_pct"  in df.columns else pd.Series([0.0]*len(df), index=df.index)
     _cf  = df["cf_st"]   if "cf_st"   in df.columns else pd.Series(["nostart"]*len(df), index=df.index)
     _pcs = df["pc_st"]   if "pc_st"   in df.columns else pd.Series(["nostart"]*len(df), index=df.index)
     _ban = df["ban_pct"] if "ban_pct" in df.columns else pd.Series([0.0]*len(df), index=df.index)
     _con = df["conv_pct"]if "conv_pct"in df.columns else pd.Series([0.0]*len(df), index=df.index)
     _syl = df["syl_val"] if "syl_val" in df.columns else pd.Series(["Si"]*len(df), index=df.index)
+    _pp  = df["periodo_propuesto"] if "periodo_propuesto" in df.columns else pd.Series([""]*len(df), index=df.index)
 
+    # R2 — Lanzamiento 2026-2 con producción de contenidos incompleta (más urgente → va primero)
+    r2_df = df[(_pp == "2026-2") & (_pcs != "na") & (_pc < 100)].sort_values(
+        "pc_pct" if "pc_pct" in df.columns else "avance_general")
+    r2_rows = _r_rows(r2_df, {
+        "% Avance de Producción": lambda r: _pbar_html(r.get("pc_pct", 0), "#FBAF17"),
+    })
+
+    # R1 — Virtual con producción iniciada pero sin concepto financiero aprobado
     r1_df = df[(_pc > 0) & (_cf.isin(["nostart", "na"]))].copy()
-    _pp = df["periodo_propuesto"] if "periodo_propuesto" in df.columns else pd.Series([""] * len(df), index=df.index)
     r1_df["_ord"] = r1_df["periodo_propuesto"].map(PERIODO_ORDER).fillna(99) if "periodo_propuesto" in r1_df.columns else 99
     r1_df = r1_df.sort_values("_ord")
     r1_rows = _r_rows(r1_df, {
-        "% PC (AK)": lambda r: _pbar_html(r.get("pc_pct", 0), "#EC0677"),
+        "% Avance de Producción": lambda r: _pbar_html(r.get("pc_pct", 0), "#EC0677"),
     })
 
-    # R2 — Lanzamiento en 2026-2 con Contenidos incompletos (periodo_propuesto=2026-2, excluye na)
-    r2_df = df[
-        (_pp == "2026-2") &
-        (_pcs != "na") & (_pc < 100)
-    ].sort_values("pc_pct" if "pc_pct" in df.columns else "avance_general")
-    r2_rows = _r_rows(r2_df, {
-        "% PC (AK)": lambda r: _pbar_html(r.get("pc_pct", 0), "#FBAF17"),
-    })
-
-    # R3 — Banner > 0 y PC < 100 (contenidos incompletos)
-    r3_df = df[(_ban > 0) & (_pc < 100)].sort_values(
-        "ban_pct" if "ban_pct" in df.columns else "avance_general", ascending=False)
-    r3_rows = _r_rows(r3_df, {
-        "% Banner (BB)": lambda r: _pbar_html(r.get("ban_pct", 0), "#7c3aed"),
-        "% PC (AK)": lambda r: _pbar_html(r.get("pc_pct", 0), "#7c3aed"),
-    })
-
-    # R4 — Virtual/Híbrido con Syllabus NO (sin restricción de PC)
+    # R4 — Programas virtuales o híbridos sin syllabus completado
     r4_df = df[
         (df["MODALIDAD"].str.lower().str.strip().isin(["virtual", "híbrido", "hibrido"])) &
         (_syl == "NO")
     ].sort_values("pc_pct" if "pc_pct" in df.columns else "avance_general", ascending=False)
     r4_rows = _r_rows(r4_df, {
-        "Syllabus (AD)": lambda r: r.get("syl_val", "—"),
-        "% PC (AK)": lambda r: _pbar_html(r.get("pc_pct", 0), "#0d9488"),
+        "% Avance Contenidos": lambda r: _pbar_html(r.get("pc_pct", 0), "#0d9488"),
     })
 
-    # R5 — Banner > 0 y Convenios < 100
+    # R3 — Parametrización en Banner iniciada sin producción de contenidos
+    r3_df = df[(_ban > 0) & (_pc < 100)].sort_values(
+        "ban_pct" if "ban_pct" in df.columns else "avance_general", ascending=False)
+    r3_rows = _r_rows(r3_df, {
+        "% Avance Banner": lambda r: _pbar_html(r.get("ban_pct", 0), "#7c3aed"),
+    })
+
+    # R5 — Banner con avance pero trámite de convenios pendiente
     r5_df = df[(_ban > 0) & (_con < 100)].sort_values(
         "conv_pct" if "conv_pct" in df.columns else "avance_general")
     r5_rows = _r_rows(r5_df, {
-        "% Convenios (AS)": lambda r: _pbar_html(r.get("conv_pct", 0), "#2563eb"),
-        "% Banner (BB)": lambda r: _pbar_html(r.get("ban_pct", 0),  "#2563eb"),
+        "% Avance Convenios": lambda r: _pbar_html(r.get("conv_pct", 0), "#2563eb"),
     })
 
     rc1, rc2 = st.columns(2)
     with rc1:
         st.markdown(_render_rcard(
-            "R1 · Producción virtual sin aval financiero",
-            "PC (AK) > 0% pero CF (T) sin iniciar o vacío",
-            "#dc2626", r1_rows, {}), unsafe_allow_html=True)
+            "R1 · Producción de contenidos sin concepto financiero aprobado",
+            "Programas virtuales con producción de contenidos iniciada pero sin concepto financiero aprobado",
+            "#dc2626", r1_rows,
+            ["Programa", "Período", "% Avance de Producción"]), unsafe_allow_html=True)
         st.markdown(_render_rcard(
-            "R3 · Avance en Banner sin producción de contenidos",
-            "Banner (BB) > 0% pero PC (AK) = 0% (sin contenidos producidos)",
-            "#7c3aed", r3_rows, {}), unsafe_allow_html=True)
+            "R3 · Parametrización en Banner sin producción de contenidos",
+            "Programas con avance en Banner pero sin producción de contenidos completada",
+            "#7c3aed", r3_rows,
+            ["Programa", "Período", "% Avance Banner"]), unsafe_allow_html=True)
         st.markdown(_render_rcard(
-            "R4 · Avance en PC y Syllabus incompleto",
-            "Virtual/Híbrido con PC (AK) > 0% pero Syllabus (AD) = NO",
-            "#0d9488", r4_rows, {}), unsafe_allow_html=True)
+            "R4 · Producción de contenidos en curso sin syllabus completado",
+            "Programas virtuales o híbridos con producción de contenidos avanzando pero sin syllabus",
+            "#0d9488", r4_rows,
+            ["Programa", "Modalidad", "Período", "% Avance Contenidos"]), unsafe_allow_html=True)
     with rc2:
         st.markdown(_render_rcard(
-            "R2 · Lanzamiento en 2026-2 con Contenidos incompletos",
-            "Propuestos 2026-2 con % PC (AK) < 100% — excluye No aplica",
-            "#d97706", r2_rows, {}), unsafe_allow_html=True)
+            "R2 · Lanzamiento en 2026-2 con producción de contenidos incompleta",
+            "Programas propuestos para lanzar en 2026-2 que aún no completan la producción de contenidos",
+            "#d97706", r2_rows,
+            ["Programa", "Modalidad", "% Avance de Producción"]), unsafe_allow_html=True)
         st.markdown(_render_rcard(
-            "R5 · Parametrización en Banner sin trámite de convenios",
-            "Banner (BB) > 0% pero Convenios (AS) < 100%",
-            "#2563eb", r5_rows, {}), unsafe_allow_html=True)
+            "R5 · Parametrización en Banner con trámite de convenios pendiente",
+            "Programas con avance en Banner pero con proceso de convenios sin completar",
+            "#2563eb", r5_rows,
+            ["Programa", "Período", "Modalidad", "% Avance Convenios"]), unsafe_allow_html=True)
 
     # ── SECCIÓN 3: Resumen por Etapa ──────────────────────────────────────────
     st.markdown('<div class="re-sec">📋 Estado por Etapa</div>', unsafe_allow_html=True)
