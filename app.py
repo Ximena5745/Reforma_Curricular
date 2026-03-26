@@ -642,12 +642,15 @@ def _p_badge(txt, clr):
     return (f'<span style="background:rgba({r},{g},{b},0.12);color:{clr};font-size:10px;'
             f'font-weight:700;padding:3px 9px;border-radius:12px;white-space:nowrap">{_p_esc(txt)}</span>')
 
-def _p_star(av, per):
-    if "2026" not in str(per) and "oferta" not in str(per).lower():
-        return '<span style="color:#FBAF17;font-size:14px">★</span>'
-    if av >= 70: return '<span style="color:#A6CE38;font-size:14px" title="Puede implementarse en 2026-2">★</span>'
-    if av >= 40: return '<span style="color:#FBAF17;font-size:14px" title="Con esfuerzo podría implementarse">★</span>'
-    return         '<span style="color:#EC0677;font-size:14px" title="No se podría implementar en 2026-2">★</span>'
+def _p_star(av, per, verde_2026=False):
+    if "2026" in str(per):
+        if verde_2026: return '<span style="color:#A6CE38;font-size:14px" title="Puede implementarse en 2026-2">★</span>'
+        if av >= 40:   return '<span style="color:#FBAF17;font-size:14px" title="Con esfuerzo podría implementarse">★</span>'
+        return                '<span style="color:#EC0677;font-size:14px" title="No se podría implementar en 2026-2">★</span>'
+    # 2027-x
+    if av >= 70: return '<span style="color:#A6CE38;font-size:14px">★</span>'
+    if av >= 40: return '<span style="color:#FBAF17;font-size:14px">★</span>'
+    return              '<span style="color:#EC0677;font-size:14px">★</span>'
 
 # ── Tabs principales ────────────────────────────────────────────────────────────
 tab0, tab_prio, tab2 = st.tabs(["🏆 Resumen Ejecutivo", "🎯 Priorización", "🏛️ Por Facultad y Programa"])
@@ -1223,28 +1226,34 @@ with tab_prio:
     if sel_pper:  df_p = df_p[df_p["PERIODO DE IMPLEMENTACIÓN"].isin(sel_pper)]
     df_p = enrich_df(df_p) if "pc_pct" not in df_p.columns else df_p
 
-    # Filtro: requiere notificación MEN (Z="Si") y tiene avance en contenidos (AK>0)
+    # Excluir "Ya está en oferta"
+    df_p = df_p[~df_p["PERIODO DE IMPLEMENTACIÓN"].str.strip().str.lower().str.contains("oferta", na=False)].copy()
+
+    # Condición verde 2026-2: Z="Si" y AK>0
     _col_z = "¿Requiere informarse al MEN previa implementación?"
-    if _col_z in df_p.columns:
-        df_p = df_p[df_p[_col_z].str.strip().str.lower().isin(["si", "sí"])]
-    df_p = df_p[df_p["pc_pct"] > 0].copy()
-    df_p = df_p[~df_p["PERIODO DE IMPLEMENTACIÓN"].str.strip().str.lower().str.contains("oferta", na=False)]
+    def _es_verde_2026(row):
+        if str(row.get("PERIODO DE IMPLEMENTACIÓN","")).strip() != "2026-2":
+            return False
+        req = str(row.get(_col_z, "")).strip().lower() if _col_z in row.index else ""
+        return req in ("si", "sí") and float(row.get("pc_pct", 0) or 0) > 0
 
     # clasificar
-    _PER_ORD = {"2026-2": 0, "2027-1": 1, "2027-2": 2, "Ya está en oferta": 3}
+    _PER_ORD = {"2026-2": 0, "2027-1": 1, "2027-2": 2}
     if len(df_p) > 0:
         df_p["_clasif"] = df_p.apply(
             lambda r: clasificar_programa(r["avance_general"], r["PERIODO DE IMPLEMENTACIÓN"]), axis=1)
+        df_p["_verde_2026"] = df_p.apply(_es_verde_2026, axis=1)
         def _star_ord(row):
-            av = float(row.get("avance_general", 0) or 0)
+            av  = float(row.get("avance_general", 0) or 0)
             per = str(row.get("PERIODO DE IMPLEMENTACIÓN", "")).strip()
-            if "2026" not in per and "oferta" not in per.lower():
-                if av >= 70: return (1, -av)
-                if av >= 40: return (2, -av)
-                return (3, -av)
-            if av >= 70: return (0, -av)   # green - ready
-            if av >= 40: return (1, -av)   # yellow - with effort
-            return (2, -av)                # red - not ready
+            if per == "2026-2":
+                if row.get("_verde_2026"): return (0, -av)   # verde: Z=Si y AK>0
+                if av >= 40:               return (1, -av)   # amarillo
+                return (2, -av)                              # rojo
+            # 2027-x
+            if av >= 70: return (1, -av)
+            if av >= 40: return (2, -av)
+            return (3, -av)
         df_p["_sort_key"] = df_p.apply(lambda r: _star_ord(r), axis=1)
         df_p["_per_ord"]  = df_p["PERIODO DE IMPLEMENTACIÓN"].apply(
             lambda x: _PER_ORD.get(str(x).strip(), 4))
@@ -1354,7 +1363,7 @@ with tab_prio:
             rows_p.append(
                 f'<tr>'
                 f'<td {TDL}>'
-                f'<span style="margin-right:3px">{_p_star(av,per)}</span>'
+                f'<span style="margin-right:3px">{_p_star(av, per, row.get("_verde_2026", False))}</span>'
                 f'<span style="font-size:11px;font-weight:600;color:#0F385A">{prog}</span>'
                 f'<br><span style="font-size:10px;font-weight:700;color:{fac_c}">{fac_s}</span></td>'
                 f'<td {TD}>{_p_badge(mod, mod_c)}</td>'
