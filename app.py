@@ -1223,13 +1223,21 @@ with tab_prio:
     if sel_pper:  df_p = df_p[df_p["PERIODO DE IMPLEMENTACIÓN"].isin(sel_pper)]
     df_p = enrich_df(df_p) if "pc_pct" not in df_p.columns else df_p
 
+    # Filtro: requiere notificación MEN (Z="Si") y tiene avance en contenidos (AK>0)
+    _col_z = "¿Requiere informarse al MEN previa implementación?"
+    if _col_z in df_p.columns:
+        df_p = df_p[df_p[_col_z].str.strip().str.lower().isin(["si", "sí"])]
+    df_p = df_p[df_p["pc_pct"] > 0].copy()
+    df_p = df_p[~df_p["PERIODO DE IMPLEMENTACIÓN"].str.strip().str.lower().str.contains("oferta", na=False)]
+
     # clasificar
+    _PER_ORD = {"2026-2": 0, "2027-1": 1, "2027-2": 2, "Ya está en oferta": 3}
     if len(df_p) > 0:
         df_p["_clasif"] = df_p.apply(
             lambda r: clasificar_programa(r["avance_general"], r["PERIODO DE IMPLEMENTACIÓN"]), axis=1)
         def _star_ord(row):
             av = float(row.get("avance_general", 0) or 0)
-            per = str(row.get("periodo_propuesto", ""))
+            per = str(row.get("PERIODO DE IMPLEMENTACIÓN", "")).strip()
             if "2026" not in per and "oferta" not in per.lower():
                 if av >= 70: return (1, -av)
                 if av >= 40: return (2, -av)
@@ -1238,7 +1246,9 @@ with tab_prio:
             if av >= 40: return (1, -av)   # yellow - with effort
             return (2, -av)                # red - not ready
         df_p["_sort_key"] = df_p.apply(lambda r: _star_ord(r), axis=1)
-        df_p = df_p.sort_values("_sort_key")
+        df_p["_per_ord"]  = df_p["PERIODO DE IMPLEMENTACIÓN"].apply(
+            lambda x: _PER_ORD.get(str(x).strip(), 4))
+        df_p = df_p.sort_values(["_per_ord", "_sort_key"])
 
     _prio_cnt.markdown(
         f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right">'
@@ -1278,9 +1288,26 @@ with tab_prio:
         THL_P = ('style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:700;'
                  'padding:6px 8px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2;'
                  'border-right:1px solid rgba(255,255,255,0.10)"')
+        _PER_HDR_CLR = {"2026-2": "#A6CE38", "2027-1": "#FBAF17", "2027-2": "#EC0677"}
+        _ncols = 4 + len(_PRIO_ETAPAS)
         rows_p = []
-        for idx, (_, row) in enumerate(df_p.iterrows()):
-            rbg = "#FFFFFF" if idx % 2 == 0 else "#f8fafc"
+        _cur_per = None
+        _row_idx = 0
+        for _, row in df_p.iterrows():
+            per = str(row.get("PERIODO DE IMPLEMENTACIÓN", "—")).strip()
+            # ── Encabezado de grupo por período ──
+            if per != _cur_per:
+                _cur_per = per
+                _ph_clr  = _PER_HDR_CLR.get(per, "#9aabb5")
+                _per_cnt = int((df_p["PERIODO DE IMPLEMENTACIÓN"].str.strip() == per).sum())
+                rows_p.append(
+                    f'<tr><td colspan="{_ncols}" style="background:{_ph_clr};color:#FFFFFF;'
+                    f'font-size:11px;font-weight:800;padding:7px 12px;letter-spacing:.3px">'
+                    f'{_p_esc(per)} · {_per_cnt} PROGRAMAS</td></tr>'
+                )
+                _row_idx = 0
+            rbg = "#FFFFFF" if _row_idx % 2 == 0 else "#f8fafc"
+            _row_idx += 1
             TD  = (f'style="padding:4px 3px;text-align:center;vertical-align:middle;'
                    f'border-bottom:1px solid #eef3f8;background:{rbg}"')
             TDL = (f'style="padding:4px 6px;text-align:left;vertical-align:middle;'
@@ -1290,7 +1317,6 @@ with tab_prio:
             fac_c  = _P_FAC_CLR.get(fac_s, "#9aabb5")
             mod    = str(row.get("MODALIDAD","—"))
             mod_c  = _P_MOD_CLR.get(mod, "#9aabb5")
-            per    = str(row.get("periodo_propuesto","—"))
             per_c  = _P_PER_CLR.get(per, "#9aabb5")
             av     = int(float(row.get("avance_general",0) or 0))
             clasif = row.get("_clasif","En curso")
