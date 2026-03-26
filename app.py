@@ -252,7 +252,7 @@ with st.sidebar:
     st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
     st.page_link("pages/2_Programa.py",                 label="Resumen Programa",     icon="🔍")
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
-    if st.button("🔄 Actualizar datos", use_container_width=True, key="refresh_main"):
+    if st.button("🔄 Actualizar datos", use_container_width=True, key="refresh_main", type="primary"):
         st.cache_data.clear()
         st.rerun()
     st.markdown("<div style='flex:1'></div>", unsafe_allow_html=True)
@@ -884,7 +884,10 @@ with tab0:
         return risk_df.sort_values("avance_general", ascending=False)
 
     # R1 — Producción virtual sin aval financiero
-    r1_df   = _sort_risk(df_risk[(_pc > 0) & (_cf == "nostart")])
+    # Usa df completo (no df_risk) para incluir programas con trámite ministerial
+    _pc_all = df["pc_pct"] if "pc_pct" in df.columns else pd.Series([0.0]*len(df), index=df.index)
+    _cf_all = df["cf_st"]  if "cf_st"  in df.columns else pd.Series(["nostart"]*len(df), index=df.index)
+    r1_df   = _sort_risk(df[(_pc_all > 0) & (_cf_all == "nostart")])
     r1_rows = _r_rows(r1_df, {
         "% Contenidos": lambda r: _rpct(r.get("pc_pct", 0)),
     })

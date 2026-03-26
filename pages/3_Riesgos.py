@@ -124,7 +124,7 @@ with st.sidebar:
     st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
     st.page_link("pages/2_Programa.py",                 label="Resumen Programa",     icon="🔍")
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
-    if st.button("🔄 Actualizar datos", use_container_width=True, key="refresh_riesgos"):
+    if st.button("🔄 Actualizar datos", use_container_width=True, key="refresh_riesgos", type="primary"):
         st.cache_data.clear()
         st.rerun()
     st.markdown(
