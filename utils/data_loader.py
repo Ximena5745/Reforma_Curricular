@@ -34,6 +34,7 @@ ETAPAS_MAP = [
     ("Publicación en Página Web",                "Publicar plan de estudios en web",                 "Publicar plan de estudios en Web",                          "status"),
     ("Publicación en Página Web",                "Fecha fin",                                        "FECHA FIN",                                                 "date"),
     ("Publicación en Página Web",                "Periodo de implementación",                        "PERIODO DE IMPLEMENTACIÓN",                                 "info"),
+    ("Publicación en Página Web",                "% de avance web",                                  "% de Avance.1",                                             "pct_nostart"),
     ("Syllabus",                                 "Syllabus completos",                               "SYLLABUS COMPLETOS.1",                                      "syllabus"),
 ]
 
@@ -145,6 +146,12 @@ def _classify(tipo, v):
         if sl in ("si", "sí", "yes", "1"):      return "done"
         if sl in ("no",):                        return "inprog"
         return "na"
+    if tipo == "pct_nostart":
+        # Como pct pero vacío/nulo → "nostart" en lugar de "na"
+        s2 = s.lower()
+        if not s2 or s2 in ("none", "nan", "no aplica", "—"):
+            return "nostart"
+        return _cls_pct(s2)
     return "na"
 
 
@@ -283,9 +290,13 @@ def _build_df():
             return 0.0
 
     # Porcentajes numéricos
+    _web_pct_idx = next((i for i, (p,_,_,t) in enumerate(ETAPAS_MAP)
+                         if p == "Publicación en Página Web" and t == "pct_nostart"), None)
     df["pc_pct"]   = df["val_9"].apply(_to_pct_num)   # AK: % avance contenidos
     df["conv_pct"] = df["val_12"].apply(_to_pct_num)  # AS: % avance convenios
     df["ban_pct"]  = df["val_15"].apply(_to_pct_num)  # BB: % avance banner
+    df["web_pct"]  = (df[f"val_{_web_pct_idx}"].apply(_to_pct_num)
+                      if _web_pct_idx is not None else 0.0)  # BH: % avance web
 
     # Presencial: ban_pct = 0 (No aplica — excluye de riesgos y cálculos)
     _pres = df["MODALIDAD"].str.strip().str.lower() == "presencial"
@@ -297,6 +308,12 @@ def _build_df():
     if _proc_ban in df.columns:
         _ban_notna = df[_proc_ban].notna()
         df.loc[_ban_notna, _proc_ban] = df.loc[_ban_notna, "ban_pct"]
+
+    # proc_Web = web_pct directamente (BH determina el estado del proceso)
+    # Vacío en BH → 0 (Sin iniciar)
+    _proc_web = "proc_Publicación en Página Web"
+    if _proc_web in df.columns:
+        df[_proc_web] = df["web_pct"]
 
     # Estado directo de Concepto Financiero (col T)
     df["cf_st"] = df["cl_3"]
