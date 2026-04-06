@@ -286,12 +286,20 @@ def _build_df():
         except Exception:
             return 0.0
 
+    # Índices dinámicos (se recalculan si cambia ETAPAS_MAP)
+    _pc_pct_idx   = next((i for i, (p,_,_,t) in enumerate(ETAPAS_MAP)
+                          if p == "Producción de Contenidos" and t == "pct"), None)
+    _conv_pct_idx = next((i for i, (p,_,_,t) in enumerate(ETAPAS_MAP)
+                          if p == "Convenios Institucionales" and t == "pct"), None)
+    _web_pct_idx  = next((i for i, (p,_,_,t) in enumerate(ETAPAS_MAP)
+                          if p == "Publicación en Página Web" and t == "pct_nostart"), None)
     # Porcentajes numéricos
-    _web_pct_idx = next((i for i, (p,_,_,t) in enumerate(ETAPAS_MAP)
-                         if p == "Publicación en Página Web" and t == "pct_nostart"), None)
-    df["pc_pct"]   = df["val_9"].apply(_to_pct_num)   # AK: % avance contenidos
-    df["conv_pct"] = df["val_12"].apply(_to_pct_num)  # AS: % avance convenios
-    df["ban_pct"]  = df["val_15"].apply(_to_pct_num)  # BB: % avance banner
+    df["pc_pct"]   = (df[f"val_{_pc_pct_idx}"].apply(_to_pct_num)
+                      if _pc_pct_idx   is not None else pd.Series([0.0]*len(df)))  # % avance contenidos
+    df["conv_pct"] = (df[f"val_{_conv_pct_idx}"].apply(_to_pct_num)
+                      if _conv_pct_idx is not None else pd.Series([0.0]*len(df)))  # % avance convenios
+    df["ban_pct"]  = (df[f"val_{_ban_pct_idx}"].apply(_to_pct_num)
+                      if _ban_pct_idx  is not None else pd.Series([0.0]*len(df)))  # % avance Banner
     df["web_pct"]  = (df[f"val_{_web_pct_idx}"].apply(_to_pct_num)
                       if _web_pct_idx is not None else 0.0)  # BH: % avance web
 
@@ -314,8 +322,9 @@ def _build_df():
 
     # Estado directo de Concepto Financiero (col T)
     df["cf_st"] = df["cl_3"]
-    # Estado directo de Producción de Contenidos (col AK)
-    df["pc_st"] = df["cl_9"]   # "na" = No aplica (Presencial)
+    # Estado directo de Producción de Contenidos (% avance)
+    df["pc_st"] = (df[f"cl_{_pc_pct_idx}"]
+                   if _pc_pct_idx is not None else pd.Series(["nostart"]*len(df)))
 
     # syl_val: columna AD = "SYLLABUS COMPLETOS.1" (segunda ocurrencia, la correcta)
     # pandas renombra duplicados: la primera queda "SYLLABUS COMPLETOS", la segunda ".1"
@@ -386,19 +395,23 @@ def enrich_df(df):
         except Exception:
             return 0.0
 
+    # Índices dinámicos
+    _pci = next((i for i,(p,_,_,t) in enumerate(ETAPAS_MAP) if p=="Producción de Contenidos" and t=="pct"), 8)
+    _ci  = next((i for i,(p,_,_,t) in enumerate(ETAPAS_MAP) if p=="Convenios Institucionales" and t=="pct"), 11)
+    _bi  = next((i for i,(p,_,_,t) in enumerate(ETAPAS_MAP) if p=="Parametrizar Reforma en Banner" and t=="pct"), 14)
     # Verificar que existan las columnas val_N necesarias
-    v9  = df["val_9"]  if "val_9"  in df.columns else pd.Series(["—"] * len(df))
-    v12 = df["val_12"] if "val_12" in df.columns else pd.Series(["—"] * len(df))
-    v15 = df["val_15"] if "val_15" in df.columns else pd.Series(["—"] * len(df))
-    c3  = df["cl_3"]   if "cl_3"   in df.columns else pd.Series(["nostart"] * len(df))
-    c9  = df["cl_9"]   if "cl_9"   in df.columns else pd.Series(["nostart"] * len(df))
+    v_pc = df[f"val_{_pci}"] if f"val_{_pci}" in df.columns else pd.Series(["—"] * len(df))
+    v_cv = df[f"val_{_ci}"]  if f"val_{_ci}"  in df.columns else pd.Series(["—"] * len(df))
+    v_bn = df[f"val_{_bi}"]  if f"val_{_bi}"  in df.columns else pd.Series(["—"] * len(df))
+    c3   = df["cl_3"]        if "cl_3"        in df.columns else pd.Series(["nostart"] * len(df))
+    c_pc = df[f"cl_{_pci}"]  if f"cl_{_pci}"  in df.columns else pd.Series(["nostart"] * len(df))
 
     df = df.copy()
-    df["pc_pct"]   = v9.apply(_to_pct_num)
-    df["conv_pct"] = v12.apply(_to_pct_num)
-    df["ban_pct"]  = v15.apply(_to_pct_num)
+    df["pc_pct"]   = v_pc.apply(_to_pct_num)
+    df["conv_pct"] = v_cv.apply(_to_pct_num)
+    df["ban_pct"]  = v_bn.apply(_to_pct_num)
     df["cf_st"]    = c3
-    df["pc_st"]    = c9
+    df["pc_st"]    = c_pc
 
     # syl_val: columna AD = "SYLLABUS COMPLETOS.1" (segunda ocurrencia, la correcta)
     syl_col = (_find_col(df, "SYLLABUS COMPLETOS.1") or
