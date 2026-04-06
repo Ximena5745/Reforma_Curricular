@@ -921,7 +921,11 @@ with tab0:
 
     # R5 — Banner con avance pero convenios incompletos
     _per_r5   = df_risk["PERIODO DE IMPLEMENTACIÓN"].str.strip()
-    _conv_val = df_risk["val_12"].str.lower().str.strip() if "val_12" in df_risk.columns else pd.Series([""]*len(df_risk), index=df_risk.index)
+    _conv_raw_idx = next((i for i,(p,_,_,t) in enumerate(ETAPAS_MAP) if p=="Convenios Institucionales" and t=="pct"), None)
+    _conv_raw_col = f"val_{_conv_raw_idx}" if _conv_raw_idx is not None else None
+    _conv_val = (df_risk[_conv_raw_col].str.lower().str.strip()
+                 if _conv_raw_col and _conv_raw_col in df_risk.columns
+                 else pd.Series([""]*len(df_risk), index=df_risk.index))
     r5_df   = df_risk[
         (_ban > 0) & (_con < 100) &
         (_per_r5 != "Ya está en oferta") &

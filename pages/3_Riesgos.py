@@ -5,7 +5,7 @@ Análisis de riesgos: 5 secciones con criterios específicos de filtrado.
 
 import streamlit as st
 import pandas as pd
-from utils.data_loader import load_data, enrich_df, STATUS_LABEL
+from utils.data_loader import load_data, enrich_df, STATUS_LABEL, ETAPAS_MAP
 
 st.set_page_config(
     page_title="Riesgos · Reforma Curricular",
@@ -104,6 +104,11 @@ st.markdown(CSS, unsafe_allow_html=True)
 # ── Datos ─────────────────────────────────────────────────────────────────────
 df_raw = enrich_df(load_data())
 df_raw = df_raw[df_raw["PERIODO DE IMPLEMENTACIÓN"] != "Ya está en oferta"].copy()
+
+# Índice dinámico de la columna raw de convenios (cambia si se modifica ETAPAS_MAP)
+_conv_raw_idx = next((i for i, (p,_,_,t) in enumerate(ETAPAS_MAP)
+                      if p == "Convenios Institucionales" and t == "pct"), None)
+_conv_raw_col = f"val_{_conv_raw_idx}" if _conv_raw_idx is not None else None
 
 fac_abrev = {
     "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",
@@ -379,10 +384,15 @@ else:
 # ban_pct (BB) > 0  Y  conv_pct (AS) < 100
 # Tabla: Programa | % Convenios (AS) | % Banner (BB) | % Avance  — asc por AS
 # ═══════════════════════════════════════════════════════════════════════════════
+_conv_no_aplica_mask = (
+    df_raw[_conv_raw_col].str.lower().str.strip() != "no aplica"
+    if _conv_raw_col and _conv_raw_col in df_raw.columns
+    else pd.Series([True] * len(df_raw), index=df_raw.index)
+)
 r5 = df_raw[
     (df_raw["ban_pct"] > 0) &
     (df_raw["conv_pct"] < 100) &
-    (df_raw["val_12"].str.lower().str.strip() != "no aplica")
+    _conv_no_aplica_mask
 ].copy()
 r5 = r5.sort_values("conv_pct", ascending=True)
 

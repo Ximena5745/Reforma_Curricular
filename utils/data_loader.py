@@ -343,11 +343,14 @@ def _build_df():
         df["syl_val"] = df[syl_col].apply(_syl_from_col)
         df.loc[df["MODALIDAD"] == "Presencial", "syl_val"] = "N/A"
     else:
-        # Derivar desde "Número de syllabus" (val_7): si tiene valor positivo → Si
+        # Derivar desde "N\u00famero de syllabus" (val din\u00e1mico)
+        _syl_num_idx = next((i for i,(p,_,_,_) in enumerate(ETAPAS_MAP)
+                             if p == "Producci\u00f3n de Contenidos" and _ == "N\u00famero de syllabus"), None)
+        _syl_num_col = f"val_{_syl_num_idx}" if _syl_num_idx is not None else None
         def _derive_syl(row):
             if row.get("MODALIDAD", "") == "Presencial":
                 return "N/A"
-            v = str(row.get("val_7", "—")).strip()
+            v = str(row.get(_syl_num_col, "—") if _syl_num_col else "—").strip()
             if v in ("—", "no aplica", "None", "nan", ""):
                 return "NO"
             try:
@@ -426,9 +429,12 @@ def enrich_df(df):
         df["syl_val"] = df[syl_col].apply(_syl)
         df.loc[df["MODALIDAD"] == "Presencial", "syl_val"] = "N/A"
     else:
+        _syl_n_idx = next((i for i,(p,e,_,_) in enumerate(ETAPAS_MAP)
+                           if p == "Producci\u00f3n de Contenidos" and e == "N\u00famero de syllabus"), None)
+        _syl_n_col = f"val_{_syl_n_idx}" if _syl_n_idx is not None else None
         def _derive_syl(row):
             if row.get("MODALIDAD", "") == "Presencial": return "N/A"
-            v = str(row.get("val_7", "—")).strip()
+            v = str(row.get(_syl_n_col, "—") if _syl_n_col else "—").strip()
             if v in ("—", "no aplica", "None", "nan", ""): return "NO"
             try:   return "Si" if float(v) > 0 else "NO"
             except Exception: return "Si"
