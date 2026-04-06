@@ -402,7 +402,28 @@ st.divider()
 st.markdown("### Detalle por Proceso y Etapa")
 
 CL_ICON = {"done": "✅", "inprog": "🔵", "nostart": "🔴", "info": "ℹ️", "na": "⬜"}
-
+def _fmt_val(val, tipo):
+    """Formatea el valor según el tipo de campo."""
+    s = str(val).strip()
+    if s in ("—", "No aplica", "no aplica", "None", "nan", ""):
+        return s
+    if tipo in ("pct", "pct_nostart"):
+        try:
+            v = float(s)
+            pct = v * 100 if v <= 1.0 else v
+            return f"{int(pct)}%" if pct == int(pct) else f"{pct:.1f}%"
+        except (ValueError, TypeError):
+            return s
+    if tipo == "date":
+        try:
+            n = int(float(s))
+            if n <= 0:
+                return "—"
+            dt = datetime.date(1899, 12, 30) + datetime.timedelta(days=n)
+            return dt.strftime("%d/%m/%Y")
+        except (ValueError, TypeError):
+            return s
+    return s
 tabs = st.tabs([PROC_SHORT.get(p, p) for p in PROCESOS])
 
 for tab, proc in zip(tabs, PROCESOS):
@@ -431,7 +452,7 @@ for tab, proc in zip(tabs, PROCESOS):
         for col_i, i in enumerate(proc_idxs):
             _, etapa_name, _, tipo = ETAPAS_MAP[i]
             cl         = row[f"cl_{i}"]
-            val        = row[f"val_{i}"]
+            val        = _fmt_val(row[f"val_{i}"], tipo)
             status_lbl = STATUS_LABEL.get(cl, "—")
             status_clr = STATUS_COLOR.get(cl, "#9aabb5")
             icon       = CL_ICON.get(cl, "")
@@ -471,29 +492,6 @@ FAC_PALETTE = {
     "FIDI": "#1FB2DE",
     "FNGS": "#A6CE38",
 }
-
-def _fmt_val(val, tipo):
-    """Formatea el valor según el tipo de campo."""
-    s = str(val).strip()
-    if s in ("—", "No aplica", "no aplica", "None", "nan", ""):
-        return s
-    if tipo == "pct":
-        try:
-            v = float(s)
-            pct = v * 100 if v <= 1.0 else v
-            return f"{int(pct)}%" if pct == int(pct) else f"{pct:.1f}%"
-        except (ValueError, TypeError):
-            return s
-    if tipo == "date":
-        try:
-            n = int(float(s))
-            if n <= 0:
-                return "—"
-            dt = datetime.date(1899, 12, 30) + datetime.timedelta(days=n)
-            return dt.strftime("%d/%m/%Y")
-        except (ValueError, TypeError):
-            return s
-    return s
 
 # Estilos por estado (cl_)
 _CL_BG = {
