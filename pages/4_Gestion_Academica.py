@@ -237,7 +237,7 @@ def _esc(s):
 
 def _proc_icon(val):
     if val is None or (isinstance(val, float) and math.isnan(float(val))):
-        return '<span style="color:#9aabb5;font-size:15px;font-weight:600">—</span>'
+        return '<span style="color:#9aabb5;font-size:16px">—</span>'
     v = float(val)
     if v >= 100:
         return '<span style="font-size:16px">✅</span>'
@@ -250,10 +250,15 @@ def _syl_icon(syl):
         return '<span style="font-size:16px">✅</span>'
     if syl == "NO":
         return '<span style="font-size:16px">🔴</span>'
-    return '<span style="color:#9aabb5;font-size:15px;font-weight:600">—</span>'
+    return '<span style="color:#9aabb5;font-size:16px">—</span>'
 
 def _pct_bar(pct):
-    pct = float(pct or 0)
+    try:
+        pct = float(pct if pct is not None else 0)
+    except Exception:
+        pct = 0.0
+    import math as _m
+    if _m.isnan(pct): pct = 0.0
     clr = "#5a7a2e" if pct >= 70 else ("#d97706" if pct >= 40 else "#EC0677")
     bg  = "#f0f8e8" if pct >= 70 else ("#fef9e8" if pct >= 40 else "#fce8f2")
     bar_clr = "#A6CE38" if pct >= 70 else ("#FBAF17" if pct >= 40 else "#EC0677")
@@ -330,10 +335,10 @@ for idx, (_, row) in enumerate(df.iterrows()):
             etapa_cells.append(f'<td {TD}>{_syl_icon(str(val or "N/A"))}</td>')
         elif typ == "bar":
             try:
-                pct = float(val or 0)
+                pct = float(val if val is not None else 0)
+                etapa_cells.append(f'<td {TD}>{_pct_bar(pct)}</td>')
             except Exception:
-                pct = 0.0
-            etapa_cells.append(f'<td {TD}>{_pct_bar(pct)}</td>')
+                etapa_cells.append(f'<td {TD}><span style="color:#9aabb5;font-size:16px">—</span></td>')
         else:
             # Para columnas de texto (aseguramiento de la calidad)
             etapa_cells.append(f'<td {TD}><span style="font-size:11px;color:#0F385A">{val if val not in [None, "", "nan"] else "—"}</span></td>')
@@ -367,7 +372,7 @@ else:
         + "".join(rows_html) +
         '</tbody></table></div>'
     )
-    st.markdown(table_html, unsafe_allow_html=True)
+    st.html(table_html)
 
 # ── Descarga Excel ─────────────────────────────────────────────────────────────
 st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)

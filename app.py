@@ -603,9 +603,9 @@ def _p_esc(s): return str(s).replace("&","&amp;").replace("<","&lt;").replace(">
 
 def _p_icon(val):
     try: v = float(val)
-    except Exception: return '<span style="color:#b0bec5;font-size:13px">—</span>'
+    except Exception: return '<span style="color:#b0bec5;font-size:16px">—</span>'
     import math as _m
-    if _m.isnan(v): return '<span style="color:#b0bec5;font-size:11px;font-weight:600">N/A</span>'
+    if _m.isnan(v): return '<span style="color:#b0bec5;font-size:13px;font-weight:600">N/A</span>'
     if v >= 100: return '<span style="font-size:16px">✅</span>'
     if v > 0:    return '<span style="font-size:16px">⚠️</span>'
     return              '<span style="font-size:16px">🔴</span>'
@@ -613,10 +613,15 @@ def _p_icon(val):
 def _p_syl(s):
     if s == "Si":  return '<span style="font-size:16px">✅</span>'
     if s == "NO":  return '<span style="font-size:16px">🔴</span>'
-    return '<span style="color:#b0bec5;font-size:11px;font-weight:600">N/A</span>'
+    return '<span style="color:#b0bec5;font-size:13px;font-weight:600">N/A</span>'
 
 def _p_bar(pct):
-    pct = float(pct or 0)
+    try:
+        pct = float(pct if pct is not None else 0)
+    except Exception:
+        pct = 0.0
+    import math as _m2
+    if _m2.isnan(pct): pct = 0.0
     clr = "#15803d" if pct >= 70 else ("#d97706" if pct >= 40 else "#dc2626")
     bar = "#22c55e" if pct >= 70 else ("#f59e0b" if pct >= 40 else "#ef4444")
     return (f'<div style="min-width:70px;text-align:center">'
@@ -1364,9 +1369,11 @@ with tab_prio:
                     if col_key == "pc_pct" and mod == "Presencial":
                         etapa_cells.append(f'<td {TD}><span style="font-size:9px;color:#94a3b8;font-style:italic">No aplica</span></td>')
                     else:
-                        try: pct = float(val or 0)
-                        except: pct = 0.0
-                        etapa_cells.append(f'<td {TD}>{_p_bar(pct)}</td>')
+                        try:
+                            pct = float(val if val is not None else 0)
+                            etapa_cells.append(f'<td {TD}>{_p_bar(pct)}</td>')
+                        except Exception:
+                            etapa_cells.append(f'<td {TD}><span style="color:#b0bec5;font-size:13px">—</span></td>')
                 elif typ == "tramite":
                     tv = val if val not in [None,"","nan"] else "—"
                     etapa_cells.append(f'<td style="padding:5px 4px;text-align:center;vertical-align:middle;'
@@ -1409,7 +1416,7 @@ with tab_prio:
             + "".join(rows_p) +
             '</tbody></table></div>'
         )
-        st.markdown(tabla_p, unsafe_allow_html=True)
+        st.html(tabla_p)
         st.markdown(f'<div style="font-size:11px;color:#6a8a9e;margin-top:4px;text-align:right">'
                     f'{len(df_p)} programas · ordenados por prioridad y avance general</div>',
                     unsafe_allow_html=True)
