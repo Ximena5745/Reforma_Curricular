@@ -157,7 +157,6 @@ PROC_SHORT = {
     "Gestión Académica":                       "Gest. Académica",
     "Gestión Financiera":                      "Gest. Financiera",
     "Aseguramiento de la Calidad":             "Aseg. Calidad",
-    "Ger. Planeación y Gestión Institucional": "Ger. Planeación",
     "Producción de Contenidos":                "Prod. Contenidos",
     "Convenios Institucionales":               "Convenios",
     "Parametrizar Reforma en Banner":          "Banner",

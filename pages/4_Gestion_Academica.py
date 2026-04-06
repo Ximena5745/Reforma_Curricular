@@ -293,7 +293,6 @@ ETAPA_COLS = [
     ("G.ACADÉMICA",  f"proc_Gestión Académica",                      "proc"),
     ("C.FINANCIERO", f"proc_Gestión Financiera",                      "proc"),
     ("ASEGURAMIENT", f"proc_Aseguramiento de la Calidad",             "proc"),
-    ("PLANEACIÓN",   f"proc_Ger. Planeación y Gestión Institucional", "proc"),
     ("SYLLABUS",     "syl_val",                                       "syl"),
     ("PROD.CONT.",   "pc_pct",                                        "bar"),
     ("CONVENIOS",    f"proc_Convenios Institucionales",               "proc"),

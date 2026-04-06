@@ -349,7 +349,6 @@ proc_short_map = {
     "Gestión Académica": "Gest. Académica",
     "Gestión Financiera": "Gest. Financiera",
     "Aseguramiento de la Calidad": "Aseg. Calidad",
-    "Ger. Planeación y Gestión Institucional": "Ger. Planeación",
     "Producción de Contenidos": "Prod. Contenidos",
     "Convenios Institucionales": "Convenios",
     "Parametrizar Reforma en Banner": "Banner",
@@ -984,7 +983,6 @@ with tab0:
         ("Gestión Financiera",                      "#FBAF17"),
         ("Aseguramiento de la Calidad",             "#EC0677"),
         ("Syllabus",                                "#9333ea"),
-        ("Ger. Planeación y Gestión Institucional", "#1FB2DE"),
         ("Producción de Contenidos",                "#A6CE38"),
         ("Convenios Institucionales",               "#42B0B5"),
         ("Parametrizar Reforma en Banner",          "#5C89B5"),
@@ -996,14 +994,13 @@ with tab0:
         "Gestión Financiera":                      "Concepto Financiero",
         "Aseguramiento de la Calidad":             "Aseguramiento Calidad",
         "Syllabus":                                "Syllabus",
-        "Ger. Planeación y Gestión Institucional": "Ger. Planeación",
         "Producción de Contenidos":                "Producción Contenidos",
         "Convenios Institucionales":               "Convenios",
         "Parametrizar Reforma en Banner":          "Parametrización Banner",
         "Publicación en Página Web":               "Publicación Web",
     }
 
-    etapa_cols_row1 = st.columns(5)
+    etapa_cols_row1 = st.columns(4)
     etapa_cols_row2 = st.columns(4)
     all_etapa_cols = etapa_cols_row1 + etapa_cols_row2
 
@@ -1310,7 +1307,6 @@ with tab_prio:
         ("G.Académica",  "proc_Gestión Académica",                       "proc"),
         ("C.Financiero", "proc_Gestión Financiera",                       "proc"),
         ("Aseguramient", "proc_Aseguramiento de la Calidad",              "proc"),
-        ("Planeación",   "proc_Ger. Planeación y Gestión Institucional",  "proc"),
         ("Syllabus",     "syl_val",                                        "syl"),
         ("Prod.Cont.",   "pc_pct",                                         "bar"),
         ("Convenios",    "conv_pct",                                      "bar"),
