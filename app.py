@@ -606,23 +606,13 @@ def _p_icon(val):
     except Exception: return '<span style="color:#b0bec5;font-size:13px">—</span>'
     import math as _m
     if _m.isnan(v): return '<span style="color:#b0bec5;font-size:11px;font-weight:600">N/A</span>'
-    if v >= 100: return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                         'width:24px;height:24px;background:#dcfce7;color:#16a34a;border-radius:50%;'
-                         'font-size:14px;box-shadow:0 1px 3px rgba(22,163,74,.25)">✅</span>')
-    if v > 0:    return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                         'width:24px;height:24px;background:#fef3c7;color:#d97706;border-radius:50%;'
-                         'font-size:13px;box-shadow:0 1px 3px rgba(217,119,6,.25)">⚠️</span>')
-    return              ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                         'width:24px;height:24px;background:#ffe4e6;color:#e11d48;border-radius:50%;'
-                         'font-size:13px;box-shadow:0 1px 3px rgba(225,29,72,.25)">🔴</span>')
+    if v >= 100: return '<span style="font-size:16px">✅</span>'
+    if v > 0:    return '<span style="font-size:16px">⚠️</span>'
+    return              '<span style="font-size:16px">🔴</span>'
 
 def _p_syl(s):
-    if s == "Si":  return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                           'width:24px;height:24px;background:#dcfce7;color:#16a34a;border-radius:50%;'
-                           'font-size:14px;box-shadow:0 1px 3px rgba(22,163,74,.25)">✅</span>')
-    if s == "NO":  return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                           'width:24px;height:24px;background:#ffe4e6;color:#e11d48;border-radius:50%;'
-                           'font-size:13px;box-shadow:0 1px 3px rgba(225,29,72,.25)">🔴</span>')
+    if s == "Si":  return '<span style="font-size:16px">✅</span>'
+    if s == "NO":  return '<span style="font-size:16px">🔴</span>'
     return '<span style="color:#b0bec5;font-size:11px;font-weight:600">N/A</span>'
 
 def _p_bar(pct):

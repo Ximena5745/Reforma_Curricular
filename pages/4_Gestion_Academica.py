@@ -240,26 +240,16 @@ def _proc_icon(val):
         return '<span style="color:#9aabb5;font-size:15px;font-weight:600">—</span>'
     v = float(val)
     if v >= 100:
-        return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                'width:22px;height:22px;background:#f0f8e8;color:#5a7a2e;border-radius:50%;'
-                'font-weight:700;font-size:13px">✓</span>')
+        return '<span style="font-size:16px">✅</span>'
     if v > 0:
-        return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                'width:22px;height:22px;background:#fef9e8;color:#d97706;border-radius:50%;'
-                'font-weight:700;font-size:13px">○</span>')
-    return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-            'width:22px;height:22px;background:#fce8f2;color:#EC0677;border-radius:50%;'
-            'font-weight:700;font-size:13px">○</span>')
+        return '<span style="font-size:16px">⚠️</span>'
+    return '<span style="font-size:16px">🔴</span>'
 
 def _syl_icon(syl):
     if syl == "Si":
-        return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                'width:22px;height:22px;background:#f0f8e8;color:#5a7a2e;border-radius:50%;'
-                'font-weight:700;font-size:13px">✓</span>')
+        return '<span style="font-size:16px">✅</span>'
     if syl == "NO":
-        return ('<span style="display:inline-flex;align-items:center;justify-content:center;'
-                'width:22px;height:22px;background:#fce8f2;color:#EC0677;border-radius:50%;'
-                'font-weight:700;font-size:13px">○</span>')
+        return '<span style="font-size:16px">🔴</span>'
     return '<span style="color:#9aabb5;font-size:15px;font-weight:600">—</span>'
 
 def _pct_bar(pct):
