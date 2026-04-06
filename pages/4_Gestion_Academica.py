@@ -6,6 +6,7 @@ Tabla principal de Gestión Académica con estado de todas las etapas por progra
 import math
 import io
 import streamlit as st
+import streamlit.components.v1 as _html_comp
 import pandas as pd
 from openpyxl import Workbook
 from openpyxl.styles import PatternFill, Font, Alignment
@@ -372,7 +373,8 @@ else:
         + "".join(rows_html) +
         '</tbody></table></div>'
     )
-    st.html(table_html)
+    _tph = max(300, min(1400, 100 + n_show * 60))
+    _html_comp.html(table_html, height=_tph, scrolling=True)
 
 # ── Descarga Excel ─────────────────────────────────────────────────────────────
 st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)

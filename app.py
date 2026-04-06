@@ -4,6 +4,7 @@ Página principal: Resumen General
 """
 
 import streamlit as st
+import streamlit.components.v1 as _html_comp
 import pandas as pd
 import plotly.graph_objects as go
 import plotly.express as px
@@ -1174,7 +1175,8 @@ with tab2:
         + "".join(rows_t2) +
         '</tbody></table></div>'
     )
-    st.markdown(tabla_t2, unsafe_allow_html=True)
+    _t2h = max(280, min(900, 80 + len(df_t2) * 50))
+    _html_comp.html(tabla_t2, height=_t2h, scrolling=True)
     st.markdown(f'<div style="font-size:11px;color:#6a8a9e;margin-top:4px;text-align:right">'
                 f'{len(df_t2)} programas · ordenados por período de implementación</div>',
                 unsafe_allow_html=True)
@@ -1416,7 +1418,9 @@ with tab_prio:
             + "".join(rows_p) +
             '</tbody></table></div>'
         )
-        st.html(tabla_p)
+        _n_per_grps = len(df_p["PERIODO DE IMPLEMENTACIÓN"].unique())
+        _tph = max(300, min(1400, 100 + len(df_p) * 62 + _n_per_grps * 36))
+        _html_comp.html(tabla_p, height=_tph, scrolling=True)
         st.markdown(f'<div style="font-size:11px;color:#6a8a9e;margin-top:4px;text-align:right">'
                     f'{len(df_p)} programas · ordenados por prioridad y avance general</div>',
                     unsafe_allow_html=True)
