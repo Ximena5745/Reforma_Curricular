@@ -643,9 +643,7 @@ def _p_star(av, per, verde_2026=False, amarillo_2026=False):
     if amarillo_2026:
         return '<span style="color:#FBAF17;font-size:14px" title="Con esfuerzo podría implementarse">★</span>'
     if "2026" in str(per):
-        if av >= 40: return '<span style="color:#FBAF17;font-size:14px" title="Con esfuerzo podría implementarse">★</span>'
-        return              '<span style="color:#EC0677;font-size:14px" title="No se podría implementar en 2026-2">★</span>'
-    # 2027-x: sin estrella (excepto los que tengan verde_2026=True, ya manejados arriba)
+        return '<span style="color:#EC0677;font-size:14px" title="No se podría implementar en 2026-2">★</span>'
     return ''
 
 # ── Tabs principales ────────────────────────────────────────────────────────────
