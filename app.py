@@ -1266,13 +1266,10 @@ with tab_prio:
         def _star_ord(row):
             av  = float(row.get("avance_general", 0) or 0)
             per = str(row.get("PERIODO DE IMPLEMENTACIÓN", "")).strip()
-            if row.get("_verde_2026"):     return (0, -av)   # verde (cualquier período)
-            if per == "2026-2":
-                if av >= 40:               return (1, -av)   # amarillo
-                return (2, -av)                              # rojo
-            # 2027-x
-            if av >= 40: return (2, -av)
-            return (3, -av)
+            if row.get("_verde_2026"):    return (0, -av)   # verde
+            if row.get("_amarillo_2026"): return (1, -av)   # amarillo (forzado explícito)
+            if "2026" in per:             return (2, -av)   # rojo 2026-2
+            return (3, -av)                                 # 2027-x
         df_p["_sort_key"] = df_p.apply(lambda r: _star_ord(r), axis=1)
         df_p["_per_ord"]  = df_p["PERIODO DE IMPLEMENTACIÓN"].apply(
             lambda x: _PER_ORD.get(str(x).strip(), 4))
