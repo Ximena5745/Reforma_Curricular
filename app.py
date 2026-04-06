@@ -1224,40 +1224,27 @@ with tab_prio:
     # Excluir "Ya está en oferta"
     df_p = df_p[~df_p["PERIODO DE IMPLEMENTACIÓN"].str.strip().str.lower().str.contains("oferta", na=False)].copy()
 
-    # Condición verde 2026-2: Z="Si" y AK>0
-    _col_z = "¿Requiere informarse al MEN previa implementación?"
-
-    # (programa, modalidad, periodo) → estrella forzada
+    # (programa, modalidad, periodo) → estrella forzada — asignación explícita
     _VERDE_FORZADO = {
-        ("Administración de Empresas", "Presencial", "2026-2"),
-        ("Contaduría Pública",         "Presencial", "2026-2"),
+        ("Licenciatura en Educación Infantil",        "Virtual",    "2026-2"),
+        ("Licenciatura en Educación Básica Primaria", "Virtual",    "2026-2"),
+        ("Técnica Profesional Judicial",              "Virtual",    "2026-2"),
+        ("Administración de Empresas",                "Presencial", "2026-2"),
+        ("Contaduría Pública",                        "Presencial", "2026-2"),
     }
     _AMARILLO_FORZADO = {
-        ("Contaduría Pública",      "Virtual",  "2026-2"),
-        ("Ingeniería de Software",  "Virtual",  "2026-2"),
-        ("Derecho",                 "Virtual",  "2026-2"),
+        ("Contaduría Pública",     "Virtual", "2026-2"),
+        ("Ingeniería de Software", "Virtual", "2026-2"),
+        ("Derecho",                "Virtual", "2026-2"),
     }
 
     def _es_verde(row):
         prog = str(row.get("NOMBRE DEL PROGRAMA", "")).strip()
         per  = str(row.get("PERIODO DE IMPLEMENTACIÓN","")).strip()
         mod  = str(row.get("MODALIDAD", "")).strip()
-        # Tecnología en Gestión Ambiental: siempre verde
-        if prog == "Tecnología en Gestión Ambiental":
+        if prog == "Tecnología en Gestión Ambiental" and per == "2027-1":
             return True
-        # Programas forzados a amarillo: nunca verde
-        if (prog, mod, per) in _AMARILLO_FORZADO:
-            return False
-        # Programas forzados a verde
-        if (prog, mod, per) in _VERDE_FORZADO:
-            return True
-        if per != "2026-2":
-            return False
-        # Técnica Profesional Judicial: verde en 2026-2
-        if prog == "Técnica Profesional Judicial":
-            return True
-        req = str(row.get(_col_z, "")).strip().lower() if _col_z in row.index else ""
-        return req in ("si", "sí") and float(row.get("pc_pct", 0) or 0) > 0
+        return (prog, mod, per) in _VERDE_FORZADO
 
     def _es_amarillo(row):
         prog = str(row.get("NOMBRE DEL PROGRAMA", "")).strip()
