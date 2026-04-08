@@ -68,6 +68,8 @@ st.markdown(CSS, unsafe_allow_html=True)
 # ── Datos ──────────────────────────────────────────────────────────────────────
 df_raw = enrich_df(load_data())
 
+niveles = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
+
 fac_abrev = {
     "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",
     "Facultad de Ingeniería, Diseño e Innovación":    "FIDI",
@@ -149,22 +151,38 @@ for periodo, dates in WORK_DATES.items():
 
 df_all = pd.DataFrame(all_rows)
 
-# ── Filtro por Periodo ──────────────────────────────────────────────────────────
+# ── Filtro por Periodo y Nivel ──────────────────────────────────────────────
 periodos_disponibles = [p for p in WORK_DATES if p in df_all["Periodo propuesto"].values]
+_use_pills = hasattr(st, "pills")
+_LBL_PT = 'style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px;white-space:nowrap"'
 
-fc1, fc2 = st.columns([2, 5])
+fc1, fc2, fc3, fc4 = st.columns([0.7, 2.2, 0.7, 2.2])
 with fc1:
+    st.markdown(f'<div {_LBL_PT}>📅 PERÍODO</div>', unsafe_allow_html=True)
+with fc2:
     sel_periodo = st.selectbox(
-        "Filtrar por periodo",
+        "periodo",
         options=["Todos"] + periodos_disponibles,
         index=0,
+        label_visibility="collapsed",
     )
+with fc3:
+    st.markdown(f'<div {_LBL_PT}>🎓 NIVEL</div>', unsafe_allow_html=True)
+with fc4:
+    if _use_pills:
+        sel_nivel_pt = st.pills("nivel_pt", niveles, selection_mode="multi", key="pt_nivel", label_visibility="collapsed")
+    else:
+        sel_nivel_pt = st.multiselect("nivel_pt", niveles, key="pt_nivel", label_visibility="collapsed", placeholder="Todos")
 
-# Aplicar filtro
+# Aplicar filtros
 if sel_periodo == "Todos":
     df_show = df_all.copy()
 else:
     df_show = df_all[df_all["Periodo propuesto"] == sel_periodo].copy()
+if sel_nivel_pt:
+    df_show = df_show[df_show["Programa"].isin(
+        df_raw[df_raw["NIVEL_HOMOLOGADO"].isin(sel_nivel_pt)]["NOMBRE DEL PROGRAMA"]
+    )]
 
 # Indicador de periodo seleccionado
 color_sel = PERIOD_COLORS.get(sel_periodo, "#1FB2DE") if sel_periodo != "Todos" else "#0F385A"

@@ -144,7 +144,7 @@ footer { visibility: hidden; }
 [data-testid="stBaseButton-primary"] > button,
 [data-testid="stBaseButton-primary"] button {
     height: 32px !important; min-height: 32px !important;
-    padding: 0 10px !important; line-height: 1 !important;
+    padding: 0 10px !important; line-height: 1 !important; white-space: nowrap !important;
 }
 /* Align button vertically */
 [data-testid="stColumn"]:has([data-testid="stBaseButton-primary"]) {
@@ -283,23 +283,28 @@ _use_pills = hasattr(st, "pills")
 _mods_ops  = sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
 fac_ops    = sorted([fac_abrev.get(f, f) for f in df_raw["FACULTAD"].dropna().unique()])
 _pers_ops  = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
+_niveles_ops = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
 
 def _clear_app():
-    st.session_state["flt_mod"] = []
-    st.session_state["flt_fac"] = []
-    st.session_state["flt_per"] = []
+    st.session_state["flt_mod"]   = []
+    st.session_state["flt_fac"]   = []
+    st.session_state["flt_per"]   = []
+    st.session_state["flt_nivel"] = []
 
 _LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
         'letter-spacing:.4px;white-space:nowrap"')
 
 # ── Filtrar datos usando session_state (widgets se renderizan dentro de cada tab) ──
-_sel_mod = list(st.session_state.get("flt_mod") or [])
-_sel_fac = list(st.session_state.get("flt_fac") or [])
-_sel_per = list(st.session_state.get("flt_per") or [])
+_sel_mod   = list(st.session_state.get("flt_mod")   or [])
+_sel_fac   = list(st.session_state.get("flt_fac")   or [])
+_sel_per   = list(st.session_state.get("flt_per")   or [])
+_sel_nivel = list(st.session_state.get("flt_nivel") or [])
 modalidad_f = _sel_mod
 facultad_f  = [fac_abrev_inv.get(f, f) for f in _sel_fac]
 periodo_f   = _sel_per
 df = apply_filters(df_raw.copy(), modalidad_f, facultad_f, periodo_f)
+if _sel_nivel:
+    df = df[df["NIVEL_HOMOLOGADO"].isin(_sel_nivel)]
 n  = len(df)
 
 # ── Cálculos previos (no rendering) ────────────────────────────────────────────
@@ -660,11 +665,15 @@ with tab0:
             if _use_pills: st.pills("fac", fac_ops, selection_mode="multi", key="flt_fac", label_visibility="collapsed")
             else: st.multiselect("fac", fac_ops, key="flt_fac", label_visibility="collapsed", placeholder="Todas")
         with _btn0: st.button("✕ LIMPIAR", on_click=_clear_app, type="primary", key="app_clear")
-        _lb3, _in3, _sp0b, _, _cnt0 = st.columns([0.55, 2.2, 0.05, 0.65, 2.55])
+        _lb3, _in3, _sp0b, _lb_nivel, _in_nivel, _cnt0 = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
         with _lb3: st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
         with _in3:
             if _use_pills: st.pills("per", _pers_ops, selection_mode="multi", key="flt_per", label_visibility="collapsed")
             else: st.multiselect("per", _pers_ops, key="flt_per", label_visibility="collapsed", placeholder="Todos")
+        with _lb_nivel: st.markdown(f'<div {_LBL}>🎓 NIVEL</div>', unsafe_allow_html=True)
+        with _in_nivel:
+            if _use_pills: st.pills("nivel", _niveles_ops, selection_mode="multi", key="flt_nivel", label_visibility="collapsed")
+            else: st.multiselect("nivel", _niveles_ops, key="flt_nivel", label_visibility="collapsed", placeholder="Todos")
         with _cnt0:
             st.markdown(f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right">'
                         f'Mostrando <b style="color:#0F385A">{n}</b> de '
