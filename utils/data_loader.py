@@ -166,9 +166,11 @@ def _find_col(df, name):
 def homologar_nivel(val):
     """Homologa el valor de la columna NIVEL de la BD a Pregrado o Posgrado."""
     v = str(val).strip().lower()
-    if v in ("profesional", "t\u00e9cnico", "tecnol\u00f3gico", "tecnico", "tecnologico"):
+    # Pregrado: profesional, técnico, tecnológico y variantes sin tilde
+    if any(v.startswith(p) for p in ("profesional", "tecnico", "técnico", "tecnologico", "tecnológico", "tecn")):
         return "Pregrado"
-    if v in ("maestr\u00eda", "especializaci\u00f3n", "maestria", "especializacion"):
+    # Posgrado: maestría, especialización y variantes
+    if any(v.startswith(p) for p in ("maestria", "maestría", "especializacion", "especialización", "maest", "espec")):
         return "Posgrado"
     return ""
 

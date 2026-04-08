@@ -166,9 +166,12 @@ st.markdown(
 )
 
 # ── Preparar datos ─────────────────────────────────────────────────────────────
-df = df_raw[["NOMBRE DEL PROGRAMA", "MODALIDAD", "NIVEL", "NIVEL_HOMOLOGADO", "SEDE", "FACULTAD",
+_cols_base = ["NOMBRE DEL PROGRAMA", "MODALIDAD", "NIVEL", "SEDE", "FACULTAD",
              "PERIODO DE IMPLEMENTACIÓN", "periodo_propuesto", "pc_pct", "cf_st",
-             "avance_general"]].copy()
+             "avance_general"]
+if "NIVEL_HOMOLOGADO" in df_raw.columns:
+    _cols_base.insert(3, "NIVEL_HOMOLOGADO")
+df = df_raw[[c for c in _cols_base if c in df_raw.columns]].copy()
 
 df["Facultad"] = df["FACULTAD"].map(fac_abrev).fillna(df["FACULTAD"])
 df["Cambio"]   = df["PERIODO DE IMPLEMENTACIÓN"] != df["periodo_propuesto"]
