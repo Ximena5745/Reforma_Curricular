@@ -200,15 +200,10 @@ def _build_df():
     df = df[df["NOMBRE DEL PROGRAMA"].str.strip() != ""].copy()
     df = df.reset_index(drop=True)
 
-<<<<<<< HEAD
     # Homologar columna NIVEL (columna G, índice 6) a Pregrado/Posgrado
     col_nivel = _find_col(df, "NIVEL")
     if not col_nivel and len(df.columns) > 6:
         col_nivel = df.columns[6]
-=======
-    # Homologar columna NIVEL (columna G) a Pregrado/Posgrado
-    col_nivel = _find_col(df, "NIVEL")
->>>>>>> fbaef3fd2f237446123814ceb6816a340e0bfb0e
     if col_nivel:
         df["NIVEL_HOMOLOGADO"] = df[col_nivel].apply(homologar_nivel)
     else:
