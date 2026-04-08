@@ -1,4 +1,4 @@
-"""
+﻿"""
 pages/3_Riesgos.py
 Análisis de riesgos: 5 secciones con criterios específicos de filtrado.
 """
@@ -104,7 +104,7 @@ st.markdown(CSS, unsafe_allow_html=True)
 # ── Datos ─────────────────────────────────────────────────────────────────────
 df_raw = enrich_df(load_data())
 
-niveles = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
+niveles = [n for n in ["Pregrado", "Posgrado"] if "NIVEL_HOMOLOGADO" in df_raw.columns and n in df_raw["NIVEL_HOMOLOGADO"].values]
 df_raw = df_raw[df_raw["PERIODO DE IMPLEMENTACIÓN"] != "Ya está en oferta"].copy()
 
 # Índice dinámico de la columna raw de convenios (cambia si se modifica ETAPAS_MAP)
@@ -448,3 +448,4 @@ else:
     )
 
 st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+

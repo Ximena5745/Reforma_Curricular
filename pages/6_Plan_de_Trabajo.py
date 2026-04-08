@@ -1,4 +1,4 @@
-"""
+﻿"""
 pages/6_Plan_de_Trabajo.py
 Plan de trabajo sugerido con fechas de inicio y cierre por periodo propuesto.
 """
@@ -68,7 +68,7 @@ st.markdown(CSS, unsafe_allow_html=True)
 # ── Datos ──────────────────────────────────────────────────────────────────────
 df_raw = enrich_df(load_data())
 
-niveles = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
+niveles = [n for n in ["Pregrado", "Posgrado"] if "NIVEL_HOMOLOGADO" in df_raw.columns and n in df_raw["NIVEL_HOMOLOGADO"].values]
 
 fac_abrev = {
     "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",
@@ -322,3 +322,4 @@ st.download_button(
 )
 
 st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+

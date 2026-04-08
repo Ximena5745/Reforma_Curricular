@@ -1,4 +1,4 @@
-"""
+﻿"""
 pages/5_Periodo_Propuesto.py
 Periodo de implementación propuesto con lógica calculada + gráfico Gantt.
 """
@@ -114,7 +114,7 @@ st.markdown(CSS, unsafe_allow_html=True)
 # ── Datos ──────────────────────────────────────────────────────────────────────
 df_raw = enrich_df(load_data())
 
-niveles = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
+niveles = [n for n in ["Pregrado", "Posgrado"] if "NIVEL_HOMOLOGADO" in df_raw.columns and n in df_raw["NIVEL_HOMOLOGADO"].values]
 
 fac_abrev = {
     "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",
@@ -277,3 +277,4 @@ st.dataframe(styled, use_container_width=True, hide_index=True,
              height=min(600, len(df_disp) * 38 + 60))
 
 st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+

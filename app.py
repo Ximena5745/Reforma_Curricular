@@ -283,7 +283,7 @@ _use_pills = hasattr(st, "pills")
 _mods_ops  = sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
 fac_ops    = sorted([fac_abrev.get(f, f) for f in df_raw["FACULTAD"].dropna().unique()])
 _pers_ops  = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
-_niveles_ops = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
+_niveles_ops = [n for n in ["Pregrado", "Posgrado"] if n in df_raw.get("NIVEL_HOMOLOGADO", pd.Series(dtype=str)).values]
 
 def _clear_app():
     st.session_state["flt_mod"]   = []
@@ -303,7 +303,7 @@ modalidad_f = _sel_mod
 facultad_f  = [fac_abrev_inv.get(f, f) for f in _sel_fac]
 periodo_f   = _sel_per
 df = apply_filters(df_raw.copy(), modalidad_f, facultad_f, periodo_f)
-if _sel_nivel:
+if _sel_nivel and "NIVEL_HOMOLOGADO" in df.columns:
     df = df[df["NIVEL_HOMOLOGADO"].isin(_sel_nivel)]
 n  = len(df)
 

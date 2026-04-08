@@ -1,4 +1,4 @@
-"""
+﻿"""
 pages/4_Gestion_Academica.py
 Tabla principal de Gestión Académica con estado de todas las etapas por programa.
 """
@@ -104,7 +104,7 @@ st.markdown(CSS, unsafe_allow_html=True)
 df_raw = enrich_df(load_data())
 
 # Filtro de Nivel homologado
-niveles = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
+niveles = [n for n in ["Pregrado", "Posgrado"] if "NIVEL_HOMOLOGADO" in df_raw.columns and n in df_raw["NIVEL_HOMOLOGADO"].values]
 
 fac_abrev = {
     "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",
@@ -456,3 +456,4 @@ st.download_button(
 )
 
 st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
+

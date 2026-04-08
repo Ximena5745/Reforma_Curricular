@@ -1,15 +1,3 @@
-def homologar_nivel(nivel_bd):
-    """
-    Homologa el valor de NIVEL (columna G) a 'Pregrado' o 'Posgrado' según la tabla de equivalencias.
-    """
-    if not isinstance(nivel_bd, str):
-        return ""
-    nivel = nivel_bd.strip().lower()
-    if nivel in ["profesional", "técnico", "tecnológico"]:
-        return "Pregrado"
-    if nivel in ["maestría", "especialización"]:
-        return "Posgrado"
-    return ""
 """
 utils/data_loader.py
 Carga y procesa la hoja 'Maestro' del archivo Excel de Control Maestro de Reforma Curricular.

@@ -1,4 +1,4 @@
-"""
+﻿"""
 pages/2_Programa.py
 Vista general de programas con conteo de etapas + ficha detallada por programa.
 """
@@ -140,7 +140,7 @@ footer { visibility: hidden; }
 # ── Datos ──────────────────────────────────────────────────────────────────────
 df_raw = load_data()
 
-niveles = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
+niveles = [n for n in ["Pregrado", "Posgrado"] if "NIVEL_HOMOLOGADO" in df_raw.columns and n in df_raw["NIVEL_HOMOLOGADO"].values]
 
 FAC_LABELS = {
     "Facultad de Sociedad, Cultura y Creatividad":    "Sociedad, Cultura y Creatividad",
@@ -578,3 +578,4 @@ with st.expander("Ver tabla completa de valores para este programa"):
             "Estado":  st.column_config.TextColumn("Estado",  width="small"),
         },
     )
+
