@@ -68,7 +68,7 @@ footer { visibility: hidden; }
 [data-testid="stBaseButton-primary"] > button,
 [data-testid="stBaseButton-primary"] button {
     height: 32px !important; min-height: 32px !important;
-    padding: 0 10px !important; line-height: 1 !important;
+    padding: 0 10px !important; line-height: 1 !important; white-space: nowrap !important;
 }
 /* Align button vertically */
 [data-testid="stColumn"]:has([data-testid="stBaseButton-primary"]) {
@@ -103,6 +103,8 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 # ── Datos ─────────────────────────────────────────────────────────────────────
 df_raw = enrich_df(load_data())
+
+niveles = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
 df_raw = df_raw[df_raw["PERIODO DE IMPLEMENTACIÓN"] != "Ya está en oferta"].copy()
 
 # Índice dinámico de la columna raw de convenios (cambia si se modifica ETAPAS_MAP)
@@ -148,6 +150,21 @@ st.markdown(
 )
 
 st.markdown("<div style='height:10px'></div>", unsafe_allow_html=True)
+
+# ── Filtro de Nivel ───────────────────────────────────────────────────────
+_use_pills = hasattr(st, "pills")
+_LBL_R = 'style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px;white-space:nowrap"'
+with st.container():
+    lb_nivel, in_nivel, _ = st.columns([0.7, 2.5, 8.8])
+    with lb_nivel:
+        st.markdown(f'<div {_LBL_R}>🎓 NIVEL</div>', unsafe_allow_html=True)
+    with in_nivel:
+        if _use_pills:
+            sel_nivel = st.pills("nivel", niveles, selection_mode="multi", key="r_nivel", label_visibility="collapsed")
+        else:
+            sel_nivel = st.multiselect("nivel", niveles, key="r_nivel", label_visibility="collapsed", placeholder="Todos")
+if sel_nivel:
+    df_raw = df_raw[df_raw["NIVEL_HOMOLOGADO"].isin(sel_nivel)]
 
 # ─── helpers ──────────────────────────────────────────────────────────────────
 def _risk_header(title, desc, color, n):

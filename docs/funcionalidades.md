@@ -1,4 +1,34 @@
-﻿# Funcionalidades y Lógica — Reforma Curricular
+﻿---
+
+## Filtro de Nivel (Pregrado/Posgrado) — Homologación
+
+**Funcionalidad agregada (2026-04-08):**
+
+Se incorpora un filtro de **Nivel** en todas las visuales principales del dashboard. Este filtro permite seleccionar entre "Pregrado" y "Posgrado" y se basa en la homologación de los valores originales de la columna `NIVEL` (columna G en la base de datos) según la siguiente tabla:
+
+| NIVEL BD        | NIVEL     |
+|----------------|-----------|
+| Profesional    | Pregrado  |
+| Técnico        | Pregrado  |
+| Tecnológico    | Pregrado  |
+| Maestría       | Posgrado  |
+| Especialización| Posgrado  |
+
+La homologación se realiza automáticamente al cargar los datos, generando una nueva columna `NIVEL_HOMOLOGADO` que es la utilizada por el filtro en todas las visuales.
+
+**¿Cómo funciona?**
+- El usuario puede filtrar los datos visualizados por "Pregrado" o "Posgrado" en cada página temática.
+- La lógica de homologación está centralizada en `utils/data_loader.py` y se aplica al cargar el DataFrame.
+- El filtro de Nivel es independiente de los filtros de Modalidad, Facultad y Periodo, y puede combinarse con ellos.
+
+**Archivos involucrados:**
+- `utils/data_loader.py` — función `homologar_nivel` y columna `NIVEL_HOMOLOGADO`.
+- `pages/1_Detalle_por_Etapa.py`, `pages/2_Programa.py`, `pages/4_Gestion_Academica.py`, `pages/5_Periodo_Propuesto.py`, `pages/6_Plan_de_Trabajo.py` — integración del filtro visual y aplicación sobre la columna homologada.
+
+**Motivación:**
+Permite un análisis transversal y homogéneo de los datos académicos, agrupando correctamente los programas según su nivel académico real, independientemente de la denominación original en la base de datos.
+
+# Funcionalidades y Lógica — Reforma Curricular
 
 > **Fecha:** 2026-04-06  
 > **Proyecto:** Dashboard Streamlit de seguimiento de la Reforma Curricular POLI  

@@ -1,3 +1,15 @@
+def homologar_nivel(nivel_bd):
+    """
+    Homologa el valor de NIVEL (columna G) a 'Pregrado' o 'Posgrado' según la tabla de equivalencias.
+    """
+    if not isinstance(nivel_bd, str):
+        return ""
+    nivel = nivel_bd.strip().lower()
+    if nivel in ["profesional", "técnico", "tecnológico"]:
+        return "Pregrado"
+    if nivel in ["maestría", "especialización"]:
+        return "Posgrado"
+    return ""
 """
 utils/data_loader.py
 Carga y procesa la hoja 'Maestro' del archivo Excel de Control Maestro de Reforma Curricular.
@@ -177,6 +189,13 @@ def _build_df():
     # Filtrar filas sin programa
     df = df[df["NOMBRE DEL PROGRAMA"].str.strip() != ""].copy()
     df = df.reset_index(drop=True)
+
+    # Homologar columna NIVEL (columna G) a Pregrado/Posgrado
+    col_nivel = _find_col(df, "NIVEL")
+    if col_nivel:
+        df["NIVEL_HOMOLOGADO"] = df[col_nivel].apply(homologar_nivel)
+    else:
+        df["NIVEL_HOMOLOGADO"] = ""
 
     # Normalizar periodo
     df["PERIODO DE IMPLEMENTACIÓN"] = (
