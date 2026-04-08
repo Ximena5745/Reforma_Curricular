@@ -484,10 +484,10 @@ def load_data():
         import streamlit as st
 
         @st.cache_data
-        def _cached(_n_etapas: int):
+        def _cached(_n_etapas: int, _v: int):
             return _build_df()
 
-        return _cached(len(ETAPAS_MAP))
+        return _cached(len(ETAPAS_MAP), 2)
     except Exception:
         return _build_df()
 
