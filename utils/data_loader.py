@@ -163,6 +163,16 @@ def _find_col(df, name):
     return None
 
 
+def homologar_nivel(val):
+    """Homologa el valor de la columna NIVEL de la BD a Pregrado o Posgrado."""
+    v = str(val).strip().lower()
+    if v in ("profesional", "t\u00e9cnico", "tecnol\u00f3gico", "tecnico", "tecnologico"):
+        return "Pregrado"
+    if v in ("maestr\u00eda", "especializaci\u00f3n", "maestria", "especializacion"):
+        return "Posgrado"
+    return ""
+
+
 # ─── Carga y cálculo ──────────────────────────────────────────────────────────
 def _build_df():
     df = pd.read_excel(DATA_PATH, sheet_name="Borrador", header=9, dtype=str).fillna("")
@@ -177,6 +187,15 @@ def _build_df():
     # Filtrar filas sin programa
     df = df[df["NOMBRE DEL PROGRAMA"].str.strip() != ""].copy()
     df = df.reset_index(drop=True)
+
+    # Homologar columna NIVEL (columna G, índice 6) a Pregrado/Posgrado
+    col_nivel = _find_col(df, "NIVEL")
+    if not col_nivel and len(df.columns) > 6:
+        col_nivel = df.columns[6]
+    if col_nivel:
+        df["NIVEL_HOMOLOGADO"] = df[col_nivel].apply(homologar_nivel)
+    else:
+        df["NIVEL_HOMOLOGADO"] = ""
 
     # Normalizar periodo
     df["PERIODO DE IMPLEMENTACIÓN"] = (
