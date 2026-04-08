@@ -1199,11 +1199,13 @@ with tab_prio:
     if "prio_mod" not in st.session_state: st.session_state["prio_mod"] = []
     if "prio_per" not in st.session_state: st.session_state["prio_per"] = ["2026-2"]
     if "prio_fac" not in st.session_state: st.session_state["prio_fac"] = []
+    if "prio_nivel" not in st.session_state: st.session_state["prio_nivel"] = []
 
     def _clear_prio():
-        st.session_state["prio_mod"] = []
-        st.session_state["prio_per"] = ["2026-2"]
-        st.session_state["prio_fac"] = []
+        st.session_state["prio_mod"]   = []
+        st.session_state["prio_per"]   = ["2026-2"]
+        st.session_state["prio_fac"]   = []
+        st.session_state["prio_nivel"] = []
 
     _LBL_P = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
                'letter-spacing:.4px;white-space:nowrap"')
@@ -1216,10 +1218,15 @@ with tab_prio:
         with _ip2: sel_pfac = st.pills("pfac", sorted([fac_abrev.get(f,f) for f in df_raw["FACULTAD"].dropna().unique()]),
                                        selection_mode="multi", key="prio_fac", label_visibility="collapsed")
         with _btn_p: st.button("✕ LIMPIAR", on_click=_clear_prio, type="primary", key="prio_clear")
-        _lp3, _ip3, _sp_p2, _, _cnt_p = st.columns([0.55, 2.2, 0.05, 0.65, 2.55])
+        _lp3, _ip3, _sp_p2, _lp_nivel, _ip_nivel, _cnt_p = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
         with _lp3: st.markdown(f'<div {_LBL_P}>📅 PERÍODO</div>', unsafe_allow_html=True)
         with _ip3: sel_pper = st.pills("pper", sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist()),
                                        selection_mode="multi", key="prio_per", label_visibility="collapsed")
+        with _lp_nivel: st.markdown(f'<div {_LBL_P}>🎓 NIVEL</div>', unsafe_allow_html=True)
+        with _ip_nivel:
+            _niv_ops = [n for n in ["Pregrado", "Posgrado"] if "NIVEL_HOMOLOGADO" in df_raw.columns and n in df_raw["NIVEL_HOMOLOGADO"].values]
+            if _use_pills: st.pills("pnivel", _niv_ops, selection_mode="multi", key="prio_nivel", label_visibility="collapsed")
+            else: st.multiselect("pnivel", _niv_ops, key="prio_nivel", label_visibility="collapsed", placeholder="Todos")
         with _cnt_p: _prio_cnt = st.empty()
 
     # ── Filtrar datos ───────────────────────────────────────────────────────────
@@ -1227,6 +1234,9 @@ with tab_prio:
     if sel_pmod:  df_p = df_p[df_p["MODALIDAD"].isin(sel_pmod)]
     if sel_pfac:  df_p = df_p[df_p["FACULTAD"].isin([fac_abrev_inv.get(f,f) for f in sel_pfac])]
     if sel_pper:  df_p = df_p[df_p["PERIODO DE IMPLEMENTACIÓN"].isin(sel_pper)]
+    _sel_pnivel = list(st.session_state.get("prio_nivel") or [])
+    if _sel_pnivel and "NIVEL_HOMOLOGADO" in df_p.columns:
+        df_p = df_p[df_p["NIVEL_HOMOLOGADO"].isin(_sel_pnivel)]
     df_p = enrich_df(df_p) if "pc_pct" not in df_p.columns else df_p
 
     # Excluir "Ya está en oferta"

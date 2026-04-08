@@ -61,19 +61,21 @@ PROCESO_COLOR = {
 }
 
 STATUS_LABEL = {
-    "done":    "Finalizado",
-    "inprog":  "En proceso",
-    "nostart": "Sin iniciar",
-    "info":    "Informativo",
-    "na":      "No aplica",
+    "done":      "Finalizado",
+    "inprog":    "En proceso",
+    "nostart":   "Sin iniciar",
+    "devuelto":  "Devuelto",
+    "info":      "Informativo",
+    "na":        "No aplica",
 }
 
 STATUS_COLOR = {
-    "done":    "#A6CE38",
-    "inprog":  "#1FB2DE",
-    "nostart": "#EC0677",
-    "info":    "#FBAF17",
-    "na":      "#9aabb5",
+    "done":      "#A6CE38",
+    "inprog":    "#1FB2DE",
+    "nostart":   "#EC0677",
+    "devuelto":  "#F47B20",
+    "info":      "#FBAF17",
+    "na":        "#9aabb5",
 }
 
 
@@ -88,6 +90,8 @@ def _cls_status(v):
         return "done"
     if "sin iniciar" in s or s == "no":
         return "nostart"
+    if s == "devuelto":
+        return "devuelto"
     if s == "en proceso":
         return "inprog"
     if "aprobado por el men" in s:
