@@ -75,7 +75,7 @@ footer { visibility: hidden; }
 [data-testid="stBaseButton-primary"] > button,
 [data-testid="stBaseButton-primary"] button {
     height: 32px !important; min-height: 32px !important;
-    padding: 0 10px !important; line-height: 1 !important; white-space: nowrap !important;
+    padding: 0 10px !important; line-height: 1 !important;
 }
 /* Align button vertically */
 [data-testid="stColumn"]:has([data-testid="stBaseButton-primary"]) {
@@ -139,8 +139,6 @@ footer { visibility: hidden; }
 
 # ── Datos ──────────────────────────────────────────────────────────────────────
 df_raw = load_data()
-
-niveles = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
 
 FAC_LABELS = {
     "Facultad de Sociedad, Cultura y Creatividad":    "Sociedad, Cultura y Creatividad",
@@ -207,10 +205,9 @@ _mods_ops  = sorted(df_raw["MODALIDAD"].dropna().unique().tolist())
 _pers_ops  = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())
 
 def _clear_p2():
-    st.session_state["p2_mod"]   = []
-    st.session_state["p2_fac"]   = []
-    st.session_state["p2_per"]   = []
-    st.session_state["p2_nivel"] = []
+    st.session_state["p2_mod"] = []
+    st.session_state["p2_fac"] = []
+    st.session_state["p2_per"] = []
 
 _LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
         'letter-spacing:.4px;white-space:nowrap"')
@@ -240,8 +237,8 @@ with st.container():
         st.button("✕ LIMPIAR", on_click=_clear_p2,
                   type="primary", key="p2_clear")
 
-    # Fila 2: PERÍODO · NIVEL · contador
-    lb3, in3, lb_nivel, in_nivel, cnt_col = st.columns([0.6, 3.0, 0.7, 2.5, 1.65])
+    # Fila 2: PERÍODO · contador
+    lb3, in3, cnt_col = st.columns([0.6, 5.15, 1.65])
     with lb3:
         st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
     with in3:
@@ -251,24 +248,14 @@ with st.container():
         else:
             sel_per = st.multiselect("per", _pers_ops, key="p2_per",
                                      label_visibility="collapsed", placeholder="Todos")
-    with lb_nivel:
-        st.markdown(f'<div {_LBL}>🎓 NIVEL</div>', unsafe_allow_html=True)
-    with in_nivel:
-        if _use_pills:
-            sel_nivel = st.pills("nivel", niveles, selection_mode="multi", key="p2_nivel", label_visibility="collapsed")
-        else:
-            sel_nivel = st.multiselect("nivel", niveles, key="p2_nivel", label_visibility="collapsed", placeholder="Todos")
     with cnt_col:
         _p2_counter = st.empty()
 
+# Aplicar filtros
 modalidad_f = list(sel_mod) if sel_mod else []
 facultad_f  = [fac_abrev_inv.get(f, f) for f in sel_fac] if sel_fac else []
 periodo_f   = list(sel_per) if sel_per else []
-nivel_f     = list(sel_nivel) if sel_nivel else []
-df_filt = df_raw.copy()
-if nivel_f:
-    df_filt = df_filt[df_filt["NIVEL_HOMOLOGADO"].isin(nivel_f)]
-df = apply_filters(df_filt, modalidad_f, facultad_f, periodo_f)
+df = apply_filters(df_raw.copy(), modalidad_f, facultad_f, periodo_f)
 
 _p2_counter.markdown(
     f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right;white-space:nowrap">'

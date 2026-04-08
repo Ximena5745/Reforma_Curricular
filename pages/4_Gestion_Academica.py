@@ -86,7 +86,7 @@ footer { visibility: hidden; }
 [data-testid="stBaseButton-primary"] > button,
 [data-testid="stBaseButton-primary"] button {
     height: 32px !important; min-height: 32px !important;
-    padding: 0 10px !important; line-height: 1 !important; white-space: nowrap !important;
+    padding: 0 10px !important; line-height: 1 !important;
 }
 /* Align button vertically */
 [data-testid="stColumn"]:has([data-testid="stBaseButton-primary"]) {
@@ -102,9 +102,6 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 # ── Datos ──────────────────────────────────────────────────────────────────────
 df_raw = enrich_df(load_data())
-
-# Filtro de Nivel homologado
-niveles = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
 
 fac_abrev = {
     "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",
@@ -163,7 +160,6 @@ def _clear():
     st.session_state["ga_buscar"] = ""
     st.session_state["ga_mod"]    = []
     st.session_state["ga_per"]    = []
-    st.session_state["ga_nivel"]  = []
 
 _use_pills = hasattr(st, "pills")
 _per_opts  = list(PER_DISPLAY.values())
@@ -193,8 +189,8 @@ with st.container():
     with btn_col:
         st.button("✕ LIMPIAR", on_click=_clear, type="primary")
 
-    # ── Fila 2: PERÍODO · NIVEL · Mostrando ────────────────────────────────────────────
-    lb3, in3, lb4, in4, cnt_col = st.columns([0.55, 2.6, 0.7, 2.5, 2.15])
+    # ── Fila 2: PERÍODO · Mostrando ────────────────────────────────────────────
+    lb3, in3, cnt_col = st.columns([0.55, 3.6, 2.15])
     with lb3:
         st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
     with in3:
@@ -204,13 +200,6 @@ with st.container():
         else:
             st.multiselect("per", _per_opts,
                            key="ga_per", label_visibility="collapsed", placeholder="Todos")
-    with lb4:
-        st.markdown(f'<div {_LBL}>🎓 NIVEL</div>', unsafe_allow_html=True)
-    with in4:
-        if _use_pills:
-            st.pills("nivel", niveles, selection_mode="multi", key="ga_nivel", label_visibility="collapsed")
-        else:
-            st.multiselect("nivel", niveles, key="ga_nivel", label_visibility="collapsed", placeholder="Todos")
     with cnt_col:
         _counter = st.empty()
 
@@ -220,7 +209,6 @@ df = df_raw.copy()
 buscar_v  = (st.session_state.get("ga_buscar") or "").strip().lower()
 sel_mod_v = list(st.session_state.get("ga_mod") or [])
 sel_per_v = [PER_REVERSE.get(p, p) for p in (st.session_state.get("ga_per") or [])]
-sel_nivel_v = list(st.session_state.get("ga_nivel") or [])
 
 if buscar_v:
     _fal = {k.lower(): v for k, v in fac_abrev.items()}
@@ -233,8 +221,6 @@ if sel_mod_v:
     df = df[df["MODALIDAD"].isin(sel_mod_v)]
 if sel_per_v:
     df = df[df["periodo_propuesto"].isin(sel_per_v)]
-if sel_nivel_v:
-    df = df[df["NIVEL_HOMOLOGADO"].isin(sel_nivel_v)]
 
 n_total = len(df_raw)
 n_show  = len(df)

@@ -69,7 +69,7 @@ footer { visibility: hidden; }
 [data-testid="stBaseButton-primary"] > button,
 [data-testid="stBaseButton-primary"] button {
     height: 32px !important; min-height: 32px !important;
-    padding: 0 10px !important; line-height: 1 !important; white-space: nowrap !important;
+    padding: 0 10px !important; line-height: 1 !important;
 }
 /* Align button vertically */
 [data-testid="stColumn"]:has([data-testid="stBaseButton-primary"]) {
@@ -135,9 +135,6 @@ footer { visibility: hidden; }
 # ── Datos ──────────────────────────────────────────────────────────────────────
 df_raw = load_data()
 
-niveles = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
-
-
 fac_labels = {
     "Facultad de Sociedad, Cultura y Creatividad":    "Sociedad, Cultura y Creatividad",
     "Facultad de Ingeniería, Diseño e Innovación":    "Ingeniería, Diseño e Innovación",
@@ -192,11 +189,10 @@ _pers_ops  = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolis
 _proc_ops  = ["Todos los procesos"] + PROCESOS
 
 def _clear_p1():
-    st.session_state["p1_mod"]   = []
-    st.session_state["p1_fac"]   = []
-    st.session_state["p1_per"]   = []
-    st.session_state["p1_nivel"] = []
-    st.session_state["p1_proc"]  = "Todos los procesos"
+    st.session_state["p1_mod"]  = []
+    st.session_state["p1_fac"]  = []
+    st.session_state["p1_per"]  = []
+    st.session_state["p1_proc"] = "Todos los procesos"
 
 _LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
         'letter-spacing:.4px;white-space:nowrap"')
@@ -226,8 +222,8 @@ with st.container():
         st.button("✕ LIMPIAR", on_click=_clear_p1,
                   type="primary", key="p1_clear")
 
-    # Fila 2: PERÍODO · NIVEL · PROCESO · contador
-    lb3, in3, lb_nivel, in_nivel, _sp2, lb4, in4, cnt_col = st.columns([0.6, 2.3, 0.65, 2.0, 0.05, 0.85, 2.3, 1.1])
+    # Fila 2: PERÍODO · PROCESO · contador
+    lb3, in3, _sp2, lb4, in4, cnt_col = st.columns([0.6, 2.5, 0.05, 0.6, 2.3, 1.15])
     with lb3:
         st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
     with in3:
@@ -237,13 +233,6 @@ with st.container():
         else:
             sel_per = st.multiselect("per", _pers_ops, key="p1_per",
                                      label_visibility="collapsed", placeholder="Todos")
-    with lb_nivel:
-        st.markdown(f'<div {_LBL}>🎓 NIVEL</div>', unsafe_allow_html=True)
-    with in_nivel:
-        if _use_pills:
-            sel_nivel = st.pills("nivel", niveles, selection_mode="multi", key="p1_nivel", label_visibility="collapsed")
-        else:
-            sel_nivel = st.multiselect("nivel", niveles, key="p1_nivel", label_visibility="collapsed", placeholder="Todos")
     with lb4:
         st.markdown(f'<div {_LBL}>⚙️ PROCESO</div>', unsafe_allow_html=True)
     with in4:
@@ -252,16 +241,11 @@ with st.container():
     with cnt_col:
         _p1_counter = st.empty()
 
-
 # Aplicar filtros
 modalidad_f = list(sel_mod) if sel_mod else []
 facultad_f  = [fac_abrev_inv.get(f, f) for f in sel_fac] if sel_fac else []
 periodo_f   = list(sel_per) if sel_per else []
-nivel_f     = list(sel_nivel) if sel_nivel else []
-df_filt = df_raw.copy()
-if nivel_f:
-    df_filt = df_filt[df_filt["NIVEL_HOMOLOGADO"].isin(nivel_f)]
-df = apply_filters(df_filt, modalidad_f, facultad_f, periodo_f)
+df = apply_filters(df_raw.copy(), modalidad_f, facultad_f, periodo_f)
 n  = len(df)
 
 _p1_counter.markdown(
@@ -286,13 +270,13 @@ st.markdown(
 st.markdown(
     '<div style="display:flex;align-items:center;gap:8px;padding:4px 12px;'
     'border-bottom:1px solid rgba(15,56,90,0.12);margin-bottom:2px">'
-    '<div style="width:220px;font-size:12px;font-weight:700;color:#4a6a7e;text-transform:uppercase;letter-spacing:.5px">Etapa</div>'
-    '<div style="width:54px;font-size:12px;font-weight:700;color:#4a6a7e;text-align:center">Avance</div>'
-    '<div style="flex:1;font-size:12px;font-weight:700;color:#4a6a7e">Distribución</div>'
-    '<div style="width:48px;font-size:12px;font-weight:700;color:#A6CE38;text-align:center">✓ Final</div>'
-    '<div style="width:48px;font-size:12px;font-weight:700;color:#1FB2DE;text-align:center">◎ Proc.</div>'
-    '<div style="width:48px;font-size:12px;font-weight:700;color:#EC0677;text-align:center">✗ Sin ini.</div>'
-    '<div style="width:48px;font-size:12px;font-weight:700;color:#9aabb5;text-align:center">N/A</div>'
+    '<div style="width:220px;font-size:10px;color:#4a6a7e;text-transform:uppercase;letter-spacing:.5px">Etapa</div>'
+    '<div style="width:54px;font-size:10px;color:#4a6a7e;text-align:center">Avance</div>'
+    '<div style="flex:1;font-size:10px;color:#4a6a7e">Distribución</div>'
+    '<div style="width:48px;font-size:10px;color:#A6CE38;text-align:center">✓ Final</div>'
+    '<div style="width:48px;font-size:10px;color:#1FB2DE;text-align:center">◎ Proc.</div>'
+    '<div style="width:48px;font-size:10px;color:#EC0677;text-align:center">✗ Sin ini.</div>'
+    '<div style="width:48px;font-size:10px;color:#9aabb5;text-align:center">N/A</div>'
     '</div>',
     unsafe_allow_html=True,
 )
@@ -348,10 +332,10 @@ for proc in PROCESOS:
             f'<div style="width:{w_nst:.1f}%;background:#EC0677"></div>'
             f'<div style="width:{w_na:.1f}%;background:#ccd5dc"></div>'
             f'</div></div>'
-            f'<div style="width:48px;text-align:center;font-size:13px;font-weight:600;color:#A6CE38">{done}</div>'
-            f'<div style="width:48px;text-align:center;font-size:13px;font-weight:600;color:#1FB2DE">{inp}</div>'
-            f'<div style="width:48px;text-align:center;font-size:13px;font-weight:600;color:#EC0677">{nst}</div>'
-            f'<div style="width:48px;text-align:center;font-size:13px;color:#9aabb5">{na_t}</div>'
+            f'<div style="width:48px;text-align:center;font-size:11px;font-weight:600;color:#A6CE38">{done}</div>'
+            f'<div style="width:48px;text-align:center;font-size:11px;font-weight:600;color:#1FB2DE">{inp}</div>'
+            f'<div style="width:48px;text-align:center;font-size:11px;font-weight:600;color:#EC0677">{nst}</div>'
+            f'<div style="width:48px;text-align:center;font-size:11px;color:#9aabb5">{na_t}</div>'
             f'</div>',
             unsafe_allow_html=True,
         )

@@ -78,7 +78,7 @@ footer { visibility: hidden; }
 [data-testid="stBaseButton-primary"] > button,
 [data-testid="stBaseButton-primary"] button {
     height: 32px !important; min-height: 32px !important;
-    padding: 0 10px !important; line-height: 1 !important; white-space: nowrap !important;
+    padding: 0 10px !important; line-height: 1 !important;
 }
 /* Align button vertically */
 [data-testid="stColumn"]:has([data-testid="stBaseButton-primary"]) {
@@ -113,8 +113,6 @@ st.markdown(CSS, unsafe_allow_html=True)
 
 # ── Datos ──────────────────────────────────────────────────────────────────────
 df_raw = enrich_df(load_data())
-
-niveles = [n for n in ["Pregrado", "Posgrado"] if n in df_raw["NIVEL_HOMOLOGADO"].values]
 
 fac_abrev = {
     "Facultad de Sociedad, Cultura y Creatividad":    "FSCC",
@@ -166,7 +164,7 @@ st.markdown(
 )
 
 # ── Preparar datos ─────────────────────────────────────────────────────────────
-df = df_raw[["NOMBRE DEL PROGRAMA", "MODALIDAD", "NIVEL", "NIVEL_HOMOLOGADO", "SEDE", "FACULTAD",
+df = df_raw[["NOMBRE DEL PROGRAMA", "MODALIDAD", "NIVEL", "SEDE", "FACULTAD",
              "PERIODO DE IMPLEMENTACIÓN", "periodo_propuesto", "pc_pct", "cf_st",
              "avance_general"]].copy()
 
@@ -206,8 +204,7 @@ st.markdown("<div style='height:8px'></div>", unsafe_allow_html=True)
 st.markdown("#### Detalle por Programa")
 
 with st.container():
-    _LBL_P5 = 'style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px;white-space:nowrap"'
-    lb_c, in_c, lb_nivel, in_nivel = st.columns([0.65, 3, 0.7, 2.5])
+    lb_c, in_c = st.columns([0.65, 3])
     with lb_c:
         st.markdown(
             f'<div {_LBL_P5}>🔀 VER SOLO CAMBIOS</div>',
@@ -216,18 +213,8 @@ with st.container():
     with in_c:
         show_cambios = st.checkbox("cambios", value=False, key="p5_cambios",
                                    label_visibility="collapsed")
-    with lb_nivel:
-        st.markdown(f'<div {_LBL_P5}>🎓 NIVEL</div>', unsafe_allow_html=True)
-    with in_nivel:
-        _use_pills = hasattr(st, "pills")
-        if _use_pills:
-            sel_nivel = st.pills("nivel", niveles, selection_mode="multi", key="p5_nivel", label_visibility="collapsed")
-        else:
-            sel_nivel = st.multiselect("nivel", niveles, key="p5_nivel", label_visibility="collapsed", placeholder="Todos")
 
 df_table = df.copy() if not show_cambios else df[df["Cambio"]].copy()
-if sel_nivel:
-    df_table = df_table[df_table["NIVEL_HOMOLOGADO"].isin(sel_nivel)]
 
 rows = []
 for _, row in df_table.iterrows():
