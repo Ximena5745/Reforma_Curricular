@@ -36,7 +36,13 @@ h1,h2,h3,h4,h5                     { font-family: 'Segoe UI', sans-serif; color:
 p, li, label, caption               { color: #2a4a5e; }
 [data-testid="stCaption"]           { color: #6a8a9e !important; }
 /* ── Block container ── */
-.block-container { padding-top: 3.5rem !important; padding-bottom: 2rem; }
+.block-container { 
+    padding-top: 3.5rem !important; 
+    padding-bottom: 2rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    max-width: 100% !important;
+}
 /* ── Selectbox — fondo diferenciado azul muy claro ── */
 div[data-baseweb="select"] > div {
     background: #E3F4FB !important;

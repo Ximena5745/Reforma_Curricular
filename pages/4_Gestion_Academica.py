@@ -29,7 +29,13 @@ CSS = """
 }
 h1,h2,h3,h4,h5  { font-family: 'Segoe UI', sans-serif; color: #0F385A !important; }
 p, li, label, caption { color: #2a4a5e; }
-.block-container { padding-top: 3.5rem !important; padding-bottom: 2rem; }
+.block-container { 
+    padding-top: 3.5rem !important; 
+    padding-bottom: 2rem !important;
+    padding-left: 1rem !important;
+    padding-right: 1rem !important;
+    max-width: 100% !important;
+}
 div[data-baseweb="select"] > div {
     background: #E3F4FB !important; border-color: rgba(31,178,222,0.45) !important;
     color: #0F385A !important; border-radius: 8px !important;
