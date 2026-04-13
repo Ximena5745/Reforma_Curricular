@@ -941,43 +941,93 @@ with tab0:
         "% Avance Banner":    lambda r: _rpct(r.get("ban_pct", 0)),
     })
 
-    rr1, rr2, rr3 = st.columns(3)
+    # R6 — Estado del trámite aprobado/notificado al MEN pero sin concepto financiero initado
+    _est_tramite_col = next((c for c in df_risk.columns if "estado del tr" in c.lower()), None)
+    if _est_tramite_col:
+        r6_df = df_risk[
+            (df_risk[_est_tramite_col].str.lower().str.contains("aprobado|notificado", na=False)) &
+            (_cf == "nostart")
+        ].copy()
+    else:
+        r6_df = pd.DataFrame()
+    r6_df = _sort_risk(r6_df) if len(r6_df) > 0 else r6_df
+    r6_rows = _r_rows(r6_df, {
+        "Est. Trámite": lambda r: (str(r.get(_est_tramite_col, "—")).split("\n")[0] if _est_tramite_col else "—"),
+    })
+
+    # R7 — Programas Híbridos que no aplican para contenidos virtuales
+    r7_df   = df_risk[
+        (df_risk["MODALIDAD"].str.lower().str.strip() == "híbrido") |
+        (df_risk["MODALIDAD"].str.lower().str.strip() == "hibrido")
+    ].copy()
+    r7_df   = r7_df[r7_df["pc_st"] == "na"].copy()
+    r7_df   = _sort_risk(r7_df) if len(r7_df) > 0 else r7_df
+    r7_rows = _r_rows(r7_df, {})
+
+    # R8 — Concepto Financiero devuelto
+    r8_df   = df_risk[_cf == "devuelto"].copy()
+    r8_df   = _sort_risk(r8_df) if len(r8_df) > 0 else r8_df
+    r8_rows = _r_rows(r8_df, {})
+
+    rr1, rr2, rr3, rr4 = st.columns(4)
+    rr5, rr6, rr7, rr8 = st.columns(4)
     with rr1:
         st.markdown(_render_rcard(
             "Producción virtual sin aval financiero",
             "Virtual · % contenidos > 0 y sin concepto financiero",
             "#dc2626", r1_rows,
             ["Programa", "Período", "% Contenidos"], "⚠️",
-            tbl_max_height="none", card_min_height="420px"), unsafe_allow_html=True)
+            tbl_max_height="320px"), unsafe_allow_html=True)
     with rr2:
         st.markdown(_render_rcard(
             "Lanzamiento 2026-2 con contenidos incompletos",
             "Período 2026-2 · Producción < 100% · Menor avance primero",
             "#d97706", r2_rows,
             ["Programa", "Modalidad", "% Contenidos"], "🔔",
-            tbl_max_height="none"), unsafe_allow_html=True)
+            tbl_max_height="320px"), unsafe_allow_html=True)
     with rr3:
         st.markdown(_render_rcard(
             "Parametrización en Banner sin producción de contenidos",
             "Banner > 0% y Contenidos < 100%",
             "#7c3aed", r3_rows,
             ["Programa", "Período", "% Banner"], "⚙️",
-            tbl_max_height="none", card_min_height="420px"), unsafe_allow_html=True)
-    rr4, rr5, rr6 = st.columns(3)
+            tbl_max_height="320px"), unsafe_allow_html=True)
     with rr4:
         st.markdown(_render_rcard(
             "Avance en producción — Syllabus incompleto",
             "Virtual/Híbrido · AK > 0% y Syllabus = NO · Mayor avance primero",
             "#0d9488", r4_rows,
             ["Programa", "Estado Syllabus", "% Contenidos"], "📋",
-            tbl_max_height="none"), unsafe_allow_html=True)
+            tbl_max_height="320px"), unsafe_allow_html=True)
+    
     with rr5:
         st.markdown(_render_rcard(
             "Banner con avance sin trámite de convenios",
             "BB > 0% y AS < 100% · Menor avance en convenios primero",
             "#2563eb", r5_rows,
             ["Programa", "% Avance Convenios", "% Avance Banner"], "🤝",
-            tbl_max_height="none"), unsafe_allow_html=True)
+            tbl_max_height="320px"), unsafe_allow_html=True)
+    with rr6:
+        st.markdown(_render_rcard(
+            "Estado del trámite aprobado sin concepto financiero",
+            "Aprobado/Notificado al MEN pero sin concepto financiero iniciado",
+            "#f59e0b", r6_rows,
+            ["Programa", "Período", "Est. Trámite"], "📝",
+            tbl_max_height="320px"), unsafe_allow_html=True)
+    with rr7:
+        st.markdown(_render_rcard(
+            "Programas Híbridos sin contenidos virtuales",
+            "Modalidad Híbrida pero contenidos virtuales no aplican",
+            "#8b5cf6", r7_rows,
+            ["Programa", "Período", "Modalidad"], "🔗",
+            tbl_max_height="320px"), unsafe_allow_html=True)
+    with rr8:
+        st.markdown(_render_rcard(
+            "Concepto Financiero devuelto",
+            "Programas con Concepto Financiero en estado devuelto",
+            "#ec4899", r8_rows,
+            ["Programa", "Período", "Modalidad"], "💰",
+            tbl_max_height="320px"), unsafe_allow_html=True)
 
     # ── SECCIÓN 3: Resumen por Etapa ──────────────────────────────────────────
     st.markdown('<div class="re-sec">📋 Estado por Etapa</div>', unsafe_allow_html=True)
