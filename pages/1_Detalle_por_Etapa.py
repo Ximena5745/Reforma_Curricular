@@ -763,7 +763,7 @@ def _fac_col(s):
 # Filtros antes de la tabla detallada
 with st.container():
     # Fila 1: MODALIDAD · FACULTAD · PERIODO
-    c1, c2, c3, c4, c5, c6 = st.columns([0.6, 1.8, 0.5, 1.8, 0.5, 2.0, 0.4])
+    c1, c2, c3, c4, c5, c6 = st.columns([0.6, 1.8, 0.5, 1.8, 0.5, 2.0])
     with c1:
         st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">📋 MODALIDAD</div>', unsafe_allow_html=True)
     with c2:
@@ -778,7 +778,7 @@ with st.container():
         sel_per_filt = st.pills("per_filt", _pers_ops, selection_mode="multi", key="p1_per_filt", label_visibility="collapsed") if _use_pills else st.multiselect("per_filt", _pers_ops, key="p1_per_filt", label_visibility="collapsed", placeholder="Todos")
     
     # Fila 2: NIVEL · PROCESO · BUSCAR · LIMPIAR
-    c7, c8, c9, c10, c11, c12 = st.columns([0.5, 1.8, 0.5, 1.8, 1.5, 0.4])
+    c7, c8, c9, c10, c11, c12 = st.columns([0.5, 1.8, 0.5, 1.8, 2.0, 0.4])
     with c7:
         st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">🎓 NIVEL</div>', unsafe_allow_html=True)
     with c8:
