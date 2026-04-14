@@ -469,20 +469,41 @@ FAC_PALETTE = {
 etapas_show = [(i, em) for i, em in enumerate(ETAPAS_MAP)
                if sel_proc == "Todos los procesos" or em[0] == sel_proc]
 
-base_cols = {
+# Build base dataframe with columns we know exist
+base_cols_existing = {
     "NOMBRE DEL PROGRAMA":       "Programa",
     "FACULTAD":                  "Facultad",
     "MODALIDAD":                 "Modal.",
     "PERIODO DE IMPLEMENTACIÓN": "Periodo",
     "avance_general":            "Avance %",
-    "Tipo de trámite":           "Tipo Trámite",
-    "Fecha Notif.":              "Fecha Notif.",
-    "¿Requiere aprobación ministerial?": "Req. Min.",
 }
+
+# Check which additional columns exist in the dataframe
+tipo_tramite_col = "Tipo de trámite" if "Tipo de trámite" in df.columns else None
+fecha_notif_col = "Fecha Notif." if "Fecha Notif." in df.columns else None
+req_min_col = "¿Requiere aprobación ministerial?" if "¿Requiere aprobación ministerial?" in df.columns else None
+
+# Build base dataframe with existing columns
+base_cols = base_cols_existing.copy()
+if tipo_tramite_col:
+    base_cols[tipo_tramite_col] = "Tipo Trámite"
+if fecha_notif_col:
+    base_cols[fecha_notif_col] = "Fecha Notif."
+if req_min_col:
+    base_cols[req_min_col] = "Req. Min."
+
 df_base = df[list(base_cols.keys())].copy().reset_index(drop=True)
 df_det  = df_base.rename(columns=base_cols)
 df_det["Facultad"] = df["FACULTAD"].map(fac_abrev).fillna("—").reset_index(drop=True)
 df_det["Avance %"] = df_det["Avance %"].apply(lambda x: f"{int(x)}%" if pd.notna(x) else "—")
+
+# For missing columns, add empty columns
+if not tipo_tramite_col:
+    df_det["Tipo Trámite"] = "—"
+if not fecha_notif_col:
+    df_det["Fecha Notif."] = "—"
+if not req_min_col:
+    df_det["Req. Min."] = "—"
 
 # Guardar cl_ para cada etapa (alineado con df_det tras reset_index)
 df_cl = df.reset_index(drop=True)
