@@ -770,18 +770,18 @@ for idx, row in df_det.iterrows():
     
     for col in header_cols:
         if col == "Programa":
-            prog = _p_esc(row.get("NOMBRE DEL PROGRAMA", "—"))
-            fac = _p_esc(row.get("FACULTAD", "—"))
+            prog = _p_esc(row.get("Programa", "—"))
+            fac = _p_esc(row.get("Facultad", "—"))
             fac_abbr = fac_abrev.get(fac, fac) if fac != "—" else "—"
             cells.append(f'<td style="padding:6px 4px;text-align:left;vertical-align:middle;border-bottom:1px solid #eef3f8;">{prog}<br><span style="font-size:10px;font-weight:700;color:#EC0677">{fac_abbr}</span></td>')
         elif col == "Facultad":
             # Skip - already shown with Programa
             cells.append(f'<td style="padding:6px 4px;text-align:left;vertical-align:middle;border-bottom:1px solid #eef3f8;"></td>')
         elif col == "Modal.":
-            mod = _p_esc(row.get("MODALIDAD", "—"))
+            mod = _p_esc(row.get("Modal.", "—"))
             cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;"><span style="font-size:10px;font-weight:600;color:#0F385A">{mod}</span></td>')
         elif col == "Periodo":
-            per = _p_esc(row.get("PERIODO DE IMPLEMENTACIÓN", "—"))
+            per = _p_esc(row.get("Periodo", "—"))
             cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;"><span style="font-size:10px;font-weight:600;color:#0F385A">{per}</span></td>')
         elif col == "Avance %":
             # Use the original value from df_det which already has the % formatted
