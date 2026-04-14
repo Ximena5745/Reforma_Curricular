@@ -484,6 +484,49 @@ df_det["Avance %"] = df_det["Avance %"].apply(lambda x: f"{int(x)}%" if pd.notna
 # Guardar cl_ para cada etapa (alineado con df_det tras reset_index)
 df_cl = df.reset_index(drop=True)
 
+import math as _m
+
+def _p_icon(val):
+    """Icono según avance: ✅ (100%), ⚠️ (>0%), 🔴 (0%)"""
+    try:
+        v = float(val) if val is not None else None
+    except:
+        v = None
+    if v is None:
+        return '<span style="color:#b0bec5;font-size:16px">—</span>'
+    if _m.isnan(v):
+        return '<span style="color:#b0bec5;font-size:16px">—</span>'
+    if v >= 100:
+        return '<span style="font-size:16px">✅</span>'
+    if v > 0:
+        return '<span style="font-size:16px">⚠️</span>'
+    return '<span style="font-size:16px">🔴</span>'
+
+def _p_syl(s):
+    """Icono para Syllabus: ✅ (Si), 🔴 (NO), — (otros)"""
+    s = str(s).strip()
+    if s == "Si":
+        return '<span style="font-size:16px">✅</span>'
+    if s == "NO":
+        return '<span style="font-size:16px">🔴</span>'
+    return '<span style="color:#b0bec5;font-size:16px">—</span>'
+
+def _p_bar(pct):
+    """Barra de progreso con porcentaje."""
+    try:
+        pct = float(pct if pct is not None else 0)
+    except:
+        pct = 0.0
+    if _m.isnan(pct):
+        pct = 0.0
+    clr = "#15803d" if pct >= 70 else ("#d97706" if pct >= 40 else "#dc2626")
+    bar = "#22c55e" if pct >= 70 else ("#f59e0b" if pct >= 40 else "#ef4444")
+    return (f'<div style="min-width:60px;text-align:center">'
+            f'<div style="font-size:11px;font-weight:700;color:{clr};margin-bottom:2px">{int(pct)}%</div>'
+            f'<div style="height:5px;background:#e2e8f0;border-radius:3px;overflow:hidden">'
+            f'<div style="width:{min(pct,100):.0f}%;height:100%;background:{bar};border-radius:3px"></div>'
+            f'</div></div>')
+
 _CL_STYLE = {
     "done":    "background-color:#edf7e1;color:#2d6a00;font-weight:600",
     "inprog":  "background-color:#e3f4fb;color:#0a5e80;font-weight:600",
@@ -581,18 +624,30 @@ for col_key in _ETAPA_ORDER:
         tipo = _ETAPA_TYPE.get(col_key, "status")
         col_label = _ETAPA_DISPLAY.get(col_key, em[1][:15])
         etapa_labels.append((i, col_label, tipo, col_key))
+        
         raw = df_cl[f"val_{i}"]
+        
         if tipo == "pct":
-            df_det[col_label] = raw.apply(
-                lambda v: _fmt_pct(v) if v not in ("—", "No aplica", "no aplica") else v)
-        elif tipo == "date":
-            df_det[col_label] = raw.apply(_fmt_date)
-else:
+            def _make_pct_formatter(key):
+                def _fmt(v):
+                    if v in ("", None, "No aplica", "no aplica", "—"):
+                        return '<span style="color:#b0bec5;font-size:13px">—</span>'
+                    try:
+                        fv = float(v)
+                        pct = fv * 100 if 0 < fv <= 1 else fv
+                        return _p_bar(pct)
+                    except:
+                        return '<span style="color:#b0bec5;font-size:13px">—</span>'
+                return _fmt
+            df_det[col_label] = raw.apply(_make_pct_formatter(col_key))
+        elif tipo == "syl":
+            df_det[col_label] = raw.apply(lambda v: _p_syl(str(v)))
+        elif tipo == "proc":
+            proc_val = df_cl[f"proc_{em[0]}"].tolist()
+            df_det[col_label] = [_p_icon(v) for v in proc_val]
+        else:
             cl_col = df_cl[f"cl_{i}"]
-            df_det[col_label] = [
-                _fmt_status_with_icon(cl, v)
-                for cl, v in zip(cl_col, raw)
-            ]
+            df_det[col_label] = [_fmt_status_with_icon(cl, v) for cl, v in zip(cl_col, raw)]
 
 def _av_col(s):
     out = []
@@ -622,26 +677,47 @@ if "Avance %" in df_det.columns:
 if "Facultad" in df_det.columns:
     styled = styled.apply(_fac_col, subset=["Facultad"])
 
-for i, col_label, _, _ in etapa_labels:
+for i, col_label, _, col_key in etapa_labels:
     if col_label not in df_det.columns:
         continue
-    cl_vals = df_cl[f"cl_{i}"].tolist()
-    def _etapa_col(s, _cl=cl_vals):
-        return [_CL_STYLE.get(c, "") for c in _cl]
-    styled = styled.apply(_etapa_col, subset=[col_label])
+    styled = styled.map(lambda x: "", subset=[col_label])
+
+st.markdown("""
+<style>
+[data-testid="stDataFrame"] thead th {
+    background: #0F385A !important;
+    color: #FFFFFF !important;
+    font-size: 11px !important;
+    font-weight: 700 !important;
+    text-align: center !important;
+    padding: 8px 4px !important;
+    position: sticky;
+    top: 0;
+    z-index: 1;
+}
+[data-testid="stDataFrame"] tbody tr:nth-child(odd) {
+    background: #FFFFFF;
+}
+[data-testid="stDataFrame"] tbody tr:nth-child(even) {
+    background: #f8fafc;
+}
+[data-testid="stDataFrame"] td {
+    border-bottom: 1px solid #eef3f8;
+}
+</style>
+""", unsafe_allow_html=True)
 
 st.dataframe(
     styled,
     use_container_width=True,
-    height=500,
+    height=600,
     hide_index=True,
     column_config={
         "Programa": st.column_config.TextColumn("Programa", width="medium"),
         "Facultad": st.column_config.TextColumn("Facultad", width="small"),
-        "Avance %": st.column_config.TextColumn("Avance %", width="small"),
         "Modal.":   st.column_config.TextColumn("Modal.",   width="small"),
         "Periodo":  st.column_config.TextColumn("Periodo",  width="small"),
     },
 )
-st.caption(f"{n} programas · {len(etapas_show)} etapas mostradas")
+st.caption(f"{n} programas · {len(etapa_labels)} etapas mostradas")
 
