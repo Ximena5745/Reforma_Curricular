@@ -530,23 +530,69 @@ def _fmt_date(val):
         return str(val) if str(val).strip() not in ("", "None", "nan", "—") else "—"
 
 etapa_labels = []
-for i, em in etapas_show:
-    _, _, _, tipo = em
-    etapa_name = em[1]
-    col_label = etapa_name
-    etapa_labels.append((i, col_label, tipo, etapa_name))
-    raw = df_cl[f"val_{i}"]
-    if tipo == "pct":
-        df_det[col_label] = raw.apply(
-            lambda v: _fmt_pct(v) if v not in ("—", "No aplica", "no aplica") else v)
-    elif tipo == "date":
-        df_det[col_label] = raw.apply(_fmt_date)
+
+_ETAPA_ORDER = [
+    "proc_Gestión Académica",
+    "proc_Gestión Financiera", 
+    "proc_Aseguramiento de la Calidad",
+    "syl_val",
+    "pc_pct",
+    "conv_pct",
+    "ban_pct",
+]
+
+_ETAPA_DISPLAY = {
+    "proc_Gestión Académica": "G. Académica",
+    "proc_Gestión Financiera": "C. Financiero",
+    "proc_Aseguramiento de la Calidad": "Aseguram.",
+    "syl_val": "Syllabus",
+    "pc_pct": "Prod. Cont.",
+    "conv_pct": "Convenios",
+    "ban_pct": "Banner",
+}
+
+_ETAPA_TYPE = {
+    "proc_Gestión Académica": "proc",
+    "proc_Gestión Financiera": "proc",
+    "proc_Aseguramiento de la Calidad": "proc",
+    "syl_val": "syl",
+    "pc_pct": "pct",
+    "conv_pct": "pct",
+    "ban_pct": "pct",
+}
+
+etapa_idx_map = {}
+for i, em in enumerate(ETAPAS_MAP):
+    proc_key = f"proc_{em[0]}"
+    etapa_idx_map[proc_key] = i
+    if em[1] == "Syllabus completos":
+        etapa_idx_map["syl_val"] = i
+    if em[1] == "% avance contenidos virtuales":
+        etapa_idx_map["pc_pct"] = i
+    if em[1] == "% avance":
+        etapa_idx_map["conv_pct"] = i
+    if em[1] == "% de avance":
+        etapa_idx_map["ban_pct"] = i
+
+for col_key in _ETAPA_ORDER:
+    if col_key in etapa_idx_map:
+        i = etapa_idx_map[col_key]
+        em = ETAPAS_MAP[i]
+        tipo = _ETAPA_TYPE.get(col_key, "status")
+        col_label = _ETAPA_DISPLAY.get(col_key, em[1][:15])
+        etapa_labels.append((i, col_label, tipo, col_key))
+        raw = df_cl[f"val_{i}"]
+        if tipo == "pct":
+            df_det[col_label] = raw.apply(
+                lambda v: _fmt_pct(v) if v not in ("—", "No aplica", "no aplica") else v)
+        elif tipo == "date":
+            df_det[col_label] = raw.apply(_fmt_date)
 else:
-        cl_col = df_cl[f"cl_{i}"]
-        df_det[col_label] = [
-            _fmt_status_with_icon(cl, v)
-            for cl, v in zip(cl_col, raw)
-        ]
+            cl_col = df_cl[f"cl_{i}"]
+            df_det[col_label] = [
+                _fmt_status_with_icon(cl, v)
+                for cl, v in zip(cl_col, raw)
+            ]
 
 def _av_col(s):
     out = []
