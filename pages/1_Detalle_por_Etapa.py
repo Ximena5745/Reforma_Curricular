@@ -169,7 +169,6 @@ with st.sidebar:
     st.page_link("app.py",                              label="Resumen General",      icon="📊")
     st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
     st.page_link("pages/2_Programa.py",                 label="Resumen Programa",     icon="🔍")
-    st.page_link("pages/7_Gestion_OM.py",               label="Gestión OM",           icon="⚙️")
     st.markdown(
         '<div style="padding:12px 6px;font-size:10px;color:rgba(255,255,255,0.40);text-align:center">'
         'POLI · 2025–2026</div>',
