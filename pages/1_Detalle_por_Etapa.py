@@ -209,7 +209,6 @@ def _clear_p1():
     st.session_state["p1_fac_filt"] = []
     st.session_state["p1_per_filt"] = []
     st.session_state["p1_nivel_filt"] = []
-    st.session_state["p1_proc_filt"] = "Todos los procesos"
     st.session_state["p1_clear_table"] = False
 
 _LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
@@ -784,19 +783,15 @@ with st.container():
     with c6:
         sel_per_filt = st.pills("per_filt", _pers_ops, selection_mode="multi", key="p1_per_filt", label_visibility="collapsed") if _use_pills else st.multiselect("per_filt", _pers_ops, key="p1_per_filt", label_visibility="collapsed", placeholder="Todos")
     
-    # Fila 2: NIVEL · PROCESO · BUSCAR · LIMPIAR
-    c7, c8, c9, c10, c11, c12 = st.columns([0.5, 1.8, 0.5, 1.8, 2.0, 0.4])
+    # Fila 2: NIVEL · BUSCAR · LIMPIAR
+    c7, c8, c9, c10 = st.columns([0.5, 1.8, 3.5, 0.4])
     with c7:
         st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">🎓 NIVEL</div>', unsafe_allow_html=True)
     with c8:
         sel_nivel_filt = st.pills("nivel_filt", niveles, selection_mode="multi", key="p1_nivel_filt", label_visibility="collapsed") if _use_pills else st.multiselect("nivel_filt", niveles, key="p1_nivel_filt", label_visibility="collapsed", placeholder="Todos")
     with c9:
-        st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">⚙️ PROCESO</div>', unsafe_allow_html=True)
-    with c10:
-        sel_proc_filt = st.selectbox("proc_filt", _proc_ops, key="p1_proc_filt", label_visibility="collapsed")
-    with c11:
         sel_search = st.text_input("search_table", key="p1_search_table", label_visibility="collapsed", placeholder="Digite nombre del programa...")
-    with c12:
+    with c10:
         st.button("✕", on_click=_clear_p1, type="primary", key="p1_clear_table")
 
 # Apply filters to df_det
