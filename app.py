@@ -252,7 +252,6 @@ with st.sidebar:
     st.page_link("app.py",                              label="Resumen General",      icon="📊")
     st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
     st.page_link("pages/2_Programa.py",                 label="Resumen Programa",     icon="🔍")
-    st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
     st.markdown("<div style='flex:1'></div>", unsafe_allow_html=True)
     st.markdown(
