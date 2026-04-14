@@ -736,6 +736,8 @@ for idx, row in df_det.iterrows():
             cells.append(f'<td {TD}><span style="font-size:10px;font-weight:600;color:#0F385A">{mod}</span></td>')
         elif col == "Periodo":
             cells.append(f'<td {TD}><span style="font-size:10px;font-weight:600;color:#0F385A">{per}</span></td>')
+        elif col == "Avance %":
+            cells.append(f'<td {TD}>{_bar_html(val)}</td>')
         else:
             val = str(row.get(col, ""))
             cells.append(f'<td {TD}>{val}</td>')
