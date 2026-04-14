@@ -987,7 +987,7 @@ with tab0:
             tbl_max_height="none"), unsafe_allow_html=True)
     with rr5:
         st.markdown(_render_rcard(
-            "Banner con avance sin trámite de convenios",
+            "Programas con avance en Banner sin trámites de convenios",
             "BB > 0% y AS < 100% · Menor avance en convenios primero",
             "#2563eb", r5_rows,
             ["Programa", "% Avance Convenios", "% Avance Banner"], "🤝",
