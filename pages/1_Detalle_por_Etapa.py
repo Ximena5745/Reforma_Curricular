@@ -499,9 +499,9 @@ for col in df.columns:
         tipo_tramite_col = col
         break
 
-# Check for Fecha de notificación
+# Check for Estado Radicación Reforma
 for col in df.columns:
-    if "fecha" in col.lower() and "notif" in col.lower():
+    if "estado radicación" in col.lower():
         fecha_notif_col = col
         break
 
@@ -514,7 +514,7 @@ for col in df.columns:
 # Build base dataframe with existing columns
 base_cols = base_cols_existing.copy()
 tipo_tramite_label = "Tipo Trámite"
-fecha_notif_label = "Fecha Notif."
+fecha_notif_label = "Estado Radicación"
 req_min_label = "Req. Min."
 
 if tipo_tramite_col:
@@ -547,9 +547,7 @@ if "FACULTAD" in df.columns:
 if not tipo_tramite_col:
     df_det["Tipo Trámite"] = "—"
 if not fecha_notif_col:
-    df_det["Fecha Notif."] = "—"
-if not req_min_col:
-    df_det["Req. Min."] = "—"
+    df_det["Estado Radicación"] = "—"
 
 # Save the actual column names for later use
 _extra_cols = {
@@ -813,7 +811,7 @@ if sel_search:
 
 # Render detailed table as HTML to properly show icons and progress bars
 # Build column headers in the same order as Prioritization tab
-header_cols = ["Programa", "Modal.", "Periodo", "Avance %"] + [col_label for _, col_label, _, _ in etapa_labels] + ["Tipo Trámite", "Fecha Notif.", "Req. Min."]
+header_cols = ["Programa", "Modal.", "Periodo", "Avance %"] + [col_label for _, col_label, _, _ in etapa_labels] + ["Tipo Trámite", "Estado Radicación", "Req. Min."]
 
 # Build HTML header with styling similar to Prioritization tab
 header_html = "".join([f'<th style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;padding:6px 4px;text-align:center;white-space:nowrap;">{c}</th>' for c in header_cols])
@@ -854,9 +852,9 @@ for idx, row in df_det.iterrows():
             actual_col = _extra_cols.get("tipo_tramite", "Tipo Trámite")
             val = str(row.get(actual_col, row.get("Tipo Trámite", "—")))
             cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
-        elif col == "Fecha Notif.":
-            actual_col = _extra_cols.get("fecha_notif", "Fecha Notif.")
-            val = str(row.get(actual_col, row.get("Fecha Notif.", "—")))
+        elif col == "Estado Radicación":
+            actual_col = _extra_cols.get("fecha_notif", "ESTADO RADICACIÓN REFORMA")
+            val = str(row.get(actual_col, row.get("Estado Radicación", "—")))
             cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
         elif col == "Req. Min.":
             actual_col = _extra_cols.get("req_min", "Req. Min.")
