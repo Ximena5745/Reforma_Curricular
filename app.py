@@ -947,33 +947,21 @@ with tab0:
         "% Avance Banner":    lambda r: _rpct(r.get("ban_pct", 0)),
     })
 
-    # R6 — Estado del trámite aprobado/notificado al MEN pero sin concepto financiero initado
+    # R6 — Programas aprobados por el MEN sin producción virtual
     _est_tramite_col = next((c for c in df_risk.columns if "estado del tr" in c.lower()), None)
     if _est_tramite_col:
         r6_df = df_risk[
-            (df_risk[_est_tramite_col].str.lower().str.contains("aprobado|notificado", na=False)) &
-            (_cf == "nostart")
+            (df_risk[_est_tramite_col].str.lower().str.contains("aprobado por el men", na=False))
         ].copy()
     else:
         r6_df = pd.DataFrame()
-    r6_df = _sort_risk(r6_df) if len(r6_df) > 0 else r6_df
+    r6_df = r6_df.sort_values("pc_pct", ascending=True) if len(r6_df) > 0 else r6_df
     r6_rows = _r_rows(r6_df, {
-        "Est. Trámite": lambda r: (str(r.get(_est_tramite_col, "—")).split("\n")[0] if _est_tramite_col else "—"),
+        "% PC (AK)": lambda r: _rpct(r.get("pc_pct", 0)),
+        "Concepto Financiero": lambda r: str(r.get("cf_st", "—")),
     })
 
-    # R7 — Programas Híbridos que no aplican para contenidos virtuales
-    r7_df   = df_risk[
-        (df_risk["MODALIDAD"].str.lower().str.strip() == "híbrido") |
-        (df_risk["MODALIDAD"].str.lower().str.strip() == "hibrido")
-    ].copy()
-    r7_df   = r7_df[r7_df["pc_st"] == "na"].copy()
-    r7_df   = _sort_risk(r7_df) if len(r7_df) > 0 else r7_df
-    r7_rows = _r_rows(r7_df, {})
-
-    # R8 — Concepto Financiero devuelto
-    r8_df   = df_risk[_cf == "devuelto"].copy()
-    r8_df   = _sort_risk(r8_df) if len(r8_df) > 0 else r8_df
-    r8_rows = _r_rows(r8_df, {})
+    # R7 y R8 — OCULTOS
 
     rr1, rr2, rr3, rr4 = st.columns(4)
     rr5, rr6, rr7, rr8 = st.columns(4)
@@ -1015,25 +1003,13 @@ with tab0:
             tbl_max_height="320px"), unsafe_allow_html=True)
     with rr6:
         st.markdown(_render_rcard(
-            "Estado del trámite aprobado sin concepto financiero",
-            "Aprobado/Notificado al MEN pero sin concepto financiero iniciado",
+            "Programas aprobados por el MEN sin producción virtual",
+            "Estado del trámite = Aprobado por el MEN · Menor % de contenidos primero",
             "#f59e0b", r6_rows,
-            ["Programa", "Período", "Est. Trámite"], "📝",
+            ["Programa", "% PC (AK)", "Concepto Financiero"], "📝",
             tbl_max_height="320px"), unsafe_allow_html=True)
-    with rr7:
-        st.markdown(_render_rcard(
-            "Programas Híbridos sin contenidos virtuales",
-            "Modalidad Híbrida pero contenidos virtuales no aplican",
-            "#8b5cf6", r7_rows,
-            ["Programa", "Período", "Modalidad"], "🔗",
-            tbl_max_height="320px"), unsafe_allow_html=True)
-    with rr8:
-        st.markdown(_render_rcard(
-            "Concepto Financiero devuelto",
-            "Programas con Concepto Financiero en estado devuelto",
-            "#ec4899", r8_rows,
-            ["Programa", "Período", "Modalidad"], "💰",
-            tbl_max_height="320px"), unsafe_allow_html=True)
+    
+    # R7 y R8 ocultos
 
     # ── SECCIÓN 3: Resumen por Etapa ──────────────────────────────────────────
     st.markdown('<div class="re-sec">📋 Estado por Etapa</div>', unsafe_allow_html=True)

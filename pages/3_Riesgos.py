@@ -494,7 +494,7 @@ else:
         df_r6.style
             .applymap(_style_pc, subset=["% PC (AK)"]),
         use_container_width=True, hide_index=True,
-)
+    )
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # RIESGO 7: OCULTO (Modalidad Híbrida con contenidos virtuales que no aplican)
