@@ -109,6 +109,7 @@ with st.sidebar:
     st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
     st.page_link("pages/2_Programa.py",                 label="Ficha de Programa",    icon="🔍")
     st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
+    st.page_link("pages/7_Gestion_OM.py",               label="Gestión OM",           icon="⚙️")
     st.page_link("pages/5_Periodo_Propuesto.py",        label="Periodo Propuesto",    icon="📅")
     st.page_link("pages/6_Plan_de_Trabajo.py",          label="Plan de Trabajo",      icon="🗓️")
     st.markdown(

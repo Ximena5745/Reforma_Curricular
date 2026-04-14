@@ -36,13 +36,7 @@ h1,h2,h3,h4,h5                     { font-family: 'Segoe UI', sans-serif; color:
 p, li, label, caption               { color: #2a4a5e; }
 [data-testid="stCaption"]           { color: #6a8a9e !important; }
 /* ── Block container ── */
-.block-container { 
-    padding-top: 3.5rem !important; 
-    padding-bottom: 2rem !important;
-    padding-left: 1rem !important;
-    padding-right: 1rem !important;
-    max-width: 100% !important;
-}
+.block-container { padding-top: 3.5rem !important; padding-bottom: 2rem; }
 /* ── Selectbox — fondo diferenciado azul muy claro ── */
 div[data-baseweb="select"] > div {
     background: #E3F4FB !important;
@@ -258,6 +252,8 @@ with st.sidebar:
     st.page_link("app.py",                              label="Resumen General",      icon="📊")
     st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
     st.page_link("pages/2_Programa.py",                 label="Resumen Programa",     icon="🔍")
+    st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
+    st.page_link("pages/7_Gestion_OM.py",               label="Gestión OM",           icon="⚙️")
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
     st.markdown("<div style='flex:1'></div>", unsafe_allow_html=True)
     st.markdown(
@@ -947,69 +943,43 @@ with tab0:
         "% Avance Banner":    lambda r: _rpct(r.get("ban_pct", 0)),
     })
 
-    # R6 — Programas aprobados por el MEN sin producción virtual
-    _est_tramite_col = next((c for c in df_risk.columns if "estado del tr" in c.lower()), None)
-    if _est_tramite_col:
-        r6_df = df_risk[
-            (df_risk[_est_tramite_col].str.lower().str.contains("aprobado por el men", na=False))
-        ].copy()
-    else:
-        r6_df = pd.DataFrame()
-    r6_df = r6_df.sort_values("pc_pct", ascending=True) if len(r6_df) > 0 else r6_df
-    r6_rows = _r_rows(r6_df, {
-        "% Avance Contenidos Virtuales": lambda r: _rpct(r.get("pc_pct", 0)),
-        "Concepto Financiero": lambda r: STATUS_LABEL.get(str(r.get("cf_st", "")), str(r.get("cf_st", "—"))),
-    })
-
-    # R7 y R8 — OCULTOS
-
-    rr1, rr2, rr3, rr4 = st.columns(4)
-    rr5, rr6, rr7, rr8 = st.columns(4)
+    rr1, rr2, rr3 = st.columns(3)
     with rr1:
         st.markdown(_render_rcard(
             "Producción virtual sin aval financiero",
             "Virtual · % contenidos > 0 y sin concepto financiero",
             "#dc2626", r1_rows,
             ["Programa", "Período", "% Contenidos"], "⚠️",
-            tbl_max_height="320px"), unsafe_allow_html=True)
+            tbl_max_height="none", card_min_height="420px"), unsafe_allow_html=True)
     with rr2:
         st.markdown(_render_rcard(
             "Lanzamiento 2026-2 con contenidos incompletos",
             "Período 2026-2 · Producción < 100% · Menor avance primero",
             "#d97706", r2_rows,
             ["Programa", "Modalidad", "% Contenidos"], "🔔",
-            tbl_max_height="320px"), unsafe_allow_html=True)
+            tbl_max_height="none"), unsafe_allow_html=True)
     with rr3:
         st.markdown(_render_rcard(
             "Parametrización en Banner sin producción de contenidos",
             "Banner > 0% y Contenidos < 100%",
             "#7c3aed", r3_rows,
             ["Programa", "Período", "% Banner"], "⚙️",
-            tbl_max_height="320px"), unsafe_allow_html=True)
+            tbl_max_height="none", card_min_height="420px"), unsafe_allow_html=True)
+    rr4, rr5, rr6 = st.columns(3)
     with rr4:
         st.markdown(_render_rcard(
             "Avance en producción — Syllabus incompleto",
             "Virtual/Híbrido · AK > 0% y Syllabus = NO · Mayor avance primero",
             "#0d9488", r4_rows,
             ["Programa", "Estado Syllabus", "% Contenidos"], "📋",
-            tbl_max_height="320px"), unsafe_allow_html=True)
-    
+            tbl_max_height="none"), unsafe_allow_html=True)
     with rr5:
         st.markdown(_render_rcard(
             "Banner con avance sin trámite de convenios",
             "BB > 0% y AS < 100% · Menor avance en convenios primero",
             "#2563eb", r5_rows,
             ["Programa", "% Avance Convenios", "% Avance Banner"], "🤝",
-            tbl_max_height="320px"), unsafe_allow_html=True)
-    with rr6:
-        st.markdown(_render_rcard(
-            "Programas aprobados por el MEN sin producción virtual",
-            "Estado del trámite = Aprobado por el MEN · Menor % de contenidos primero",
-            "#f59e0b", r6_rows,
-            ["Programa", "% Avance Contenidos Virtuales", "Concepto Financiero"], "📝",
-            tbl_max_height="320px"), unsafe_allow_html=True)
-    
-    # R7 y R8 ocultos
+            tbl_max_height="none"), unsafe_allow_html=True)
 
     # ── SECCIÓN 3: Resumen por Etapa ──────────────────────────────────────────
     st.markdown('<div class="re-sec">📋 Estado por Etapa</div>', unsafe_allow_html=True)
@@ -1343,7 +1313,7 @@ with tab_prio:
         ("Convenios",    "conv_pct",                                      "bar"),
         ("Banner",       "ban_pct",                                        "bar"),
         ("Tipo Trámite", "Tipo de trámite de aseguramiento de la calidad", "tramite"),
-        ("Fecha Notif.", "Fecha de\nDocumentos de notificación MEN",       "text"),
+        ("Fecha Notif.", "ESTADO RADICACIÓN REFORMA",       "text"),
         ("Req. Min.",    "¿Requiere aprobación ministerial?",              "text"),
     ]
     _PRIO_CLR = {"Urgente":("#EC0677","#fce8f2"),"Prioritario":("#FBAF17","#fdf8e8"),
