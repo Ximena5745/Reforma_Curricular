@@ -941,6 +941,20 @@ with tab0:
         "% Avance Banner":    lambda r: _rpct(r.get("ban_pct", 0)),
     })
 
+    # R6 — Programas aprobados por el MEN sin producción virtual
+    _est_tramite_col = next((c for c in df_risk.columns if "estado del tr" in c.lower()), None)
+    if _est_tramite_col:
+        r6_df = df_risk[
+            (df_risk[_est_tramite_col].str.lower().str.contains("aprobado por el men", na=False))
+        ].copy()
+    else:
+        r6_df = pd.DataFrame()
+    r6_df = r6_df.sort_values("pc_pct", ascending=True) if len(r6_df) > 0 else r6_df
+    r6_rows = _r_rows(r6_df, {
+        "% Avance Contenidos Virtuales": lambda r: _rpct(r.get("pc_pct", 0)),
+        "Concepto Financiero": lambda r: STATUS_LABEL.get(str(r.get("cf_st", "")), str(r.get("cf_st", "—"))),
+    })
+
     rr1, rr2, rr3 = st.columns(3)
     with rr1:
         st.markdown(_render_rcard(
@@ -977,6 +991,13 @@ with tab0:
             "BB > 0% y AS < 100% · Menor avance en convenios primero",
             "#2563eb", r5_rows,
             ["Programa", "% Avance Convenios", "% Avance Banner"], "🤝",
+            tbl_max_height="none"), unsafe_allow_html=True)
+    with rr6:
+        st.markdown(_render_rcard(
+            "Programas aprobados por el MEN sin producción virtual",
+            "Estado del trámite = Aprobado por el MEN · Menor % de contenidos primero",
+            "#f59e0b", r6_rows,
+            ["Programa", "% Avance Contenidos Virtuales", "Concepto Financiero"], "📝",
             tbl_max_height="none"), unsafe_allow_html=True)
 
     # ── SECCIÓN 3: Resumen por Etapa ──────────────────────────────────────────
