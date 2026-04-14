@@ -570,16 +570,12 @@ _CL_ICON = {
 }
 
 def _fmt_status_with_icon(cl, v):
-    """Retorna icono + texto para estados."""
+    """Retorna solo icono para estados."""
     if cl in _CL_ICON:
         icon = _CL_ICON[cl]
-        if cl == "na":
+        if cl in ("na", "info"):
             return str(v) if v and str(v) not in ("—","nan","None","") else "—"
-        elif cl == "info":
-            return f"{icon} {str(v)}" if v and str(v) not in ("—","nan","None","") else "—"
-        else:
-            label = STATUS_LABEL.get(cl, cl)
-            return f"{icon} {label}"
+        return icon
     return str(v) if v and str(v) not in ("—","nan","None","") else "—"
 
 def _av_col(s):
@@ -621,11 +617,11 @@ for i, col_label, _, _ in etapa_labels:
 st.dataframe(
     styled,
     use_container_width=True,
-    height=460,
+    height=500,
     hide_index=True,
     column_config={
-        "Programa": st.column_config.TextColumn("Programa", width="large"),
-        "Facultad": st.column_config.TextColumn("Facultad", width="medium"),
+        "Programa": st.column_config.TextColumn("Programa", width="medium"),
+        "Facultad": st.column_config.TextColumn("Facultad", width="small"),
         "Avance %": st.column_config.TextColumn("Avance %", width="small"),
         "Modal.":   st.column_config.TextColumn("Modal.",   width="small"),
         "Periodo":  st.column_config.TextColumn("Periodo",  width="small"),
