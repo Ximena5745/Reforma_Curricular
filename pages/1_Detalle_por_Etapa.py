@@ -484,6 +484,35 @@ df_det["Avance %"] = df_det["Avance %"].apply(lambda x: f"{int(x)}%" if pd.notna
 # Guardar cl_ para cada etapa (alineado con df_det tras reset_index)
 df_cl = df.reset_index(drop=True)
 
+_CL_STYLE = {
+    "done":    "background-color:#edf7e1;color:#2d6a00;font-weight:600",
+    "inprog":  "background-color:#e3f4fb;color:#0a5e80;font-weight:600",
+    "nostart": "background-color:#fce8f2;color:#9a003e;font-weight:600",
+    "na":      "color:#9aabb5;font-style:italic",
+    "info":    "color:#9aabb5;font-style:italic",
+}
+
+_CL_ICON = {
+    "done":    "✓",
+    "inprog":  "◉",
+    "nostart": "✗",
+    "na":      "—",
+    "info":    "i",
+}
+
+def _fmt_status_with_icon(cl, v):
+    """Retorna icono + texto para estados."""
+    if cl in _CL_ICON:
+        icon = _CL_ICON[cl]
+        if cl == "na":
+            return str(v) if v and str(v) not in ("—","nan","None","") else "—"
+        elif cl == "info":
+            return f"{icon} {str(v)}" if v and str(v) not in ("—","nan","None","") else "—"
+        else:
+            label = STATUS_LABEL.get(cl, cl)
+            return f"{icon} {label}"
+    return str(v) if v and str(v) not in ("—","nan","None","") else "—"
+
 def _fmt_pct(val):
     """Convierte valor decimal (0-1) o entero a texto porcentaje."""
     try:
