@@ -210,6 +210,7 @@ def _clear_p1():
     st.session_state["p1_per_filt"] = []
     st.session_state["p1_nivel_filt"] = []
     st.session_state["p1_proc_filt"] = "Todos los procesos"
+    st.session_state["p1_clear_table"] = False
 
 _LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
         'letter-spacing:.4px;white-space:nowrap"')
@@ -790,7 +791,7 @@ with st.container():
     with c11:
         sel_search = st.text_input("search_table", key="p1_search_table", label_visibility="collapsed", placeholder="Digite nombre del programa...")
     with c12:
-        st.button("✕", on_click=_clear_p1, type="primary", key="p1_clear")
+        st.button("✕", on_click=_clear_p1, type="primary", key="p1_clear_table")
 
 # Apply filters to df_det
 if sel_mod_filt:
