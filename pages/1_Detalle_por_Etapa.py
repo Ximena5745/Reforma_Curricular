@@ -884,5 +884,5 @@ tabla_det = (
 )
 
 st.markdown(tabla_det, unsafe_allow_html=True)
-st.caption(f"{n} programas · {len(etapa_labels)} etapas mostradas")
+st.caption(f"{len(df_det)} programas · {len(etapa_labels)} etapas mostradas")
 
