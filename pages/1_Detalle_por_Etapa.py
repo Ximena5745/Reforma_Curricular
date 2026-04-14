@@ -475,6 +475,9 @@ base_cols = {
     "MODALIDAD":                 "Modal.",
     "PERIODO DE IMPLEMENTACIÓN": "Periodo",
     "avance_general":            "Avance %",
+    "Tipo de trámite":           "Tipo Trámite",
+    "Fecha Notif.":              "Fecha Notif.",
+    "¿Requiere aprobación ministerial?": "Req. Min.",
 }
 df_base = df[list(base_cols.keys())].copy().reset_index(drop=True)
 df_det  = df_base.rename(columns=base_cols)
