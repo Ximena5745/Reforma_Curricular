@@ -456,30 +456,45 @@ else:
 st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# RIESGO 6: Estado del trámite aprobado/notificado sin concepto financiero iniciado
-# Aseguramiento de Calidad = Aprobado/Notificado  Y  cf_st = "nostart"
-# Tabla: Programa | Periodo | Estado Trámite | % Avance
-# ═════════════════════════════════════════════════════════════════════════════════
+# RIESGO 6: Programas aprobados por el MEN sin producción virtual
+# Estado del trámite = "Aprobado por el MEN"
+# Tabla: Programa | % PC (AK) | Concepto Financiero  — ordenado por % PC asc
+# ═══════════════════════════════════════════════════════════════════════════════
 _est_tramite_col = next((c for c in df_raw.columns if "estado del tr" in c.lower()), None)
 if _est_tramite_col:
     r6 = df_raw[
-        (df_raw[_est_tramite_col].str.lower().str.contains("aprobado|notificado", na=False)) &
-        (df_raw["cf_st"] == "nostart")
+        (df_raw[_est_tramite_col].str.lower().str.contains("aprobado por el men", na=False))
     ].copy()
 else:
     r6 = pd.DataFrame()
 
-r6["_ord"] = r6.get("periodo_propuesto", r6.get("PERIODO DE IMPLEMENTACIÓN", "")).map(PERIODO_ORDER).fillna(99)
-r6 = r6.sort_values("_ord")
+r6 = r6.sort_values("pc_pct", ascending=True)
 
 st.markdown(
     _risk_header(
-        "Riesgo 6 — Estado del trámite aprobado sin concepto financiero",
-        "Programas aprobados/notificados al MEN pero sin concepto financiero iniciado",
+        "Riesgo 6 — Programas aprobados por el MEN sin producción virtual",
+        "Programas con Estado del trámite aprobado por el MEN, ordenados por menor % de producción de contenidos",
         "#f59e0b", len(r6),
     ),
     unsafe_allow_html=True,
 )
+
+if len(r6) == 0:
+    _empty_risk()
+else:
+    rows_r6 = []
+    for _, row in r6.iterrows():
+        rows_r6.append({
+            "Programa":           row["NOMBRE DEL PROGRAMA"],
+            "% PC (AK)":          int(float(row["pc_pct"])),
+            "Concepto Financiero": str(row.get("cf_st", "—")),
+        })
+    df_r6 = pd.DataFrame(rows_r6)
+    st.dataframe(
+        df_r6.style
+            .applymap(_style_pc, subset=["% PC (AK)"]),
+        use_container_width=True, hide_index=True,
+    )
 
 if len(r6) == 0:
     _empty_risk()
@@ -500,79 +515,9 @@ else:
     )
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# RIESGO 7: Modalidad Híbrida con contenidos virtuales que no aplican
-# MODALIDAD = Híbrido  Y  pc_st = "na"
-# Tabla: Programa | Periodo | Modalidad | % Avance
-# ═════════════════════════════════════════════════════════════════════════════════
-r7 = df_raw[
-    (df_raw["MODALIDAD"].str.lower().str.strip().isin(["híbrido", "hibrido"])) &
-    (df_raw["pc_st"] == "na")
-].copy()
-r7["_ord"] = r7.get("periodo_propuesto", r7.get("PERIODO DE IMPLEMENTACIÓN", "")).map(PERIODO_ORDER).fillna(99)
-r7 = r7.sort_values("_ord")
-
-st.markdown(
-    _risk_header(
-        "Riesgo 7 — Programas Híbridos sin aplicabilidad de contenidos virtuales",
-        "Modalidad Híbrida con contenidos virtuales que no aplican",
-        "#8b5cf6", len(r7),
-    ),
-    unsafe_allow_html=True,
-)
-
-if len(r7) == 0:
-    _empty_risk()
-else:
-    rows_r7 = []
-    for _, row in r7.iterrows():
-        rows_r7.append({
-            "Programa":   row["NOMBRE DEL PROGRAMA"],
-            "Periodo":    row.get("periodo_propuesto", row.get("PERIODO DE IMPLEMENTACIÓN", "—")),
-            "Modalidad":  row.get("MODALIDAD", "—"),
-            "% Avance":   _av(row),
-        })
-    df_r7 = pd.DataFrame(rows_r7)
-    st.dataframe(
-        df_r7.style
-            .applymap(_style_avance, subset=["% Avance"]),
-        use_container_width=True, hide_index=True,
-    )
-
+# RIESGO 7: OCULTO (Modalidad Híbrida con contenidos virtuales que no aplican)
+# RIESGO 8: OCULTO (Concepto Financiero devuelto)
 # ═══════════════════════════════════════════════════════════════════════════════
-# RIESGO 8: Concepto Financiero devuelto
-# cf_st = "devuelto"
-# Tabla: Programa | Periodo | Modalidad | % Avance
-# ═════════════════════════════════════════════════════════════════════════════════
-r8 = df_raw[df_raw["cf_st"] == "devuelto"].copy()
-r8["_ord"] = r8.get("periodo_propuesto", r8.get("PERIODO DE IMPLEMENTACIÓN", "")).map(PERIODO_ORDER).fillna(99)
-r8 = r8.sort_values("_ord")
-
-st.markdown(
-    _risk_header(
-        "Riesgo 8 — Concepto Financiero devuelto",
-        "Programas con Concepto Financiero en estado devuelto",
-        "#ec4899", len(r8),
-    ),
-    unsafe_allow_html=True,
-)
-
-if len(r8) == 0:
-    _empty_risk()
-else:
-    rows_r8 = []
-    for _, row in r8.iterrows():
-        rows_r8.append({
-            "Programa":   row["NOMBRE DEL PROGRAMA"],
-            "Periodo":    row.get("periodo_propuesto", row.get("PERIODO DE IMPLEMENTACIÓN", "—")),
-            "Modalidad":  row.get("MODALIDAD", "—"),
-            "% Avance":   _av(row),
-        })
-    df_r8 = pd.DataFrame(rows_r8)
-    st.dataframe(
-        df_r8.style
-            .applymap(_style_avance, subset=["% Avance"]),
-        use_container_width=True, hide_index=True,
-    )
 
 st.markdown("<div style='height:20px'></div>", unsafe_allow_html=True)
 
