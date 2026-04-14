@@ -507,8 +507,9 @@ def _fmt_date(val):
 etapa_labels = []
 for i, em in etapas_show:
     _, _, _, tipo = em
-    col_label = f"{em[1][:28]}…" if len(em[1]) > 28 else em[1]
-    etapa_labels.append((i, col_label, tipo))
+    etapa_name = em[1]
+    col_label = etapa_name
+    etapa_labels.append((i, col_label, tipo, etapa_name))
     raw = df_cl[f"val_{i}"]
     if tipo == "pct":
         df_det[col_label] = raw.apply(
@@ -518,7 +519,7 @@ for i, em in etapas_show:
     else:
         cl_col = df_cl[f"cl_{i}"]
         df_det[col_label] = [
-            STATUS_LABEL.get(cl, (str(v)[:1].upper() + str(v)[1:]) if v and str(v) not in ("—","nan","None","") else "—")
+            _fmt_status_with_icon(cl, v)
             for cl, v in zip(cl_col, raw)
         ]
 
@@ -530,6 +531,27 @@ _CL_STYLE = {
     "na":      "color:#9aabb5;font-style:italic",
     "info":    "color:#9aabb5;font-style:italic",
 }
+
+_CL_ICON = {
+    "done":    "✓",
+    "inprog":  "◉",
+    "nostart": "✗",
+    "na":      "—",
+    "info":    "i",
+}
+
+def _fmt_status_with_icon(cl, v):
+    """Retorna icono + texto para estados."""
+    if cl in _CL_ICON:
+        icon = _CL_ICON[cl]
+        if cl == "na":
+            return str(v) if v and str(v) not in ("—","nan","None","") else "—"
+        elif cl == "info":
+            return f"{icon} {str(v)}" if v and str(v) not in ("—","nan","None","") else "—"
+        else:
+            label = STATUS_LABEL.get(cl, cl)
+            return f"{icon} {label}"
+    return str(v) if v and str(v) not in ("—","nan","None","") else "—"
 
 def _av_col(s):
     out = []
@@ -559,7 +581,7 @@ if "Avance %" in df_det.columns:
 if "Facultad" in df_det.columns:
     styled = styled.apply(_fac_col, subset=["Facultad"])
 
-for i, col_label, _ in etapa_labels:
+for i, col_label, _, _ in etapa_labels:
     if col_label not in df_det.columns:
         continue
     cl_vals = df_cl[f"cl_{i}"].tolist()
