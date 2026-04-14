@@ -204,6 +204,12 @@ def _clear_p1():
     st.session_state["p1_nivel"] = []
     st.session_state["p1_proc"]  = "Todos los procesos"
     st.session_state["p1_search_table"] = ""
+    # Clear table filters
+    st.session_state["p1_mod_filt"] = []
+    st.session_state["p1_fac_filt"] = []
+    st.session_state["p1_per_filt"] = []
+    st.session_state["p1_nivel_filt"] = []
+    st.session_state["p1_proc_filt"] = "Todos los procesos"
 
 _LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
         'letter-spacing:.4px;white-space:nowrap"')
@@ -754,16 +760,47 @@ def _fac_col(s):
                    f"color:{c};font-weight:700;border-left:3px solid {c}")
     return out
 
-# Filtro de búsqueda antes de la tabla detallada
-search_col1, search_col2 = st.columns([0.5, 4])
-with search_col1:
-    st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">🔍 BUSCAR</div>', unsafe_allow_html=True)
-with search_col2:
-    sel_search = st.text_input("search_table", key="p1_search_table", 
-                               label_visibility="collapsed", 
-                               placeholder="Digite nombre del programa...")
+# Filtros antes de la tabla detallada
+with st.container():
+    # Fila 1: MODALIDAD · FACULTAD · PERIODO
+    c1, c2, c3, c4, c5, c6 = st.columns([0.6, 1.8, 0.5, 1.8, 0.5, 2.0, 0.4])
+    with c1:
+        st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">📋 MODALIDAD</div>', unsafe_allow_html=True)
+    with c2:
+        sel_mod_filt = st.pills("mod_filt", _mods_ops, selection_mode="multi", key="p1_mod_filt", label_visibility="collapsed") if _use_pills else st.multiselect("mod_filt", _mods_ops, key="p1_mod_filt", label_visibility="collapsed", placeholder="Todas")
+    with c3:
+        st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">🏛️ FACULTAD</div>', unsafe_allow_html=True)
+    with c4:
+        sel_fac_filt = st.pills("fac_filt", fac_ops, selection_mode="multi", key="p1_fac_filt", label_visibility="collapsed") if _use_pills else st.multiselect("fac_filt", fac_ops, key="p1_fac_filt", label_visibility="collapsed", placeholder="Todas")
+    with c5:
+        st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">📅 PERÍODO</div>', unsafe_allow_html=True)
+    with c6:
+        sel_per_filt = st.pills("per_filt", _pers_ops, selection_mode="multi", key="p1_per_filt", label_visibility="collapsed") if _use_pills else st.multiselect("per_filt", _pers_ops, key="p1_per_filt", label_visibility="collapsed", placeholder="Todos")
+    
+    # Fila 2: NIVEL · PROCESO · BUSCAR · LIMPIAR
+    c7, c8, c9, c10, c11, c12 = st.columns([0.5, 1.8, 0.5, 1.8, 1.5, 0.4])
+    with c7:
+        st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">🎓 NIVEL</div>', unsafe_allow_html=True)
+    with c8:
+        sel_nivel_filt = st.pills("nivel_filt", niveles, selection_mode="multi", key="p1_nivel_filt", label_visibility="collapsed") if _use_pills else st.multiselect("nivel_filt", niveles, key="p1_nivel_filt", label_visibility="collapsed", placeholder="Todos")
+    with c9:
+        st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">⚙️ PROCESO</div>', unsafe_allow_html=True)
+    with c10:
+        sel_proc_filt = st.selectbox("proc_filt", _proc_ops, key="p1_proc_filt", label_visibility="collapsed")
+    with c11:
+        sel_search = st.text_input("search_table", key="p1_search_table", label_visibility="collapsed", placeholder="Digite nombre del programa...")
+    with c12:
+        st.button("✕", on_click=_clear_p1, type="primary", key="p1_clear")
 
-# Apply search filter to df_det if there's search text
+# Apply filters to df_det
+if sel_mod_filt:
+    df_det = df_det[df_det["Modal."].isin(sel_mod_filt)]
+if sel_fac_filt:
+    df_det = df_det[df_det["Facultad"].isin([fac_abrev_inv.get(f, f) for f in sel_fac_filt])]
+if sel_per_filt:
+    df_det = df_det[df_det["Periodo"].isin(sel_per_filt)]
+if sel_nivel_filt and "NIVEL_HOMOLOGADO" in df_det.columns:
+    df_det = df_det[df_det["NIVEL_HOMOLOGADO"].isin(sel_nivel_filt)]
 if sel_search:
     df_det = df_det[df_det["Programa"].str.contains(sel_search, case=False, na=False)]
 
