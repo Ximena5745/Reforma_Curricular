@@ -729,24 +729,16 @@ for idx, row in df_det.iterrows():
         else:
             # Handle etapa columns
             val = str(row.get(col, "")) if col in row else "—"
-            if col == "Avance %" and "avance_general" in row:
-                # This case shouldn't happen due to the check above, but just in case
-                avance_val = row.get("avance_general", 0)
-                try:
-                    avance_pct = float(avance_val) if avance_val not in ("", None) else 0.0
-                except:
-                    avance_pct = 0.0
-                cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{_bar_html(avance_pct)}</td>')
-            else:
-                cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
+            cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
     
     rows_html.append(f'<tr style="background: {"#ffffff" if idx%2==0 else "#f8fafc"};">{"".join(cells)}</tr>')
 
+# Build final HTML table
 tabla_det = (
     '<div style="overflow-x:auto;border-radius:12px;'
     'border:1.5px solid #b5c9d8;box-shadow:0 2px 12px rgba(15,56,90,.10);background:#fafdff">'
     '<table style="width:100%;table-layout:auto;border-collapse:separate;border-spacing:0;font-family:\'Segoe UI\',sans-serif">'
-    '<thead><tr>' + hdr_html + '</tr></thead><tbody>'
+    '<thead><tr>' + header_html + '</tr></thead><tbody>'
     + "".join(rows_html) +
     '</tbody></table></div>'
 )
