@@ -692,7 +692,7 @@ def _fac_col(s):
 
 # Render detailed table as HTML to properly show icons and progress bars
 # Build column headers in the same order as Prioritization tab
-header_cols = ["Programa", "Facultad", "Modal.", "Periodo", "Avance %"] + [col_label for _, col_label, _, _ in etapa_labels]
+header_cols = ["Programa", "Facultad", "Modal.", "Periodo", "Avance %"] + [col_label for _, col_label, _, _ in etapa_labels] + ["Tipo Trámite", "Fecha Notif.", "Req. Min."]
 
 # Build HTML header with styling similar to Prioritization tab
 header_html = "".join([f'<th style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;padding:6px 4px;text-align:center;white-space:nowrap;">{c}</th>' for c in header_cols])
@@ -726,6 +726,15 @@ for idx, row in df_det.iterrows():
             except:
                 avance_pct = 0.0
             cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{_bar_html(avance_pct)}</td>')
+        elif col == "Tipo Trámite":
+            val = str(row.get("Tipo de trámite", "—"))
+            cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
+        elif col == "Fecha Notif.":
+            val = str(row.get("Fecha Notif.", "—"))
+            cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
+        elif col == "Req. Min.":
+            val = str(row.get("¿Requiere aprobación ministerial?", "—"))
+            cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
         else:
             # Handle etapa columns
             val = str(row.get(col, "")) if col in row else "—"
