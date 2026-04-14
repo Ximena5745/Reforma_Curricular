@@ -253,7 +253,7 @@ with st.sidebar:
     st.page_link("pages/1_Detalle_por_Etapa.py",        label="Detalle por Etapa",    icon="📋")
     st.page_link("pages/2_Programa.py",                 label="Resumen Programa",     icon="🔍")
     st.page_link("pages/4_Gestion_Academica.py",        label="Gestión Académica",    icon="📑")
-    st.page_link("pages/7_Gestion_OM.py",               label="Gestión OM",           icon="⚙️")
+    st.page_link("pages/7_Gestion_OM.py",               label="Gestión OM")
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
     st.markdown("<div style='flex:1'></div>", unsafe_allow_html=True)
     st.markdown(
@@ -1313,7 +1313,7 @@ with tab_prio:
         ("Convenios",    "conv_pct",                                      "bar"),
         ("Banner",       "ban_pct",                                        "bar"),
         ("Tipo Trámite", "Tipo de trámite de aseguramiento de la calidad", "tramite"),
-        ("Estado Radicación", "ESTADO RADICACIÓN REFORMA",       "text"),
+        ("Fecha Notif.", "Fecha de\nDocumentos de notificación MEN",       "text"),
         ("Req. Min.",    "¿Requiere aprobación ministerial?",              "text"),
     ]
     _PRIO_CLR = {"Urgente":("#EC0677","#fce8f2"),"Prioritario":("#FBAF17","#fdf8e8"),
