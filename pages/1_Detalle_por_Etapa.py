@@ -330,17 +330,19 @@ for proc in PROCESOS:
         done = int(df[f"cl_{i}"].eq("done").sum())
         inp  = int(df[f"cl_{i}"].eq("inprog").sum())
         nst  = int(df[f"cl_{i}"].eq("nostart").sum())
+        dev  = int(df[f"cl_{i}"].eq("devuelto").sum())
         na   = int(df[f"cl_{i}"].eq("na").sum())
         inf_ = int(df[f"cl_{i}"].eq("info").sum())
         na_t = na + inf_
 
         applicable = max(n - na_t, 1)
-        pct = round((done * 100 + inp * 50) / applicable)
-        total_s = max(done + inp + nst + na_t, 1)
+        pct = round((done * 100 + inp * 50 + dev * 50) / applicable)
+        total_s = max(done + inp + nst + dev + na_t, 1)
 
         w_done = done / total_s * 100
         w_inp  = inp  / total_s * 100
         w_nst  = nst  / total_s * 100
+        w_dev  = dev  / total_s * 100
         w_na   = na_t / total_s * 100
 
         st.markdown(
@@ -357,11 +359,13 @@ for proc in PROCESOS:
             f'<div style="display:flex;height:100%">'
             f'<div style="width:{w_done:.1f}%;background:#A6CE38"></div>'
             f'<div style="width:{w_inp:.1f}%;background:#1FB2DE"></div>'
+            f'<div style="width:{w_dev:.1f}%;background:#FBAF17"></div>'
             f'<div style="width:{w_nst:.1f}%;background:#EC0677"></div>'
             f'<div style="width:{w_na:.1f}%;background:#ccd5dc"></div>'
             f'</div></div>'
             f'<div style="width:48px;text-align:center;font-size:13px;font-weight:600;color:#A6CE38">{done}</div>'
             f'<div style="width:48px;text-align:center;font-size:13px;font-weight:600;color:#1FB2DE">{inp}</div>'
+            f'<div style="width:48px;text-align:center;font-size:13px;font-weight:600;color:#FBAF17">{dev}</div>'
             f'<div style="width:48px;text-align:center;font-size:13px;font-weight:600;color:#EC0677">{nst}</div>'
             f'<div style="width:48px;text-align:center;font-size:13px;color:#9aabb5">{na_t}</div>'
             f'</div>',
@@ -376,21 +380,22 @@ st.divider()
 st.markdown("### Vista Gráfica por Proceso")
 
 proc_names_f = []
-p_done_f, p_inp_f, p_nst_f, p_na_f, p_pct_f = [], [], [], [], []
+p_done_f, p_inp_f, p_nst_f, p_dev_f, p_na_f, p_pct_f = [], [], [], [], [], []
 
 for proc in PROCESOS:
     if sel_proc != "Todos los procesos" and proc != sel_proc:
         continue
-    idxs = [i for i, (p, _, _, _) in enumerate(ETAPAS_MAP) if p == proc]
-    d  = sum(int(df[f"cl_{i}"].eq("done").sum())   for i in idxs)
-    i_ = sum(int(df[f"cl_{i}"].eq("inprog").sum()) for i in idxs)
-    ns = sum(int(df[f"cl_{i}"].eq("nostart").sum())for i in idxs)
-    na = sum(int(df[f"cl_{i}"].eq("na").sum()) + int(df[f"cl_{i}"].eq("info").sum()) for i in idxs)
+    proc_idxs = [i for i,(p,_,_,_) in enumerate(ETAPAS_MAP) if p==proc]
+    d  = sum(int(df[f"cl_{i}"].eq("done").sum())   for i in proc_idxs)
+    i_ = sum(int(df[f"cl_{i}"].eq("inprog").sum()) for i in proc_idxs)
+    ns = sum(int(df[f"cl_{i}"].eq("nostart").sum())for i in proc_idxs)
+    dv = sum(int(df[f"cl_{i}"].eq("devuelto").sum()) for i in proc_idxs)
+    na = sum(int(df[f"cl_{i}"].eq("na").sum()) + int(df[f"cl_{i}"].eq("info").sum()) for i in proc_idxs)
     vals = df[f"proc_{proc}"].dropna()
     pct  = int(vals.mean()) if len(vals) > 0 else 0
 
     proc_names_f.append(proc)
-    p_done_f.append(d); p_inp_f.append(i_); p_nst_f.append(ns)
+    p_done_f.append(d); p_inp_f.append(i_); p_nst_f.append(ns); p_dev_f.append(dv)
     p_na_f.append(na);  p_pct_f.append(pct)
 
 col_g1, col_g2 = st.columns([2, 2])
@@ -401,6 +406,7 @@ with col_g1:
     all_data = [
         (p_done_f, "Finalizado",  "#A6CE38"),
         (p_inp_f,  "En proceso",  "#1FB2DE"),
+        (p_dev_f,  "Devuelto",    "#FBAF17"),
         (p_nst_f,  "Sin iniciar", "#EC0677"),
         (p_na_f,   "No aplica",   "#ccd5dc"),
     ]
