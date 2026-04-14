@@ -478,24 +478,57 @@ base_cols_existing = {
     "avance_general":            "Avance %",
 }
 
-# Check which additional columns exist in the dataframe
-tipo_tramite_col = "Tipo de trámite" if "Tipo de trámite" in df.columns else None
-fecha_notif_col = "Fecha Notif." if "Fecha Notif." in df.columns else None
-req_min_col = "¿Requiere aprobación ministerial?" if "¿Requiere aprobación ministerial?" in df.columns else None
+# Find actual column names for extra fields
+tipo_tramite_col = None
+fecha_notif_col = None
+req_min_col = None
+
+# Check for Tipo de trámite (various possible names)
+for col in df.columns:
+    if "tipo de trámite" in col.lower():
+        tipo_tramite_col = col
+        break
+    elif "tipo de tramite" in col.lower():
+        tipo_tramite_col = col
+        break
+
+# Check for Fecha de notificación
+for col in df.columns:
+    if "fecha" in col.lower() and "notif" in col.lower():
+        fecha_notif_col = col
+        break
+
+# Check for Requiere aprobación ministerial
+for col in df.columns:
+    if "requiere" in col.lower() and "aprobaci" in col.lower():
+        req_min_col = col
+        break
 
 # Build base dataframe with existing columns
 base_cols = base_cols_existing.copy()
+tipo_tramite_label = "Tipo Trámite"
+fecha_notif_label = "Fecha Notif."
+req_min_label = "Req. Min."
+
 if tipo_tramite_col:
-    base_cols[tipo_tramite_col] = "Tipo Trámite"
+    base_cols[tipo_tramite_col] = tipo_tramite_label
+else:
+    tipo_tramite_label = None
+    
 if fecha_notif_col:
-    base_cols[fecha_notif_col] = "Fecha Notif."
+    base_cols[fecha_notif_col] = fecha_notif_label
+else:
+    fecha_notif_label = None
+    
 if req_min_col:
-    base_cols[req_min_col] = "Req. Min."
+    base_cols[req_min_col] = req_min_label
+else:
+    req_min_label = None
 
 df_base = df[list(base_cols.keys())].copy().reset_index(drop=True)
 df_det  = df_base.rename(columns=base_cols)
 df_det["Facultad"] = df["FACULTAD"].map(fac_abrev).fillna("—").reset_index(drop=True)
-df_det["Avance %"] = df_det["Avance %"].apply(lambda x: f"{int(x)}%" if pd.notna(x) else "—")
+df_det["Avance %"] = df_det["Avance %"].apply(lambda x: f"{int(float(x))}%" if pd.notna(x) and str(x).strip() != "" else "—")
 
 # For missing columns, add empty columns
 if not tipo_tramite_col:
@@ -504,6 +537,13 @@ if not fecha_notif_col:
     df_det["Fecha Notif."] = "—"
 if not req_min_col:
     df_det["Req. Min."] = "—"
+
+# Save the actual column names for later use
+_extra_cols = {
+    "tipo_tramite": tipo_tramite_col,
+    "fecha_notif": fecha_notif_col,
+    "req_min": req_min_col,
+}
 
 # Guardar cl_ para cada etapa (alineado con df_det tras reset_index)
 df_cl = df.reset_index(drop=True)
@@ -744,20 +784,26 @@ for idx, row in df_det.iterrows():
             per = _p_esc(row.get("PERIODO DE IMPLEMENTACIÓN", "—"))
             cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;"><span style="font-size:10px;font-weight:600;color:#0F385A">{per}</span></td>')
         elif col == "Avance %":
-            avance_val = row.get("avance_general", 0)
+            # Use the original value from df_det which already has the % formatted
+            avance_val = row.get("Avance %", "0%")
+            # Extract numeric value
             try:
-                avance_pct = float(avance_val) if avance_val not in ("", None) else 0.0
+                avance_pct = float(str(avance_val).replace("%", "").strip())
             except:
                 avance_pct = 0.0
             cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{_bar_html(avance_pct)}</td>')
         elif col == "Tipo Trámite":
-            val = str(row.get("Tipo de trámite", "—"))
+            # Use the actual column name from _extra_cols
+            actual_col = _extra_cols.get("tipo_tramite", "Tipo Trámite")
+            val = str(row.get(actual_col, row.get("Tipo Trámite", "—")))
             cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
         elif col == "Fecha Notif.":
-            val = str(row.get("Fecha Notif.", "—"))
+            actual_col = _extra_cols.get("fecha_notif", "Fecha Notif.")
+            val = str(row.get(actual_col, row.get("Fecha Notif.", "—")))
             cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
         elif col == "Req. Min.":
-            val = str(row.get("¿Requiere aprobación ministerial?", "—"))
+            actual_col = _extra_cols.get("req_min", "Req. Min.")
+            val = str(row.get(actual_col, row.get("Req. Min.", "—")))
             cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
         else:
             # Handle etapa columns
