@@ -203,13 +203,14 @@ def _clear_p1():
     st.session_state["p1_per"]   = []
     st.session_state["p1_nivel"] = []
     st.session_state["p1_proc"]  = "Todos los procesos"
+    st.session_state["p1_search"] = ""
 
 _LBL = ('style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;'
         'letter-spacing:.4px;white-space:nowrap"')
 
 with st.container():
     # Fila 1: MODALIDAD · FACULTAD · LIMPIAR
-    lb1, in1, _sp, lb2, in2, btn_col = st.columns([0.6, 2.5, 0.05, 0.6, 2.7, 0.8])
+    lb1, in1, _sp, lb2, in2, _sp2, lb_search, in_search, btn_col = st.columns([0.5, 2.0, 0.03, 0.5, 2.2, 0.03, 0.5, 2.0, 0.7])
     with lb1:
         st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
     with in1:
@@ -228,6 +229,12 @@ with st.container():
         else:
             sel_fac = st.multiselect("fac", fac_ops, key="p1_fac",
                                      label_visibility="collapsed", placeholder="Todas")
+    with lb_search:
+        st.markdown(f'<div {_LBL}>🔍 BUSCAR</div>', unsafe_allow_html=True)
+    with in_search:
+        sel_search = st.text_input("search", key="p1_search", 
+                                   label_visibility="collapsed", 
+                                   placeholder="Nombre del programa...")
     with btn_col:
         st.button("✕ LIMPIAR", on_click=_clear_p1,
                   type="primary", key="p1_clear")
@@ -264,10 +271,16 @@ modalidad_f = list(sel_mod) if sel_mod else []
 facultad_f  = [fac_abrev_inv.get(f, f) for f in sel_fac] if sel_fac else []
 periodo_f   = list(sel_per) if sel_per else []
 nivel_f     = list(sel_nivel) if sel_nivel else []
+search_f    = st.session_state.get("p1_search", "")
 df_filt = df_raw.copy()
 if nivel_f:
     df_filt = df_filt[df_filt["NIVEL_HOMOLOGADO"].isin(nivel_f)]
 df = apply_filters(df_filt, modalidad_f, facultad_f, periodo_f)
+
+# Apply search filter
+if search_f:
+    df = df[df["NOMBRE DEL PROGRAMA"].str.contains(search_f, case=False, na=False)]
+
 n  = len(df)
 
 _p1_counter.markdown(
