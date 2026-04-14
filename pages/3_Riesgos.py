@@ -494,25 +494,7 @@ else:
         df_r6.style
             .applymap(_style_pc, subset=["% PC (AK)"]),
         use_container_width=True, hide_index=True,
-    )
-
-if len(r6) == 0:
-    _empty_risk()
-else:
-    rows_r6 = []
-    for _, row in r6.iterrows():
-        rows_r6.append({
-            "Programa":      row["NOMBRE DEL PROGRAMA"],
-            "Periodo":       row.get("periodo_propuesto", row.get("PERIODO DE IMPLEMENTACIÓN", "—")),
-            "Est. Trámite":  str(row.get(_est_tramite_col, "—")).split("\n")[0] if _est_tramite_col else "—",
-            "% Avance":      _av(row),
-        })
-    df_r6 = pd.DataFrame(rows_r6)
-    st.dataframe(
-        df_r6.style
-            .applymap(_style_avance, subset=["% Avance"]),
-        use_container_width=True, hide_index=True,
-    )
+)
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # RIESGO 7: OCULTO (Modalidad Híbrida con contenidos virtuales que no aplican)
