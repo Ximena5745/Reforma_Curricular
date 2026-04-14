@@ -537,6 +537,12 @@ df_det  = df_base.rename(columns=base_cols)
 df_det["Facultad"] = df["FACULTAD"].map(fac_abrev).fillna("—").reset_index(drop=True)
 df_det["Avance %"] = df_det["Avance %"].apply(lambda x: f"{int(float(x))}%" if pd.notna(x) and str(x).strip() != "" else "—")
 
+# Add original columns for filtering
+if "NIVEL_HOMOLOGADO" in df.columns:
+    df_det["NIVEL_HOMOLOGADO"] = df["NIVEL_HOMOLOGADO"].reset_index(drop=True)
+if "FACULTAD" in df.columns:
+    df_det["FACULTAD_ORI"] = df["FACULTAD"].reset_index(drop=True)
+
 # For missing columns, add empty columns
 if not tipo_tramite_col:
     df_det["Tipo Trámite"] = "—"
@@ -797,7 +803,11 @@ with st.container():
 if sel_mod_filt:
     df_det = df_det[df_det["Modal."].isin(sel_mod_filt)]
 if sel_fac_filt:
-    df_det = df_det[df_det["Facultad"].isin([fac_abrev_inv.get(f, f) for f in sel_fac_filt])]
+    # Filter using original faculty values
+    if "FACULTAD_ORI" in df_det.columns:
+        df_det = df_det[df_det["FACULTAD_ORI"].isin([fac_abrev_inv.get(f, f) for f in sel_fac_filt])]
+    else:
+        df_det = df_det[df_det["Facultad"].isin([fac_abrev_inv.get(f, f) for f in sel_fac_filt])]
 if sel_per_filt:
     df_det = df_det[df_det["Periodo"].isin(sel_per_filt)]
 if sel_nivel_filt and "NIVEL_HOMOLOGADO" in df_det.columns:
