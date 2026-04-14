@@ -473,7 +473,7 @@ r6 = r6.sort_values("pc_pct", ascending=True)
 st.markdown(
     _risk_header(
         "Riesgo 6 — Programas aprobados por el MEN sin producción virtual",
-        "Programas con Estado del trámite aprobado por el MEN, ordenados por menor % de producción de contenidos",
+        "Programas con Estado del trámite aprobado por el MEN, ordenados por menor % de contenidos virtuales",
         "#f59e0b", len(r6),
     ),
     unsafe_allow_html=True,
@@ -486,13 +486,13 @@ else:
     for _, row in r6.iterrows():
         rows_r6.append({
             "Programa":           row["NOMBRE DEL PROGRAMA"],
-            "% PC (AK)":          int(float(row["pc_pct"])),
-            "Concepto Financiero": str(row.get("cf_st", "—")),
+            "% Avance Contenidos Virtuales": int(float(row["pc_pct"])),
+            "Concepto Financiero": STATUS_LABEL.get(str(row.get("cf_st", "")), str(row.get("cf_st", "—"))),
         })
     df_r6 = pd.DataFrame(rows_r6)
     st.dataframe(
         df_r6.style
-            .applymap(_style_pc, subset=["% PC (AK)"]),
+            .applymap(_style_pc, subset=["% Avance Contenidos Virtuales"]),
         use_container_width=True, hide_index=True,
     )
 

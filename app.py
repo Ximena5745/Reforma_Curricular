@@ -957,8 +957,8 @@ with tab0:
         r6_df = pd.DataFrame()
     r6_df = r6_df.sort_values("pc_pct", ascending=True) if len(r6_df) > 0 else r6_df
     r6_rows = _r_rows(r6_df, {
-        "% PC (AK)": lambda r: _rpct(r.get("pc_pct", 0)),
-        "Concepto Financiero": lambda r: str(r.get("cf_st", "—")),
+        "% Avance Contenidos Virtuales": lambda r: _rpct(r.get("pc_pct", 0)),
+        "Concepto Financiero": lambda r: STATUS_LABEL.get(str(r.get("cf_st", "")), str(r.get("cf_st", "—"))),
     })
 
     # R7 y R8 — OCULTOS
@@ -1006,7 +1006,7 @@ with tab0:
             "Programas aprobados por el MEN sin producción virtual",
             "Estado del trámite = Aprobado por el MEN · Menor % de contenidos primero",
             "#f59e0b", r6_rows,
-            ["Programa", "% PC (AK)", "Concepto Financiero"], "📝",
+            ["Programa", "% Avance Contenidos Virtuales", "Concepto Financiero"], "📝",
             tbl_max_height="320px"), unsafe_allow_html=True)
     
     # R7 y R8 ocultos
