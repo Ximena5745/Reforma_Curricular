@@ -527,6 +527,23 @@ def _p_bar(pct):
             f'<div style="width:{min(pct,100):.0f}%;height:100%;background:{bar};border-radius:3px"></div>'
             f'</div></div>')
 
+def _bar_html(pct):
+    """Render a percentage value as an HTML progress bar."""
+    try:
+        p = float(str(pct).replace('%', '').strip())
+    except Exception:
+        p = 0.0
+    p = max(0.0, min(100.0, p))
+    # Color scheme: green >=70, orange >=40, red <40
+    color = "#22c55e" if p >= 70 else ("#f59e0b" if p >= 40 else "#ef4444")
+    return (
+        f'<div style="min-width:60px;text-align:center">'
+        f'<div style="font-size:12px;font-weight:700;color:#0F385A">{int(p)}%</div>'
+        f'<div style="height:6px;background:#e2e8f0;border-radius:4px">'
+        f'<div style="width:{p:.0f}%;height:100%;background:{color};border-radius:4px"></div>'
+        f'</div></div>'
+    )
+
 _CL_STYLE = {
     "done":    "background-color:#edf7e1;color:#2d6a00;font-weight:600",
     "inprog":  "background-color:#e3f4fb;color:#0a5e80;font-weight:600",
@@ -673,86 +690,67 @@ def _fac_col(s):
                    f"color:{c};font-weight:700;border-left:3px solid {c}")
     return out
 
-styled = df_det.style
-if "Avance %" in df_det.columns:
-    styled = styled.apply(_av_col, subset=["Avance %"])
-if "Facultad" in df_det.columns:
-    styled = styled.apply(_fac_col, subset=["Facultad"])
+# Render detailed table as HTML to properly show icons and progress bars
+# Build column headers in the same order as Prioritization tab
+header_cols = ["Programa", "Facultad", "Modal.", "Periodo", "Avance %"] + [col_label for _, col_label, _, _ in etapa_labels]
 
-for i, col_label, _, col_key in etapa_labels:
-    if col_label not in df_det.columns:
-        continue
-    styled = styled.map(lambda x: "", subset=[col_label])
+# Build HTML header with styling similar to Prioritization tab
+header_html = "".join([f'<th style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;padding:6px 4px;text-align:center;white-space:nowrap;">{c}</th>' for c in header_cols])
+hdr = f'<tr>{header_html}</tr>'
 
-st.markdown("""
-<style>
-[data-testid="stDataFrame"] thead th {
-    background: #0F385A !important;
-    color: #FFFFFF !important;
-    font-size: 11px !important;
-    font-weight: 700 !important;
-    text-align: center !important;
-    padding: 8px 4px !important;
-    position: sticky;
-    top: 0;
-    z-index: 1;
-}
-[data-testid="stDataFrame"] tbody tr:nth-child(odd) {
-    background: #FFFFFF;
-}
-[data-testid="stDataFrame"] tbody tr:nth-child(even) {
-    background: #f8fafc;
-}
-[data-testid="stDataFrame"] td {
-    border-bottom: 1px solid #eef3f8;
-}
-</style>
-""", unsafe_allow_html=True)
-
-TH_P = ('style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;'
-        'padding:6px 4px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;'
-        'border-right:1px solid rgba(255,255,255,0.10)"')
-THL_P = ('style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;'
-         'padding:6px 8px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2;'
-         'border-right:1px solid rgba(255,255,255,0.10)"')
-TD = ('style="padding:4px 3px;text-align:center;vertical-align:middle;'
-      'border-bottom:1px solid #eef3f8"')
-TDL = ('style="padding:4px 6px;text-align:left;vertical-align:middle;'
-       'border-bottom:1px solid #eef3f8;min-width:140px;max-width:220px"')
-
+# Build HTML rows
 rows_html = []
 for idx, row in df_det.iterrows():
     rbg = "#FFFFFF" if idx % 2 == 0 else "#f8fafc"
-    prog = _p_esc(row.get("Programa", "—"))
-    fac = _p_esc(row.get("Facultad", "—"))
-    mod = _p_esc(row.get("Modal.", "—"))
-    per = _p_esc(row.get("Periodo", "—"))
-    
     cells = []
-    for col in df_det.columns:
-        if col == "Programa":
-            cells.append(f'<td {TDL}><span style="font-size:11px;font-weight:600;color:#0F385A">{prog}</span><br><span style="font-size:10px;font-weight:700;color:#EC0677">{fac}</span></td>')
-        elif col == "Modal.":
-            cells.append(f'<td {TD}><span style="font-size:10px;font-weight:600;color:#0F385A">{mod}</span></td>')
-        elif col == "Periodo":
-            cells.append(f'<td {TD}><span style="font-size:10px;font-weight:600;color:#0F385A">{per}</span></td>')
-        elif col == "Avance %":
-            cells.append(f'<td {TD}>{_bar_html(val)}</td>')
-        else:
-            val = str(row.get(col, ""))
-            cells.append(f'<td {TD}>{val}</td>')
     
-    rows_html.append(f'<tr>{"".join(cells)}</tr>')
+    for col in header_cols:
+        if col == "Programa":
+            prog = _p_esc(row.get("NOMBRE DEL PROGRAMA", "—"))
+            fac = _p_esc(row.get("FACULTAD", "—"))
+            fac_abbr = fac_abrev.get(fac, fac) if fac != "—" else "—"
+            cells.append(f'<td style="padding:6px 4px;text-align:left;vertical-align:middle;border-bottom:1px solid #eef3f8;">{prog}<br><span style="font-size:10px;font-weight:700;color:#EC0677">{fac_abbr}</span></td>')
+        elif col == "Facultad":
+            # Skip - already shown with Programa
+            cells.append(f'<td style="padding:6px 4px;text-align:left;vertical-align:middle;border-bottom:1px solid #eef3f8;"></td>')
+        elif col == "Modal.":
+            mod = _p_esc(row.get("MODALIDAD", "—"))
+            cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;"><span style="font-size:10px;font-weight:600;color:#0F385A">{mod}</span></td>')
+        elif col == "Periodo":
+            per = _p_esc(row.get("PERIODO DE IMPLEMENTACIÓN", "—"))
+            cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;"><span style="font-size:10px;font-weight:600;color:#0F385A">{per}</span></td>')
+        elif col == "Avance %":
+            avance_val = row.get("avance_general", 0)
+            try:
+                avance_pct = float(avance_val) if avance_val not in ("", None) else 0.0
+            except:
+                avance_pct = 0.0
+            cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{_bar_html(avance_pct)}</td>')
+        else:
+            # Handle etapa columns
+            val = str(row.get(col, "")) if col in row else "—"
+            if col == "Avance %" and "avance_general" in row:
+                # This case shouldn't happen due to the check above, but just in case
+                avance_val = row.get("avance_general", 0)
+                try:
+                    avance_pct = float(avance_val) if avance_val not in ("", None) else 0.0
+                except:
+                    avance_pct = 0.0
+                cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{_bar_html(avance_pct)}</td>')
+            else:
+                cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
+    
+    rows_html.append(f'<tr style="background: {"#ffffff" if idx%2==0 else "#f8fafc"};">{"".join(cells)}</tr>')
 
-hdr_cells = "".join(f'<th {THL_P if i==0 else TH_P}>{c}</th>' for i, c in enumerate(df_det.columns))
-tabla = (
+tabla_det = (
     '<div style="overflow-x:auto;border-radius:12px;'
     'border:1.5px solid #b5c9d8;box-shadow:0 2px 12px rgba(15,56,90,.10);background:#fafdff">'
     '<table style="width:100%;table-layout:auto;border-collapse:separate;border-spacing:0;font-family:\'Segoe UI\',sans-serif">'
-    '<thead><tr>' + hdr_cells + '</tr></thead><tbody>'
+    '<thead><tr>' + hdr_html + '</tr></thead><tbody>'
     + "".join(rows_html) +
     '</tbody></table></div>'
 )
-st.markdown(tabla, unsafe_allow_html=True)
+
+st.markdown(tabla_det, unsafe_allow_html=True)
 st.caption(f"{n} programas · {len(etapa_labels)} etapas mostradas")
 
