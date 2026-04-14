@@ -501,16 +501,12 @@ _CL_ICON = {
 }
 
 def _fmt_status_with_icon(cl, v):
-    """Retorna icono + texto para estados."""
+    """Retorna solo icono para estados."""
     if cl in _CL_ICON:
         icon = _CL_ICON[cl]
-        if cl == "na":
+        if cl in ("na", "info"):
             return str(v) if v and str(v) not in ("—","nan","None","") else "—"
-        elif cl == "info":
-            return f"{icon} {str(v)}" if v and str(v) not in ("—","nan","None","") else "—"
-        else:
-            label = STATUS_LABEL.get(cl, cl)
-            return f"{icon} {label}"
+        return icon
     return str(v) if v and str(v) not in ("—","nan","None","") else "—"
 
 def _fmt_pct(val):
@@ -545,38 +541,12 @@ for i, em in etapas_show:
             lambda v: _fmt_pct(v) if v not in ("—", "No aplica", "no aplica") else v)
     elif tipo == "date":
         df_det[col_label] = raw.apply(_fmt_date)
-    else:
+else:
         cl_col = df_cl[f"cl_{i}"]
         df_det[col_label] = [
             _fmt_status_with_icon(cl, v)
             for cl, v in zip(cl_col, raw)
         ]
-
-# ── Colores semáforo (aplicados columna por columna para evitar KeyError) ────
-_CL_STYLE = {
-    "done":    "background-color:#edf7e1;color:#2d6a00;font-weight:600",
-    "inprog":  "background-color:#e3f4fb;color:#0a5e80;font-weight:600",
-    "nostart": "background-color:#fce8f2;color:#9a003e;font-weight:600",
-    "na":      "color:#9aabb5;font-style:italic",
-    "info":    "color:#9aabb5;font-style:italic",
-}
-
-_CL_ICON = {
-    "done":    "✓",
-    "inprog":  "◉",
-    "nostart": "✗",
-    "na":      "—",
-    "info":    "i",
-}
-
-def _fmt_status_with_icon(cl, v):
-    """Retorna solo icono para estados."""
-    if cl in _CL_ICON:
-        icon = _CL_ICON[cl]
-        if cl in ("na", "info"):
-            return str(v) if v and str(v) not in ("—","nan","None","") else "—"
-        return icon
-    return str(v) if v and str(v) not in ("—","nan","None","") else "—"
 
 def _av_col(s):
     out = []
