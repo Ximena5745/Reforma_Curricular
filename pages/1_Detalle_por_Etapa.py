@@ -574,6 +574,8 @@ def _fmt_date(val):
 
 etapa_labels = []
 
+def _p_esc(s): return str(s).replace("&","&amp;").replace("<","&lt;").replace(">","&gt;")
+
 _ETAPA_ORDER = [
     "proc_Gestión Académica",
     "proc_Gestión Financiera", 
@@ -707,17 +709,48 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
-st.dataframe(
-    styled,
-    use_container_width=True,
-    height=600,
-    hide_index=True,
-    column_config={
-        "Programa": st.column_config.TextColumn("Programa", width="medium"),
-        "Facultad": st.column_config.TextColumn("Facultad", width="small"),
-        "Modal.":   st.column_config.TextColumn("Modal.",   width="small"),
-        "Periodo":  st.column_config.TextColumn("Periodo",  width="small"),
-    },
+TH_P = ('style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;'
+        'padding:6px 4px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;'
+        'border-right:1px solid rgba(255,255,255,0.10)"')
+THL_P = ('style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;'
+         'padding:6px 8px;text-align:left;white-space:nowrap;position:sticky;top:0;z-index:2;'
+         'border-right:1px solid rgba(255,255,255,0.10)"')
+TD = ('style="padding:4px 3px;text-align:center;vertical-align:middle;'
+      'border-bottom:1px solid #eef3f8"')
+TDL = ('style="padding:4px 6px;text-align:left;vertical-align:middle;'
+       'border-bottom:1px solid #eef3f8;min-width:140px;max-width:220px"')
+
+rows_html = []
+for idx, row in df_det.iterrows():
+    rbg = "#FFFFFF" if idx % 2 == 0 else "#f8fafc"
+    prog = _p_esc(row.get("Programa", "—"))
+    fac = _p_esc(row.get("Facultad", "—"))
+    mod = _p_esc(row.get("Modal.", "—"))
+    per = _p_esc(row.get("Periodo", "—"))
+    
+    cells = []
+    for col in df_det.columns:
+        if col == "Programa":
+            cells.append(f'<td {TDL}><span style="font-size:11px;font-weight:600;color:#0F385A">{prog}</span><br><span style="font-size:10px;font-weight:700;color:#EC0677">{fac}</span></td>')
+        elif col == "Modal.":
+            cells.append(f'<td {TD}><span style="font-size:10px;font-weight:600;color:#0F385A">{mod}</span></td>')
+        elif col == "Periodo":
+            cells.append(f'<td {TD}><span style="font-size:10px;font-weight:600;color:#0F385A">{per}</span></td>')
+        else:
+            val = str(row.get(col, ""))
+            cells.append(f'<td {TD}>{val}</td>')
+    
+    rows_html.append(f'<tr>{"".join(cells)}</tr>')
+
+hdr_cells = "".join(f'<th {THL_P if i==0 else TH_P}>{c}</th>' for i, c in enumerate(df_det.columns))
+tabla = (
+    '<div style="overflow-x:auto;border-radius:12px;'
+    'border:1.5px solid #b5c9d8;box-shadow:0 2px 12px rgba(15,56,90,.10);background:#fafdff">'
+    '<table style="width:100%;table-layout:auto;border-collapse:separate;border-spacing:0;font-family:\'Segoe UI\',sans-serif">'
+    '<thead><tr>' + hdr_cells + '</tr></thead><tbody>'
+    + "".join(rows_html) +
+    '</tbody></table></div>'
 )
+st.markdown(tabla, unsafe_allow_html=True)
 st.caption(f"{n} programas · {len(etapa_labels)} etapas mostradas")
 
