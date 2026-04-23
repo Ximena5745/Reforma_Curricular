@@ -520,7 +520,7 @@ for col in df.columns:
 base_cols = base_cols_existing.copy()
 tipo_tramite_label = "Tipo Trámite"
 fecha_notif_label = "Estado Radicación"
-req_min_label = "Req. Min."
+req_min_label = "Req. Ministerio"
 
 if tipo_tramite_col:
     base_cols[tipo_tramite_col] = tipo_tramite_label
@@ -816,7 +816,7 @@ if sel_search:
 
 # Render detailed table as HTML to properly show icons and progress bars
 # Build column headers in the same order as Prioritization tab
-header_cols = ["Programa", "Modal.", "Periodo", "Avance %"] + [col_label for _, col_label, _, _ in etapa_labels] + ["Tipo Trámite", "Estado Radicación", "Req. Min."]
+header_cols = ["Programa", "Modal.", "Periodo", "Avance %"] + [col_label for _, col_label, _, _ in etapa_labels] + ["Tipo Trámite", "Estado Radicación", "Req. Ministerio"]
 
 # Build HTML header with styling similar to Prioritization tab
 header_html = "".join([f'<th style="background:#0F385A;color:#FFFFFF;font-size:10px;font-weight:700;padding:6px 4px;text-align:center;white-space:nowrap;">{c}</th>' for c in header_cols])
@@ -861,9 +861,9 @@ for idx, row in df_det.iterrows():
             actual_col = _extra_cols.get("fecha_notif", "ESTADO RADICACIÓN REFORMA")
             val = str(row.get(actual_col, row.get("Estado Radicación", "—")))
             cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
-        elif col == "Req. Min.":
-            actual_col = _extra_cols.get("req_min", "Req. Min.")
-            val = str(row.get(actual_col, row.get("Req. Min.", "—")))
+        elif col == "Req. Ministerio":
+            actual_col = _extra_cols.get("req_min", "¿Requiere aprobación ministerial?")
+            val = str(row.get(actual_col, row.get("Req. Ministerio", "—")))
             cells.append(f'<td style="padding:6px 4px;text-align:center;vertical-align:middle;border-bottom:1px solid #eef3f8;">{val}</td>')
         else:
             # Handle etapa columns

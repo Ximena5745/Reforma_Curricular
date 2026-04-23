@@ -1333,7 +1333,7 @@ with tab_prio:
         ("Banner",       "ban_pct",                                        "bar"),
         ("Tipo Trámite", "Tipo de trámite de aseguramiento de la calidad", "tramite"),
         ("Estado Radicación", "ESTADO RADICACIÓN REFORMA",       "text"),
-        ("Req. Min.",    "¿Requiere aprobación ministerial?",              "text"),
+        ("Req. Ministerio", "¿Requiere aprobación ministerial?",              "text"),
     ]
     _PRIO_CLR = {"Urgente":("#EC0677","#fce8f2"),"Prioritario":("#FBAF17","#fdf8e8"),
                  "En seguimiento":("#2980B9","#EBF5FB"),"En curso":("#A6CE38","#f0f8e8")}
