@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Reforma Curricular — POLISIGS</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  /* exact slide colors */
+  --c-pres:  #2a7ab8;   /* 1 Presentación – azul oscuro */
+  --c-rev:   #1baac1;   /* 2 Revisión – cian */
+  --c-eval:  #e91e8c;   /* 3 Evaluación – magenta */
+  --c-apro:  #8dc63f;   /* 4 Aprobación – verde */
+  --c-impl:  #f5a623;   /* 5 Implementación – naranja */
+  --c-ga:    #1baac1;   /* Gestión Académica – cian */
+
+  --bg:      #f0f2f5;
+  --white:   #ffffff;
+  --text:    #1a2332;
+  --muted:   #6b7a90;
+  --border:  #dde3ec;
+  --sh:      0 2px 10px rgba(0,0,0,.07);
+  --sh-lg:   0 4px 24px rgba(0,0,0,.11);
+}
+
+body { font-family:'Inter',sans-serif; background:var(--bg); color:var(--text); min-height:100vh; }
+
+/* ── HEADER ── */
+.header {
+  background:#fff;
+  border-bottom:3px solid #1565c0;
+  padding:16px 40px;
+  display:flex; align-items:center; gap:14px;
+  box-shadow:0 2px 8px rgba(0,0,0,.06);
+  position:sticky; top:0; z-index:100;
+}
+.hlogo {
+  width:40px;height:40px;border-radius:9px;
+  background:linear-gradient(135deg,#1565c0,#0288d1);
+  display:flex;align-items:center;justify-content:center;
+  color:#fff;font-weight:800;font-size:13px;flex-shrink:0;
+}
+.htxt h1 { font-size:.95rem;font-weight:700; }
+.htxt p  { font-size:.68rem;color:var(--muted);margin-top:1px; }
+.hbadge  {
+  margin-left:auto;background:#e3f2fd;color:#1565c0;
+  font-size:.65rem;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;padding:4px 12px;border-radius:20px;
+}
+
+/* ── MAIN ── */
+.wrap { padding:32px 40px 80px; max-width:1380px; margin:0 auto; }
+.sec-lbl {
+  font-size:.62rem;font-weight:700;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--muted);margin-bottom:14px;
+}
+
+/* ══════════════════════════════
+   TOP FLOW — Slide 2 macro
+══════════════════════════════ */
+.macro-flow {
+  background:var(--white);
+  border-radius:14px;
+  box-shadow:var(--sh);
+  padding:22px 28px;
+  margin-bottom:26px;
+  display:flex; align-items:center; gap:0;
+  overflow-x:auto;
+}
+.mnode {
+  flex:1; min-width:110px;
+  display:flex;flex-direction:column;align-items:center;gap:7px;
+  cursor:pointer; padding:10px 6px; border-radius:12px;
+  transition:background .15s, transform .18s;
+}
+.mstages-badge {
+  font-size:.58rem;font-weight:700;letter-spacing:.07em;
+  text-transform:uppercase;
+  padding:2px 9px;border-radius:10px;
+  white-space:nowrap;
+}
+.mnode:hover { background:#f0f4fc; transform:translateY(-2px); }
+.mnode.active { background:#f0f4fc; }
+
+.mcirc {
+  width:50px;height:50px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:1rem;color:#fff;
+  box-shadow:0 4px 14px rgba(0,0,0,.2);
+  transition:transform .2s,box-shadow .2s;
+  flex-shrink:0;
+}
+.mnode.active .mcirc, .mnode:hover .mcirc {
+  transform:scale(1.1);
+  box-shadow:0 6px 20px rgba(0,0,0,.28);
+}
+.mlbl {
+  font-size:.7rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.06em;
+  text-align:center;line-height:1.3;
+  transition:color .15s;
+}
+.mnode.active .mlbl { color:#1565c0; }
+
+/* active underline */
+.mnode { position:relative; }
+.mnode::after {
+  content:''; position:absolute; bottom:0;left:50%;transform:translateX(-50%);
+  width:0;height:3px;border-radius:2px;
+  background:var(--nc,#1565c0);
+  transition:width .25s;
+}
+.mnode.active::after { width:36px; }
+
+.marrow { color:#b0bec5;font-size:1.5rem;padding:0 2px;flex-shrink:0; }
+
+/* ══════════════════════════════
+   PANEL WRAPPER
+══════════════════════════════ */
+.panel { display:none; }
+.panel.vis { display:block; }
+@keyframes fadeUp { from{opacity:0;transform:translateY(8px)} to{opacity:1;transform:translateY(0)} }
+.anim { animation:fadeUp .28s ease both; }
+
+/* ── EMPTY STATE ── */
+.empty {
+  background:var(--white);border-radius:14px;
+  box-shadow:var(--sh);padding:52px 20px;
+  text-align:center;color:var(--muted);font-size:.85rem;
+}
+.empty .ico { font-size:2rem;opacity:.35;margin-bottom:10px; }
+
+/* ══════════════════════════════
+   GA PANEL — horizontal timeline
+══════════════════════════════ */
+.ga-panel {
+  background:var(--white);
+  border-radius:14px;
+  box-shadow:var(--sh-lg);
+  overflow:hidden;
+  border-top:5px solid var(--c-ga);
+}
+.ga-panel-hdr {
+  padding:16px 26px;
+  background:#f7fbff;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+}
+.ga-panel-hdr .dot {
+  width:36px;height:36px;border-radius:50%;
+  background:var(--c-ga);
+  display:flex;align-items:center;justify-content:center;
+  font-size:1rem;flex-shrink:0;
+}
+.ga-panel-hdr h2 { font-size:1rem;font-weight:700; }
+.ga-panel-hdr p  { font-size:.72rem;color:var(--muted);margin-top:2px; }
+
+/* timeline rows wrapper */
+.ga-timeline { padding:20px 26px 24px; display:flex;flex-direction:column;gap:0; }
+
+/* connector line between rows */
+.ga-row + .ga-row { border-top:1px solid var(--border); }
+
+/* single row: label | arrow | pills | arrow | responsibles */
+.ga-row {
+  display:grid;
+  grid-template-columns: 160px 28px 1fr 28px 200px;
+  align-items:center;
+  gap:0;
+  padding:14px 0;
+}
+
+/* LEFT — stage label */
+.ga-stage-id {
+  display:flex;align-items:center;gap:10px;
+  padding-right:16px;
+}
+.ga-num {
+  width:34px;height:34px;border-radius:50%;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:.9rem;color:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.18);
+}
+.ga-stage-name {
+  font-size:.72rem;font-weight:700;
+  text-transform:uppercase;letter-spacing:.07em;
+  line-height:1.3;
+}
+
+/* connector arrows */
+.ga-arr {
+  display:flex;align-items:center;justify-content:center;
+  color:#b0bec5;font-size:1.2rem;font-weight:700;
+}
+
+/* CENTRE — pill group */
+.ga-pills {
+  display:flex;flex-wrap:wrap;gap:7px;
+  padding:0 6px;
+}
+.ga-pill {
+  border-radius:20px;padding:6px 14px;
+  font-size:.72rem;font-weight:600;color:#fff;
+  line-height:1.3;white-space:nowrap;
+  box-shadow:0 2px 6px rgba(0,0,0,.14);
+}
+
+/* RIGHT — responsibles */
+.ga-resps {
+  display:flex;flex-direction:column;gap:5px;
+  padding-left:12px;
+  border-left:1px dashed var(--border);
+}
+.ga-resp-chip {
+  display:flex;align-items:center;gap:6px;
+  background:#f3f6fa;border:1px solid var(--border);
+  border-radius:20px;padding:4px 10px 4px 6px;
+  font-size:.68rem;font-weight:600;white-space:nowrap;
+  max-width:100%;overflow:hidden;text-overflow:ellipsis;
+}
+.ga-resp-chip .ri { font-size:.9rem;flex-shrink:0; }
+
+/* impl arrow at end */
+.ga-impl-arrow {
+  display:flex;align-items:center;gap:10px;
+  padding:16px 26px;
+  border-top:1px solid var(--border);
+  background:#fafbfd;
+}
+.ga-impl-line { flex:1;height:2px;background:linear-gradient(90deg,var(--border),var(--c-impl)); }
+.ga-impl-badge {
+  display:flex;align-items:center;gap:8px;
+  background:var(--c-impl);color:#fff;
+  border-radius:20px;padding:7px 16px;
+  font-size:.73rem;font-weight:700;
+  box-shadow:0 3px 10px rgba(245,166,35,.35);
+  white-space:nowrap;
+}
+.ga-impl-badge .num {
+  width:22px;height:22px;border-radius:50%;
+  background:rgba(255,255,255,.25);
+  display:flex;align-items:center;justify-content:center;
+  font-size:.75rem;font-weight:800;
+}
+
+/* ══════════════════════════════
+   IMPLEMENTACIÓN PANEL — Slide 2 bottom
+══════════════════════════════ */
+.impl-panel {
+  background:var(--white);
+  border-radius:14px;
+  box-shadow:var(--sh-lg);
+  overflow:hidden;
+  border-top:5px solid var(--c-impl);
+}
+.impl-panel-hdr {
+  padding:18px 26px;
+  background:#fffaf3;
+  border-bottom:1px solid var(--border);
+  display:flex;align-items:center;gap:12px;
+}
+.impl-panel-hdr .dot {
+  width:38px;height:38px;border-radius:50%;
+  background:var(--c-impl);
+  display:flex;align-items:center;justify-content:center;
+  font-weight:800;font-size:1rem;color:#fff;flex-shrink:0;
+}
+.impl-panel-hdr h2 { font-size:1rem;font-weight:700; }
+.impl-panel-hdr p  { font-size:.72rem;color:var(--muted);margin-top:2px; }
+
+/* 5-area grid */
+.impl-areas {
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  border-bottom:1px solid var(--border);
+}
+.impl-area {
+  padding:20px 16px;
+  border-right:1px solid var(--border);
+}
+.impl-area:last-child { border-right:none; }
+
+.area-badge {
+  border-radius:9px;padding:10px 12px;
+  color:#fff;font-size:.78rem;font-weight:700;
+  margin-bottom:14px;
+  box-shadow:0 2px 8px rgba(0,0,0,.13);
+  line-height:1.35;
+}
+.area-task {
+  font-size:.68rem;font-weight:600;
+  color:var(--muted);margin-bottom:10px;
+  letter-spacing:.04em;
+}
+.area-doc {
+  display:flex;align-items:flex-start;gap:7px;
+  padding:7px 0;border-bottom:1px solid #eef0f4;
+  font-size:.73rem;color:var(--text);line-height:1.4;
+}
+.area-doc:last-child { border-bottom:none; }
+.area-doc .bul {
+  width:6px;height:6px;border-radius:50%;
+  margin-top:5px;flex-shrink:0;
+}
+
+.impl-notice {
+  padding:13px 26px;
+  background:#fff8e1;border-top:1px solid #ffe082;
+  font-size:.74rem;color:#7a5000;
+  display:flex;align-items:center;gap:8px;
+}
+
+.impl-area--active {
+  background:#f0f7ff;
+  outline:2px solid #1565c0;
+  outline-offset:-2px;
+  border-radius:4px;
+}
+
+/* ── RESPONSIVE ── */
+@media(max-width:960px){
+  .wrap { padding:20px 16px 50px; }
+  .header { padding:14px 16px; }
+  .ga-swimlane { flex-direction:column; }
+  .stage-col { border-right:none;border-bottom:1px solid var(--border); }
+  .impl-col { width:100%;flex-direction:row;border-left:none;border-top:1px solid var(--border);padding:14px 16px; }
+  .impl-areas { grid-template-columns:1fr 1fr 1fr; }
+}
+@media(max-width:560px){
+  .impl-areas { grid-template-columns:1fr; }
+  .impl-area { border-right:none;border-bottom:1px solid var(--border); }
+}
+</style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div class="header">
+  <div class="hlogo">RC</div>
+  <div class="htxt">
+    <h1>Procedimiento de Reforma Curricular</h1>
+    <p>Selecciona una etapa del flujo para explorar el detalle</p>
+  </div>
+  <div class="hbadge">POLISIGS</div>
+</div>
+
+<div class="wrap">
+
+  <!-- TOP MACRO FLOW (Slide 2) -->
+  <p class="sec-lbl">Flujo del proceso</p>
+  <div class="macro-flow" id="macroFlow"></div>
+
+  <!-- EMPTY STATE -->
+  <div class="panel vis" id="emptyPanel">
+    <div class="empty">
+      <div class="ico">☝️</div>
+      <p>Selecciona un <strong>área</strong> del flujo para ver su detalle</p>
+    </div>
+  </div>
+
+  <!-- GA PANEL (Slide 1 — horizontal timeline) -->
+  <div class="panel ga-panel" id="gaPanel">
+    <div class="ga-panel-hdr">
+      <div class="dot">📚</div>
+      <div>
+        <h2>Gestión Académica</h2>
+        <p>Flujo interno de reforma curricular — etapas 1 a 4 y responsables</p>
+      </div>
+    </div>
+
+    <div class="ga-timeline">
+
+      <!-- 1. PRESENTACIÓN -->
+      <div class="ga-row">
+        <div class="ga-stage-id">
+          <div class="ga-num" style="background:var(--c-pres)">1</div>
+          <div class="ga-stage-name">Presentación</div>
+        </div>
+        <div class="ga-arr">›</div>
+        <div class="ga-pills">
+          <span class="ga-pill" style="background:var(--c-pres)">Presentar propuesta de reforma curricular</span>
+          <span class="ga-pill" style="background:#1e5f91">Propuesta aprobada</span>
+        </div>
+        <div class="ga-arr">›</div>
+        <div class="ga-resps">
+          <div class="ga-resp-chip"><span class="ri">👨‍💼</span>Director de Escuela</div>
+          <div class="ga-resp-chip"><span class="ri">🏛️</span>Decano de Facultad</div>
+        </div>
+      </div>
+
+      <!-- 2. REVISIÓN -->
+      <div class="ga-row">
+        <div class="ga-stage-id">
+          <div class="ga-num" style="background:var(--c-rev)">2</div>
+          <div class="ga-stage-name">Revisión</div>
+        </div>
+        <div class="ga-arr">›</div>
+        <div class="ga-pills">
+          <span class="ga-pill" style="background:var(--c-rev)">Revisar propuesta</span>
+          <span class="ga-pill" style="background:#138fa4">Propuesta presentada</span>
+          <span class="ga-pill" style="background:#0e7a8c">Plan de estudios revisado</span>
+          <span class="ga-pill" style="background:#096678">Propuesta de reforma aprobada</span>
+        </div>
+        <div class="ga-arr">›</div>
+        <div class="ga-resps">
+          <div class="ga-resp-chip"><span class="ri">🏛️</span>Decano de Facultad</div>
+          <div class="ga-resp-chip"><span class="ri">👨‍💼</span>Director de Escuela</div>
+          <div class="ga-resp-chip"><span class="ri">📐</span>Director de Currículo</div>
+          <div class="ga-resp-chip"><span class="ri">🎓</span>Vice Académica</div>
+        </div>
+      </div>
+
+      <!-- 3. EVALUACIÓN -->
+      <div class="ga-row">
+        <div class="ga-stage-id">
+          <div class="ga-num" style="background:var(--c-eval)">3</div>
+          <div class="ga-stage-name">Evaluación</div>
+        </div>
+        <div class="ga-arr">›</div>
+        <div class="ga-pills">
+          <span class="ga-pill" style="background:var(--c-eval)">Analizar impacto de reforma</span>
+          <span class="ga-pill" style="background:#c01878">Plan de virtualización validado</span>
+          <span class="ga-pill" style="background:#a01468">Proyección financiera aprobada</span>
+        </div>
+        <div class="ga-arr">›</div>
+        <div class="ga-resps">
+          <div class="ga-resp-chip"><span class="ri">💻</span>Grt. Educación Virtual</div>
+          <div class="ga-resp-chip"><span class="ri">📋</span>Secretaría Académica</div>
+          <div class="ga-resp-chip"><span class="ri">💰</span>Dir. Planeación Financiera</div>
+        </div>
+      </div>
+
+      <!-- 4. APROBACIÓN -->
+      <div class="ga-row">
+        <div class="ga-stage-id">
+          <div class="ga-num" style="background:var(--c-apro)">4</div>
+          <div class="ga-stage-name">Aprobación</div>
+        </div>
+        <div class="ga-arr">›</div>
+        <div class="ga-pills">
+          <span class="ga-pill" style="background:var(--c-apro)">Aprobar implementación de la reforma</span>
+          <span class="ga-pill" style="background:#6a9e2a">Formato creación programas en Banner</span>
+        </div>
+        <div class="ga-arr">›</div>
+        <div class="ga-resps">
+          <div class="ga-resp-chip"><span class="ri">🏛️</span>Decano de Facultad</div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Footer → Implementación -->
+    <div class="ga-impl-arrow">
+      <div class="ga-impl-line"></div>
+      <div class="ga-impl-badge">
+        <div class="num">5</div>
+        Continúa en Implementación
+      </div>
+    </div>
+
+  </div><!-- /ga-panel -->
+
+  <!-- IMPLEMENTACIÓN PANEL (Slide 2 bottom areas) -->
+  <div class="panel impl-panel" id="implPanel">
+    <div class="impl-panel-hdr">
+      <div class="dot">5</div>
+      <div>
+        <h2>Implementación</h2>
+        <p>Etapas 5 – 9 del macro-proceso — áreas y documentos involucrados</p>
+      </div>
+    </div>
+    <div class="impl-areas">
+
+      <!-- 6 — Grt. Planeación -->
+      <div class="impl-area" data-area="gplaneacion">
+        <div class="area-badge" style="background:#f5a623">Grt. Planeación</div>
+        <div class="area-task">5. Recepción de notificación</div>
+        <div class="area-doc"><span class="bul" style="background:#f5a623"></span>Recepción de correo con notificación de inicio de implementación del programa</div>
+      </div>
+
+      <!-- 7 — Grt. Educación Virtual -->
+      <div class="impl-area" data-area="virtual">
+        <div class="area-badge" style="background:#00838f">Grt. Educación Virtual</div>
+        <div class="area-task">6. Diseñar/Ajustar contenidos</div>
+        <div class="area-doc"><span class="bul" style="background:#00838f"></span>Syllabus V Final</div>
+        <div class="area-doc"><span class="bul" style="background:#00838f"></span>Plan de virtualización V Final</div>
+      </div>
+
+      <!-- 8 — Dir. Nuevos Negocios y CI -->
+      <div class="impl-area" data-area="nn">
+        <div class="area-badge" style="background:#1565c0">Dir. Nuevos Negocios y CI</div>
+        <div class="area-task">7. Actualizar convenios</div>
+        <div class="area-doc"><span class="bul" style="background:#1565c0"></span>Formato acta currículo homologación/convenios</div>
+        <div class="area-doc"><span class="bul" style="background:#1565c0"></span>Formato acta currículo articulación SENA</div>
+        <div class="area-doc"><span class="bul" style="background:#1565c0"></span>Formato reconocimiento de competencias o resultados de aprendizaje para homologación</div>
+        <div class="area-doc"><span class="bul" style="background:#1565c0"></span>Ruta sugerida programa homologación/articulación convenio</div>
+      </div>
+
+      <!-- 9 — Grt. Operaciones Académicas -->
+      <div class="impl-area" data-area="opac">
+        <div class="area-badge" style="background:#f57c00">Grt. Operaciones Académicas</div>
+        <div class="area-task">8. Parametrizar Banner</div>
+        <div class="area-doc"><span class="bul" style="background:#f57c00"></span>Resolución / Actas de MEN</div>
+        <div class="area-doc"><span class="bul" style="background:#f57c00"></span>Acta de consejo de Delegados</div>
+        <div class="area-doc"><span class="bul" style="background:#f57c00"></span>Syllabus V Final</div>
+        <div class="area-doc"><span class="bul" style="background:#f57c00"></span>Ft – creación de programas Académicos en Banner Pregrado/Posgrado Virtual y presencial V Final</div>
+      </div>
+
+      <!-- 10 — Grt. Mercadeo -->
+      <div class="impl-area" data-area="mercadeo">
+        <div class="area-badge" style="background:#e53935">Grt. Mercadeo</div>
+        <div class="area-task">9. Publicar oferta</div>
+      </div>
+
+    </div>
+    <div class="impl-notice">
+      ⚠️ <span><strong>Importante:</strong> Los formatos listados se encuentran en fase de revisión activa. Verificar versión vigente antes de diligenciar.</span>
+    </div>
+  </div>
+
+</div><!-- /wrap -->
+
+<script>
+/* ── Macro flow nodes — Áreas del Slide 2 ── */
+const MACRO = [
+  { id:'ga',          label:'Gestión\nAcadémica',               color:'#1baac1', icon:'📚', stages:'Etapas 1 – 4' },
+  { id:'gplaneacion', label:'Grt.\nPlaneación',                 color:'#f5a623', icon:'📊', stages:'Etapa 5'       },
+  { id:'virtual',     label:'Grt. Educación\nVirtual',          color:'#00838f', icon:'💻', stages:'Etapa 6'       },
+  { id:'nn',          label:'Dir. Nuevos\nNegocios y CI',       color:'#1565c0', icon:'🤝', stages:'Etapa 7'       },
+  { id:'opac',        label:'Grt. Operaciones\nAcadémicas',     color:'#f57c00', icon:'⚙️', stages:'Etapa 8'      },
+  { id:'mercadeo',    label:'Grt.\nMercadeo',                   color:'#e53935', icon:'📣', stages:'Etapa 9'       },
+];
+
+let activeId = null;
+
+function renderMacro() {
+  const bar = document.getElementById('macroFlow');
+  bar.innerHTML = '';
+
+  MACRO.forEach((n, i) => {
+    if (i > 0) {
+      const arr = document.createElement('div');
+      arr.className = 'marrow'; arr.textContent = '›';
+      bar.appendChild(arr);
+    }
+    const div = document.createElement('div');
+    div.className = 'mnode';
+    div.dataset.id = n.id;
+    div.style.setProperty('--nc', n.color);
+    div.innerHTML = `
+      <div class="mstages-badge" style="background:${n.color}18;color:${n.color};border:1px solid ${n.color}55">${n.stages}</div>
+      <div class="mcirc" style="background:${n.color}"><span style="font-size:1.3rem">${n.icon}</span></div>
+      <div class="mlbl">${n.label.replace(/\n/g,'<br>')}</div>`;
+    div.addEventListener('click', () => select(n.id));
+    bar.appendChild(div);
+  });
+}
+
+function select(id) {
+  activeId = id;
+  document.querySelectorAll('.mnode').forEach(el =>
+    el.classList.toggle('active', el.dataset.id === id));
+
+  hide('emptyPanel');
+  hide('gaPanel');
+  hide('implPanel');
+
+  if (id === 'ga') {
+    show('gaPanel');
+  } else if (['mercadeo','opac','nn','virtual','gplaneacion'].includes(id)) {
+    show('implPanel');
+    document.querySelectorAll('.impl-area').forEach(el =>
+      el.classList.toggle('impl-area--active', el.dataset.area === id));
+  }
+}
+
+function show(id) {
+  const el = document.getElementById(id);
+  el.classList.add('vis','anim');
+  setTimeout(() => el.classList.remove('anim'), 350);
+}
+function hide(id) {
+  document.getElementById(id).classList.remove('vis');
+}
+
+renderMacro();
+</script>
+</body>
+</html>

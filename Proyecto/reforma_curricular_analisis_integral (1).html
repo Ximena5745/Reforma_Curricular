@@ -1,0 +1,2081 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Análisis Integral — Proceso de Reforma Curricular | PMO Politécnico Grancolombiano</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+/* ═══════════════════════════════════════════════════
+   TOKEN SYSTEM
+═══════════════════════════════════════════════════ */
+:root {
+  --ink:        #0C1B2E;
+  --ink-2:      #1E3A5F;
+  --ink-3:      #355070;
+  --mist:       #F2F6FA;
+  --mist-2:     #E8EFF7;
+  --white:      #FFFFFF;
+  --border:     #D0DAEA;
+
+  --accent-1:   #0056D2;   /* primary blue */
+  --accent-2:   #00A896;   /* teal — TO BE */
+  --accent-3:   #E63946;   /* red — risk */
+  --accent-4:   #F4A261;   /* amber — warning */
+  --accent-5:   #7B2FBE;   /* purple — AI */
+  --accent-6:   #2DC653;   /* green — good */
+
+  --prop-1:     #0056D2;
+  --prop-2:     #00A896;
+  --prop-3:     #7B2FBE;
+
+  --sh-sm:  0 1px 4px rgba(12,27,46,.08);
+  --sh-md:  0 4px 16px rgba(12,27,46,.10);
+  --sh-lg:  0 12px 40px rgba(12,27,46,.12);
+
+  --r:   10px;
+  --r-lg: 16px;
+}
+
+/* ═══════════════════════════════════════════════════
+   BASE
+═══════════════════════════════════════════════════ */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { scroll-behavior: smooth; font-size: 15px; }
+body {
+  font-family: 'DM Sans', sans-serif;
+  background: var(--mist);
+  color: var(--ink);
+  line-height: 1.6;
+}
+
+h1,h2,h3,h4,h5 { font-family: 'DM Serif Display', serif; line-height: 1.2; }
+code, .mono { font-family: 'JetBrains Mono', monospace; }
+
+a { color: var(--accent-1); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+/* ═══════════════════════════════════════════════════
+   LAYOUT
+═══════════════════════════════════════════════════ */
+.page-wrap {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  min-height: 100vh;
+}
+
+/* ── Sidebar ── */
+.sidebar {
+  background: var(--ink);
+  position: sticky;
+  top: 0;
+  height: 100vh;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+  z-index: 50;
+}
+.sidebar-brand {
+  padding: 28px 24px 20px;
+  border-bottom: 1px solid rgba(255,255,255,.08);
+}
+.sidebar-brand .logo {
+  width: 42px; height: 42px;
+  background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+  border-radius: 10px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.1rem; margin-bottom: 12px;
+}
+.sidebar-brand h2 {
+  font-family: 'DM Sans', sans-serif;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .12em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.45);
+  margin-bottom: 4px;
+}
+.sidebar-brand p { font-size: .8rem; color: rgba(255,255,255,.85); font-weight: 500; }
+
+.sidebar-nav { padding: 16px 0; flex: 1; }
+.nav-section {
+  padding: 8px 24px 4px;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.3);
+}
+.nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 9px 24px;
+  font-size: .8rem;
+  color: rgba(255,255,255,.6);
+  cursor: pointer;
+  transition: all .15s;
+  text-decoration: none;
+  border-left: 3px solid transparent;
+}
+.nav-item:hover { background: rgba(255,255,255,.05); color: #fff; text-decoration: none; }
+.nav-item.active { background: rgba(0,86,210,.25); color: #fff; border-left-color: var(--accent-1); }
+.nav-item .n-ico { font-size: .95rem; flex-shrink: 0; }
+.nav-item .n-num {
+  margin-left: auto;
+  font-size: .62rem;
+  font-family: 'JetBrains Mono', monospace;
+  background: rgba(255,255,255,.1);
+  padding: 2px 7px;
+  border-radius: 10px;
+  color: rgba(255,255,255,.5);
+}
+
+/* ── Main ── */
+.main { overflow: hidden; }
+
+/* ═══════════════════════════════════════════════════
+   HERO
+═══════════════════════════════════════════════════ */
+.hero {
+  background: linear-gradient(135deg, var(--ink) 0%, var(--ink-2) 60%, #1a4a7a 100%);
+  padding: 56px 60px 48px;
+  position: relative;
+  overflow: hidden;
+}
+.hero::before {
+  content: '';
+  position: absolute;
+  top: -60px; right: -60px;
+  width: 380px; height: 380px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,168,150,.18) 0%, transparent 70%);
+}
+.hero::after {
+  content: '';
+  position: absolute;
+  bottom: -40px; left: 30%;
+  width: 240px; height: 240px;
+  border-radius: 50%;
+  background: radial-gradient(circle, rgba(0,86,210,.15) 0%, transparent 70%);
+}
+.hero-eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(255,255,255,.1);
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 20px;
+  padding: 5px 14px;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: rgba(255,255,255,.75);
+  margin-bottom: 20px;
+}
+.hero h1 { font-size: 2.4rem; color: #fff; margin-bottom: 14px; position: relative; z-index: 1; }
+.hero-sub { font-size: 1rem; color: rgba(255,255,255,.65); max-width: 580px; position: relative; z-index: 1; }
+.hero-meta {
+  display: flex;
+  gap: 32px;
+  margin-top: 36px;
+  position: relative;
+  z-index: 1;
+  flex-wrap: wrap;
+}
+.hero-stat {
+  display: flex;
+  flex-direction: column;
+}
+.hero-stat .val {
+  font-family: 'DM Serif Display', serif;
+  font-size: 2rem;
+  color: #fff;
+  line-height: 1;
+}
+.hero-stat .lbl { font-size: .72rem; color: rgba(255,255,255,.5); margin-top: 4px; }
+
+/* ═══════════════════════════════════════════════════
+   SECTION WRAPPER
+═══════════════════════════════════════════════════ */
+section {
+  padding: 52px 60px;
+  border-bottom: 1px solid var(--border);
+}
+section:last-child { border-bottom: none; }
+
+.section-tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-bottom: 14px;
+}
+.tag-blue  { background: rgba(0,86,210,.1);  color: var(--accent-1); }
+.tag-teal  { background: rgba(0,168,150,.1); color: var(--accent-2); }
+.tag-red   { background: rgba(230,57,70,.1); color: var(--accent-3); }
+.tag-amber { background: rgba(244,162,97,.12); color: #c07830; }
+.tag-purple{ background: rgba(123,47,190,.1); color: var(--accent-5); }
+.tag-green { background: rgba(45,198,83,.1);  color: #1a9e41; }
+
+section > h2 {
+  font-size: 1.9rem;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+section > .sec-lead {
+  font-size: .92rem;
+  color: var(--ink-3);
+  max-width: 700px;
+  margin-bottom: 36px;
+  line-height: 1.65;
+}
+
+/* ═══════════════════════════════════════════════════
+   CARDS
+═══════════════════════════════════════════════════ */
+.card {
+  background: var(--white);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  box-shadow: var(--sh-sm);
+  padding: 24px;
+}
+.card-grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+.card-grid-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+.card-grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+.card h3 { font-size: 1rem; margin-bottom: 8px; color: var(--ink); }
+.card p  { font-size: .82rem; color: var(--ink-3); line-height: 1.55; }
+
+/* ═══════════════════════════════════════════════════
+   RISK / FINDING CARDS
+═══════════════════════════════════════════════════ */
+.finding {
+  background: var(--white);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  border-left-width: 4px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+}
+.finding.high    { border-left-color: var(--accent-3); }
+.finding.medium  { border-left-color: var(--accent-4); }
+.finding.low     { border-left-color: var(--accent-6); }
+
+.finding-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 6px;
+}
+.finding h4 { font-size: .9rem; font-family: 'DM Sans', sans-serif; font-weight: 600; }
+.badge {
+  font-size: .62rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  padding: 3px 9px;
+  border-radius: 10px;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.badge-red    { background: #fdecea; color: #c62828; }
+.badge-amber  { background: #fff3e0; color: #e65100; }
+.badge-green  { background: #e8f5e9; color: #2e7d32; }
+.badge-blue   { background: #e3f2fd; color: #1565c0; }
+.badge-purple { background: #f3e5f5; color: #6a1b9a; }
+.badge-teal   { background: #e0f2f1; color: #00695c; }
+.finding p { font-size: .8rem; color: var(--ink-3); line-height: 1.5; }
+
+/* ═══════════════════════════════════════════════════
+   PROCESS FLOW
+═══════════════════════════════════════════════════ */
+.flow-container {
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r-lg);
+  padding: 32px 28px;
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+.flow-row {
+  display: flex;
+  align-items: stretch;
+  gap: 0;
+  min-width: 900px;
+}
+.flow-node {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 10px;
+  position: relative;
+}
+.flow-node:not(:last-child)::after {
+  content: '▶';
+  position: absolute;
+  right: -10px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #b0bec5;
+  font-size: .9rem;
+  z-index: 1;
+}
+.flow-circle {
+  width: 52px; height: 52px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2rem;
+  box-shadow: 0 3px 12px rgba(0,0,0,.15);
+  flex-shrink: 0;
+}
+.flow-title {
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  text-align: center;
+  line-height: 1.3;
+}
+.flow-actors {
+  font-size: .64rem;
+  color: var(--ink-3);
+  text-align: center;
+  line-height: 1.4;
+}
+.flow-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  justify-content: center;
+  margin-top: 4px;
+}
+.flow-tag {
+  font-size: .6rem;
+  padding: 2px 7px;
+  border-radius: 8px;
+  font-weight: 600;
+}
+
+/* ═══════════════════════════════════════════════════
+   ACTOR TABLE (swim lanes)
+═══════════════════════════════════════════════════ */
+.swimlane-wrap {
+  overflow-x: auto;
+  margin-bottom: 24px;
+}
+.swimlane {
+  min-width: 860px;
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.sl-header {
+  display: grid;
+  grid-template-columns: 180px repeat(8, 1fr);
+  background: var(--ink);
+  color: white;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+.sl-cell {
+  padding: 10px 8px;
+  border-right: 1px solid rgba(255,255,255,.1);
+  text-align: center;
+  font-size: .68rem;
+}
+.sl-row {
+  display: grid;
+  grid-template-columns: 180px repeat(8, 1fr);
+  border-bottom: 1px solid var(--border);
+}
+.sl-row:last-child { border-bottom: none; }
+.sl-row:nth-child(even) { background: var(--mist); }
+.sl-label {
+  padding: 12px 14px;
+  font-size: .75rem;
+  font-weight: 600;
+  border-right: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.sl-dot {
+  width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0;
+}
+.sl-act {
+  padding: 10px 6px;
+  text-align: center;
+  font-size: .68rem;
+  border-right: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.sl-pill {
+  padding: 3px 8px;
+  border-radius: 6px;
+  font-size: .64rem;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+/* ═══════════════════════════════════════════════════
+   COMPARISON TABLE
+═══════════════════════════════════════════════════ */
+.comparison-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+  font-size: .82rem;
+}
+.comparison-table th {
+  padding: 13px 16px;
+  text-align: left;
+  font-size: .72rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  background: var(--ink);
+  color: rgba(255,255,255,.8);
+  border-right: 1px solid rgba(255,255,255,.1);
+}
+.comparison-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  vertical-align: top;
+  line-height: 1.5;
+  color: var(--ink-3);
+}
+.comparison-table tr:last-child td { border-bottom: none; }
+.comparison-table td:first-child { font-weight: 600; color: var(--ink); }
+.td-bad  { background: #fff5f5; }
+.td-good { background: #f5fff8; }
+.td-great{ background: #f0f7ff; }
+
+/* ═══════════════════════════════════════════════════
+   PROPOSAL CARDS
+═══════════════════════════════════════════════════ */
+.proposal-card {
+  background: var(--white);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  overflow: hidden;
+  box-shadow: var(--sh-md);
+  margin-bottom: 32px;
+}
+.proposal-header {
+  padding: 28px 32px;
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+}
+.proposal-num {
+  width: 56px; height: 56px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.6rem;
+  color: white;
+  flex-shrink: 0;
+}
+.proposal-header h3 {
+  font-size: 1.4rem;
+  margin-bottom: 6px;
+}
+.proposal-header p { font-size: .85rem; color: var(--ink-3); line-height: 1.55; }
+.proposal-body { padding: 0 32px 32px; }
+
+.horizon-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  margin-top: 24px;
+}
+.horizon-card {
+  background: var(--mist);
+  border-radius: var(--r);
+  padding: 18px;
+  border: 1px solid var(--border);
+}
+.horizon-card .h-period {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin-bottom: 10px;
+}
+.horizon-card ul {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.horizon-card ul li {
+  font-size: .78rem;
+  color: var(--ink-3);
+  padding-left: 14px;
+  position: relative;
+  line-height: 1.4;
+}
+.horizon-card ul li::before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: var(--accent-1);
+  font-size: .7rem;
+}
+
+.action-list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 20px;
+}
+.action-list li {
+  display: flex;
+  gap: 12px;
+  font-size: .84rem;
+  color: var(--ink-3);
+  padding: 12px 16px;
+  background: var(--mist);
+  border-radius: 8px;
+  border: 1px solid var(--border);
+  align-items: flex-start;
+  line-height: 1.5;
+}
+.action-list li .a-ico { font-size: 1rem; flex-shrink: 0; margin-top: 2px; }
+.action-list li strong { color: var(--ink); font-weight: 600; }
+
+/* ═══════════════════════════════════════════════════
+   MATURITY GAUGE
+═══════════════════════════════════════════════════ */
+.maturity-wrap {
+  background: var(--white);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  padding: 32px;
+  margin-bottom: 24px;
+}
+.maturity-levels {
+  display: flex;
+  height: 48px;
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 20px;
+}
+.m-seg {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .06em;
+  color: white;
+}
+.m-marker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  position: relative;
+}
+.m-marker .pin {
+  width: 28px; height: 28px;
+  border-radius: 50%;
+  border: 3px solid white;
+  box-shadow: 0 2px 8px rgba(0,0,0,.25);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: .75rem;
+}
+.m-markers {
+  display: flex;
+  justify-content: space-around;
+  padding: 0 20px;
+}
+
+/* ═══════════════════════════════════════════════════
+   RACI TABLE
+═══════════════════════════════════════════════════ */
+.raci-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: .78rem;
+  background: var(--white);
+  border: 1px solid var(--border);
+  border-radius: var(--r);
+  overflow: hidden;
+}
+.raci-table th {
+  padding: 10px 12px;
+  background: var(--ink-2);
+  color: rgba(255,255,255,.85);
+  font-size: .68rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .07em;
+  text-align: center;
+  border-right: 1px solid rgba(255,255,255,.1);
+}
+.raci-table td {
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
+  text-align: center;
+  vertical-align: middle;
+}
+.raci-table td:first-child { text-align: left; font-weight: 500; padding-left: 16px; }
+.raci-table tr:last-child td { border-bottom: none; }
+.raci-table tr:nth-child(even) td { background: var(--mist); }
+.r-R { background: #e3f2fd; color: #1565c0; font-weight: 700; border-radius: 4px; padding: 3px 8px; display: inline-block; }
+.r-A { background: #fce4ec; color: #b71c1c; font-weight: 700; border-radius: 4px; padding: 3px 8px; display: inline-block; }
+.r-C { background: #f3e5f5; color: #6a1b9a; font-weight: 700; border-radius: 4px; padding: 3px 8px; display: inline-block; }
+.r-I { background: #e8f5e9; color: #1b5e20; font-weight: 700; border-radius: 4px; padding: 3px 8px; display: inline-block; }
+
+/* ═══════════════════════════════════════════════════
+   ARCHITECTURE
+═══════════════════════════════════════════════════ */
+.arch-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 20px;
+}
+.arch-layer {
+  background: var(--white);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+.arch-layer-head {
+  padding: 13px 18px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .78rem;
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  color: white;
+}
+.arch-layer-body {
+  padding: 16px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.arch-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: .8rem;
+  color: var(--ink-3);
+}
+.arch-item .a-ico { font-size: .9rem; }
+.arch-item .a-tool {
+  font-weight: 600;
+  color: var(--ink);
+}
+.arch-item .a-desc { font-size: .72rem; }
+
+/* ═══════════════════════════════════════════════════
+   KPI BAND
+═══════════════════════════════════════════════════ */
+.kpi-band {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+  margin-bottom: 32px;
+}
+.kpi-card {
+  background: var(--white);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.kpi-card .k-icon { font-size: 1.4rem; }
+.kpi-card .k-val  {
+  font-family: 'DM Serif Display', serif;
+  font-size: 1.9rem;
+  color: var(--ink);
+  line-height: 1;
+}
+.kpi-card .k-lbl { font-size: .75rem; color: var(--ink-3); font-weight: 500; }
+.kpi-card .k-delta {
+  font-size: .72rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 10px;
+  width: fit-content;
+}
+.k-up   { background: #e8f5e9; color: #2e7d32; }
+.k-down { background: #fdecea; color: #c62828; }
+
+/* ═══════════════════════════════════════════════════
+   INLINE DIAGRAM — BOTTLENECK MAP
+═══════════════════════════════════════════════════ */
+.bottleneck-map {
+  background: var(--white);
+  border-radius: var(--r-lg);
+  border: 1px solid var(--border);
+  padding: 28px;
+  margin-bottom: 24px;
+}
+.bm-row {
+  display: grid;
+  grid-template-columns: 140px 40px 1fr;
+  align-items: center;
+  gap: 0;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--mist-2);
+}
+.bm-row:last-child { border-bottom: none; }
+.bm-stage {
+  font-size: .75rem;
+  font-weight: 600;
+  padding-right: 12px;
+}
+.bm-arr { text-align: center; color: #b0bec5; font-size: 1.1rem; }
+.bm-bar-wrap { display: flex; align-items: center; gap: 10px; }
+.bm-bar {
+  height: 22px;
+  border-radius: 4px;
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  font-size: .68rem;
+  font-weight: 700;
+  color: white;
+  white-space: nowrap;
+}
+.bm-issue {
+  font-size: .72rem;
+  color: var(--ink-3);
+  margin-left: 8px;
+}
+
+/* ═══════════════════════════════════════════════════
+   TOOLS TABLE
+═══════════════════════════════════════════════════ */
+.tools-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+.tool-card {
+  background: var(--white);
+  border-radius: var(--r);
+  border: 1px solid var(--border);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.tool-card .t-ico { font-size: 1.4rem; }
+.tool-card .t-name {
+  font-size: .9rem;
+  font-weight: 700;
+  color: var(--ink);
+}
+.tool-card .t-cat {
+  font-size: .65rem;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+.tool-card .t-desc { font-size: .78rem; color: var(--ink-3); line-height: 1.45; }
+.tool-card .t-compat {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 4px;
+}
+.compat-pill {
+  font-size: .62rem;
+  font-weight: 700;
+  padding: 2px 8px;
+  border-radius: 8px;
+  background: var(--mist-2);
+  color: var(--ink-3);
+}
+
+/* ═══════════════════════════════════════════════════
+   SCROLL SPY
+═══════════════════════════════════════════════════ */
+.scroll-progress {
+  position: fixed;
+  top: 0;
+  left: 260px;
+  right: 0;
+  height: 3px;
+  background: var(--mist);
+  z-index: 100;
+}
+.scroll-progress-bar {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent-1), var(--accent-2));
+  width: 0%;
+  transition: width .1s;
+}
+
+/* ═══════════════════════════════════════════════════
+   MISC UTILS
+═══════════════════════════════════════════════════ */
+.divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+.callout {
+  background: var(--mist);
+  border-radius: var(--r);
+  border-left: 4px solid var(--accent-1);
+  padding: 16px 20px;
+  font-size: .84rem;
+  color: var(--ink-3);
+  line-height: 1.6;
+  margin-bottom: 20px;
+}
+.callout strong { color: var(--ink); }
+.callout.warn { border-left-color: var(--accent-4); background: #fffdf0; }
+.callout.danger { border-left-color: var(--accent-3); background: #fff8f8; }
+.callout.success { border-left-color: var(--accent-6); background: #f5fff8; }
+.callout.ai { border-left-color: var(--accent-5); background: #f9f5ff; }
+
+.mt-8  { margin-top: 8px; }
+.mt-16 { margin-top: 16px; }
+.mt-24 { margin-top: 24px; }
+.mt-32 { margin-top: 32px; }
+.mb-16 { margin-bottom: 16px; }
+.mb-24 { margin-bottom: 24px; }
+
+.two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.three-col { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 20px; }
+
+/* responsive basic */
+@media(max-width:1100px){
+  .page-wrap { grid-template-columns: 220px 1fr; }
+  section { padding: 40px 36px; }
+  .hero { padding: 40px 36px 36px; }
+  .horizon-grid { grid-template-columns: 1fr 1fr; }
+  .kpi-band { grid-template-columns: 1fr 1fr; }
+  .arch-grid { grid-template-columns: 1fr; }
+}
+@media(max-width:800px){
+  .page-wrap { grid-template-columns: 1fr; }
+  .sidebar { position: relative; height: auto; }
+  .scroll-progress { left: 0; }
+  .card-grid-2, .card-grid-3, .card-grid-4,
+  .two-col, .three-col { grid-template-columns: 1fr; }
+  .kpi-band { grid-template-columns: 1fr 1fr; }
+  .tools-grid { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+
+<div class="scroll-progress"><div class="scroll-progress-bar" id="spb"></div></div>
+
+<div class="page-wrap">
+
+<!-- ═══════════════════════
+     SIDEBAR
+═══════════════════════ -->
+<aside class="sidebar">
+  <div class="sidebar-brand">
+    <div class="logo">📋</div>
+    <h2>PMO · Reforma Curricular</h2>
+    <p>Análisis Integral de Proceso</p>
+  </div>
+  <nav class="sidebar-nav">
+    <div class="nav-section">Diagnóstico</div>
+    <a class="nav-item" href="#s1"><span class="n-ico">🔍</span> Diagnóstico AS IS <span class="n-num">01</span></a>
+    <a class="nav-item" href="#s2"><span class="n-ico">🗺️</span> Flujo Actual <span class="n-num">02</span></a>
+    <a class="nav-item" href="#s3"><span class="n-ico">⚠️</span> Cuellos de Botella <span class="n-num">03</span></a>
+
+    <div class="nav-section" style="margin-top:8px">Rediseño TO BE</div>
+    <a class="nav-item" href="#s4"><span class="n-ico">🔹</span> Propuesta 1 · Optimización <span class="n-num">04</span></a>
+    <a class="nav-item" href="#s5"><span class="n-ico">🔷</span> Propuesta 2 · Automatización <span class="n-num">05</span></a>
+    <a class="nav-item" href="#s6"><span class="n-ico">🟣</span> Propuesta 3 · IA &amp; Agentes <span class="n-num">06</span></a>
+    <a class="nav-item" href="#s7"><span class="n-ico">📅</span> Horizontes de Tiempo <span class="n-num">07</span></a>
+
+    <div class="nav-section" style="margin-top:8px">Gobierno &amp; Arquitectura</div>
+    <a class="nav-item" href="#s8"><span class="n-ico">🏛️</span> Gobierno de Información <span class="n-num">08</span></a>
+    <a class="nav-item" href="#s9"><span class="n-ico">🛠️</span> Arquitectura de Solución <span class="n-num">09</span></a>
+    <a class="nav-item" href="#s10"><span class="n-ico">📊</span> Indicadores de Mejora <span class="n-num">10</span></a>
+  </nav>
+</aside>
+
+<!-- ═══════════════════════
+     MAIN CONTENT
+═══════════════════════ -->
+<main class="main">
+
+<!-- ── HERO ── -->
+<div class="hero" id="top">
+  <div class="hero-eyebrow">⚡ Consultoría de Proceso · Abril 2026</div>
+  <h1>Análisis Integral del Proceso<br>de Reforma Curricular</h1>
+  <p class="hero-sub">Diagnóstico AS IS · Rediseño TO BE · Gobierno de la Información · Arquitectura de Solución para el Politécnico Grancolombiano — 60 programas académicos.</p>
+  <div class="hero-meta">
+    <div class="hero-stat"><span class="val">60</span><span class="lbl">Programas analizados</span></div>
+    <div class="hero-stat"><span class="val">8</span><span class="lbl">Etapas del proceso</span></div>
+    <div class="hero-stat"><span class="val">28</span><span class="lbl">Casuísticas identificadas</span></div>
+    <div class="hero-stat"><span class="val">3</span><span class="lbl">Propuestas TO BE</span></div>
+    <div class="hero-stat"><span class="val">2.0</span><span class="lbl">Madurez actual / 5</span></div>
+  </div>
+</div>
+
+<!-- ══════════════════════════════════════════
+     S1 — DIAGNÓSTICO GENERAL AS IS
+══════════════════════════════════════════ -->
+<section id="s1">
+  <div class="section-tag tag-red">01 · Diagnóstico General</div>
+  <h2>Estado Actual del Proceso (AS IS)</h2>
+  <p class="sec-lead">Evaluación multidimensional del proceso de reforma curricular desde las perspectivas operativa, tecnológica y de gobierno de datos, con base en el análisis de la documentación disponible y las 28 casuísticas identificadas en las mesas técnicas.</p>
+
+  <!-- Maturity -->
+  <div class="maturity-wrap mb-24">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:20px">
+      <h3 style="font-size:1.05rem">Nivel de Madurez del Proceso</h3>
+      <span class="badge badge-amber">Nivel 2 de 5 — Básico / Reactivo</span>
+    </div>
+    <div class="maturity-levels">
+      <div class="m-seg" style="width:20%;background:#e53935">1 · Inicial</div>
+      <div class="m-seg" style="width:20%;background:#f57c00;outline:3px solid #fff;outline-offset:-3px;position:relative">2 · Básico ◄</div>
+      <div class="m-seg" style="width:20%;background:#fbc02d">3 · Definido</div>
+      <div class="m-seg" style="width:20%;background:#388e3c">4 · Gestionado</div>
+      <div class="m-seg" style="width:20%;background:#1565c0">5 · Optimizado</div>
+    </div>
+    <div class="card-grid-3 mt-16">
+      <div class="card">
+        <h3 style="font-size:.85rem;color:var(--accent-3)">🔴 Perspectiva Operativa</h3>
+        <p>El proceso carece de gates formales bloqueantes. Las etapas avanzan en paralelo sin verificación de prerequisitos, generando reprocesos masivos al final de la cadena (Banner, publicación web). Se documentaron 28 casuísticas activas con impacto en producción.</p>
+      </div>
+      <div class="card">
+        <h3 style="font-size:.85rem;color:var(--accent-4)">🟡 Perspectiva Tecnológica</h3>
+        <p>Sin sistema central de gestión. Los datos fluyen por correo electrónico, Excel sin versioning y carpetas dispersas. Más de 12 formatos sin control de versiones. No existe integración entre las herramientas (Banner, drive, correo).</p>
+      </div>
+      <div class="card">
+        <h3 style="font-size:.85rem;color:var(--accent-3)">🔴 Perspectiva Gobierno</h3>
+        <p>No hay RACI formalizado para el proceso. Los roles son implícitos, permitiendo que actores como el Tutor Máster intervengan en etapas fuera de su alcance. La Dirección de Currículo no funciona como canal único efectivo.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- KPI Banner — problemas -->
+  <div class="kpi-band">
+    <div class="kpi-card">
+      <span class="k-icon">⚠️</span>
+      <span class="k-val">16</span>
+      <span class="k-lbl">Casuísticas de impacto ALTO</span>
+      <span class="k-delta k-down">57% del total identificado</span>
+    </div>
+    <div class="kpi-card">
+      <span class="k-icon">🔄</span>
+      <span class="k-val">20×</span>
+      <span class="k-lbl">Mayor tiempo montaje Banner (incompleto vs. completo)</span>
+      <span class="k-delta k-down">25 min → 8 h por módulo</span>
+    </div>
+    <div class="kpi-card">
+      <span class="k-icon">📂</span>
+      <span class="k-val">12+</span>
+      <span class="k-lbl">Formatos sin control de versiones activo</span>
+      <span class="k-delta k-down">Alto riesgo de inconsistencia</span>
+    </div>
+    <div class="kpi-card">
+      <span class="k-icon">🎓</span>
+      <span class="k-val">250+</span>
+      <span class="k-lbl">Estudiantes activos con riesgo regulatorio (Esp. Finanzas)</span>
+      <span class="k-delta k-down">24 vs. 30 créditos MEN</span>
+    </div>
+  </div>
+
+  <!-- Hallazgos -->
+  <h3 style="font-size:1.1rem;margin-bottom:16px">Hallazgos Críticos por Dimensión</h3>
+
+  <div class="finding high">
+    <div class="finding-head">
+      <h4>🚨 Ausencia de Gates Bloqueantes Formales</h4>
+      <span class="badge badge-red">Crítico</span>
+    </div>
+    <p>Las etapas del proceso avanzan sin verificación de prerequisitos. El concepto financiero, la consistencia Plan=MEN y la disponibilidad de sílabos no funcionan como gates de entrada. Resultado: se invierte en producción de contenidos para programas con planes de estudios inconsistentes con la resolución MEN, o sin concepto financiero aprobado.</p>
+  </div>
+
+  <div class="finding high">
+    <div class="finding-head">
+      <h4>🚨 Fragmentación Severa de la Información y Sin Control de Versiones</h4>
+      <span class="badge badge-red">Crítico</span>
+    </div>
+    <p>Los datos del proceso (planes de estudio, formatos, sílabos, resoluciones MEN) están distribuidos en múltiples repositorios sin sincronización: correo electrónico, Excel locales, carpetas de red, formularios físicos. Un director modificó retroactivamente un acta sin dejar registro, evidenciando la ausencia total de gobierno documental. Los 12+ formatos vigentes no tienen versión ni fecha de aprobación visible.</p>
+  </div>
+
+  <div class="finding high">
+    <div class="finding-head">
+      <h4>🚨 Único Punto de Verificación Plan=MEN Ocurre Demasiado Tarde</h4>
+      <span class="badge badge-red">Crítico</span>
+    </div>
+    <p>El control de coherencia entre el plan implementado y la resolución MEN se realiza al parametrizar Banner, cuando el proceso ya atravesó 4–5 áreas funcionales. Revertir en este punto genera urgencias, costos de reproceso y en algunos casos riesgo regulatorio activo (caso Esp. Finanzas: 250+ estudiantes con 24 créditos cuando el MEN aprobó 30).</p>
+  </div>
+
+  <div class="finding medium">
+    <div class="finding-head">
+      <h4>🟡 Roles Difusos: Tutor Máster, Currículo y Escuelas</h4>
+      <span class="badge badge-amber">Medio</span>
+    </div>
+    <p>El Tutor Máster interviene para modificar contenidos ya aprobados por el par académico, generando ciclos de revisión no planificados en QA. La Dirección de Currículo no funciona consistentemente como canal único: algunas áreas reciben solicitudes directamente de las escuelas, generando bypass del proceso formal.</p>
+  </div>
+
+  <div class="finding medium">
+    <div class="finding-head">
+      <h4>🟡 Dependencias No Mapeadas entre Programas (Asignaturas Transversales)</h4>
+      <span class="badge badge-amber">Medio</span>
+    </div>
+    <p>Un cambio en una asignatura compartida por 11 programas puede ejecutarse sin notificación a las demás escuelas afectadas. No existe un mapa de dependencias que alerte automáticamente sobre el impacto cascada de modificaciones curriculares.</p>
+  </div>
+
+  <div class="finding medium">
+    <div class="finding-head">
+      <h4>🟡 Ciclo de Contratos de Autoría Genera Vacío Productivo (Dic–Ene)</h4>
+      <span class="badge badge-amber">Medio</span>
+    </div>
+    <p>Los contratos de docentes-autores vencen en diciembre, pero los módulos para apertura en mayo deben iniciarse en octubre. El corte contractual genera un vacío de 6–8 semanas que desplaza compromisos de producción. La estructura contractual no está alineada con el ciclo académico.</p>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S2 — FLUJO ACTUAL
+══════════════════════════════════════════ -->
+<section id="s2">
+  <div class="section-tag tag-blue">02 · Flujo Actual</div>
+  <h2>Modelamiento del Proceso Actual (AS IS)</h2>
+  <p class="sec-lead">Representación estructurada del proceso de reforma curricular con actores, entradas, salidas, herramientas y puntos de ineficiencia identificados en cada etapa.</p>
+
+  <!-- MACRO FLOW VISUAL -->
+  <div class="flow-container">
+    <p style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:18px">Flujo Macro — 9 Etapas</p>
+    <div class="flow-row">
+      <!-- 1 -->
+      <div class="flow-node">
+        <div class="flow-circle" style="background:#2a7ab8">📋</div>
+        <div class="flow-title" style="color:#2a7ab8">1. Presentación</div>
+        <div class="flow-actors">Dir. Escuela<br>Decano</div>
+        <div class="flow-tags">
+          <span class="flow-tag" style="background:#e3f2fd;color:#2a7ab8">Propuesta</span>
+        </div>
+      </div>
+      <!-- 2 -->
+      <div class="flow-node">
+        <div class="flow-circle" style="background:#1baac1">🔍</div>
+        <div class="flow-title" style="color:#1baac1">2. Revisión</div>
+        <div class="flow-actors">Currículo<br>Vice Acad.</div>
+        <div class="flow-tags">
+          <span class="flow-tag" style="background:#e0f7fa;color:#0097a7">Plan revisado</span>
+        </div>
+      </div>
+      <!-- 3 -->
+      <div class="flow-node">
+        <div class="flow-circle" style="background:#e91e8c">📊</div>
+        <div class="flow-title" style="color:#e91e8c">3. Evaluación</div>
+        <div class="flow-actors">Grt. Virtual<br>Planeación Fin.</div>
+        <div class="flow-tags">
+          <span class="flow-tag" style="background:#fce4ec;color:#c2185b">Concepto Fin.</span>
+          <span class="flow-tag" style="background:#fce4ec;color:#c2185b">Plan Virtual.</span>
+        </div>
+      </div>
+      <!-- 4 -->
+      <div class="flow-node">
+        <div class="flow-circle" style="background:#8dc63f">✅</div>
+        <div class="flow-title" style="color:#6a9e2a">4. Aprobación</div>
+        <div class="flow-actors">Decano</div>
+        <div class="flow-tags">
+          <span class="flow-tag" style="background:#f1f8e9;color:#558b2f">Formato Banner</span>
+        </div>
+      </div>
+      <!-- 5 -->
+      <div class="flow-node">
+        <div class="flow-circle" style="background:#f5a623">📊</div>
+        <div class="flow-title" style="color:#c07a10">5. Planeación</div>
+        <div class="flow-actors">Grt. Planeación</div>
+        <div class="flow-tags">
+          <span class="flow-tag" style="background:#fff8e1;color:#f57f17">Notificación</span>
+        </div>
+      </div>
+      <!-- 6 -->
+      <div class="flow-node">
+        <div class="flow-circle" style="background:#00838f">🎬</div>
+        <div class="flow-title" style="color:#00838f">6. Producción</div>
+        <div class="flow-actors">Grt. Ed. Virtual</div>
+        <div class="flow-tags">
+          <span class="flow-tag" style="background:#e0f2f1;color:#00695c">Syllabus</span>
+          <span class="flow-tag" style="background:#e0f2f1;color:#00695c">Módulos</span>
+        </div>
+      </div>
+      <!-- 7 -->
+      <div class="flow-node">
+        <div class="flow-circle" style="background:#1565c0">🤝</div>
+        <div class="flow-title" style="color:#1565c0">7. Convenios</div>
+        <div class="flow-actors">Dir. NNeg. y CI</div>
+        <div class="flow-tags">
+          <span class="flow-tag" style="background:#e3f2fd;color:#1565c0">Homolog.</span>
+        </div>
+      </div>
+      <!-- 8 -->
+      <div class="flow-node">
+        <div class="flow-circle" style="background:#f57c00">⚙️</div>
+        <div class="flow-title" style="color:#e65100">8. Banner</div>
+        <div class="flow-actors">Grt. Operaciones</div>
+        <div class="flow-tags">
+          <span class="flow-tag" style="background:#fff3e0;color:#e65100">Parametriz.</span>
+        </div>
+      </div>
+      <!-- 9 -->
+      <div class="flow-node">
+        <div class="flow-circle" style="background:#e53935">🌐</div>
+        <div class="flow-title" style="color:#c62828">9. Publicación</div>
+        <div class="flow-actors">Grt. Mercadeo</div>
+        <div class="flow-tags">
+          <span class="flow-tag" style="background:#ffebee;color:#c62828">Oferta web</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SWIM LANES -->
+  <h3 style="font-size:1.05rem;margin-bottom:16px">Tabla de Actores, Entradas y Salidas por Etapa</h3>
+  <div class="swimlane-wrap mb-24">
+    <div class="swimlane">
+      <div class="sl-header">
+        <div class="sl-cell" style="text-align:left;padding-left:14px">Actor / Área</div>
+        <div class="sl-cell">E.1 Present.</div>
+        <div class="sl-cell">E.2 Revisión</div>
+        <div class="sl-cell">E.3 Evaluac.</div>
+        <div class="sl-cell">E.4 Aprobac.</div>
+        <div class="sl-cell">E.5–7 Impl.</div>
+        <div class="sl-cell">E.8 Banner</div>
+        <div class="sl-cell">E.9 Publi.</div>
+        <div class="sl-cell">Herramienta</div>
+      </div>
+      <!-- rows -->
+      <div class="sl-row">
+        <div class="sl-label"><div class="sl-dot" style="background:#2a7ab8"></div>Dir. Escuela</div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e3f2fd;color:#1565c0">R</span></div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e8f5e9;color:#1b5e20">C</span></div>
+        <div class="sl-act">—</div><div class="sl-act">—</div>
+        <div class="sl-act"><span class="sl-pill" style="background:#fce4ec;color:#880e4f">R</span></div>
+        <div class="sl-act"><span class="sl-pill" style="background:#fce4ec;color:#880e4f">R</span></div>
+        <div class="sl-act">—</div>
+        <div class="sl-act" style="font-size:.65rem">Excel · Correo</div>
+      </div>
+      <div class="sl-row">
+        <div class="sl-label"><div class="sl-dot" style="background:#1baac1"></div>Dir. Currículo</div>
+        <div class="sl-act">—</div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e3f2fd;color:#1565c0">R</span></div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e8f5e9;color:#1b5e20">C</span></div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e8f5e9;color:#1b5e20">C</span></div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e3f2fd;color:#1565c0">R</span></div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e8f5e9;color:#1b5e20">C</span></div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e8f5e9;color:#1b5e20">C</span></div>
+        <div class="sl-act" style="font-size:.65rem">Control Maestro · Excel</div>
+      </div>
+      <div class="sl-row">
+        <div class="sl-label"><div class="sl-dot" style="background:#7b2fbe"></div>Vice Acad.</div>
+        <div class="sl-act">—</div>
+        <div class="sl-act"><span class="sl-pill" style="background:#f3e5f5;color:#6a1b9a">A</span></div>
+        <div class="sl-act">—</div>
+        <div class="sl-act"><span class="sl-pill" style="background:#f3e5f5;color:#6a1b9a">A</span></div>
+        <div class="sl-act"><span class="sl-pill" style="background:#f3e5f5;color:#6a1b9a">A</span></div>
+        <div class="sl-act">—</div><div class="sl-act">—</div>
+        <div class="sl-act" style="font-size:.65rem">Correo · Reunión</div>
+      </div>
+      <div class="sl-row">
+        <div class="sl-label"><div class="sl-dot" style="background:#e91e8c"></div>Aseguramientos</div>
+        <div class="sl-act">—</div><div class="sl-act">—</div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e3f2fd;color:#1565c0">R</span></div>
+        <div class="sl-act">—</div><div class="sl-act">—</div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e3f2fd;color:#1565c0">R</span></div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e3f2fd;color:#1565c0">R</span></div>
+        <div class="sl-act" style="font-size:.65rem">Excel · Correo</div>
+      </div>
+      <div class="sl-row">
+        <div class="sl-label"><div class="sl-dot" style="background:#f5a623"></div>Pla. Financiera</div>
+        <div class="sl-act">—</div><div class="sl-act">—</div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e3f2fd;color:#1565c0">R</span></div>
+        <div class="sl-act">—</div><div class="sl-act">—</div><div class="sl-act">—</div><div class="sl-act">—</div>
+        <div class="sl-act" style="font-size:.65rem">Excel · Formatos</div>
+      </div>
+      <div class="sl-row">
+        <div class="sl-label"><div class="sl-dot" style="background:#00838f"></div>Grt. Ed. Virtual</div>
+        <div class="sl-act">—</div><div class="sl-act">—</div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e3f2fd;color:#1565c0">R</span></div>
+        <div class="sl-act">—</div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e3f2fd;color:#1565c0">R</span></div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e8f5e9;color:#1b5e20">C</span></div>
+        <div class="sl-act">—</div>
+        <div class="sl-act" style="font-size:.65rem">LMS · Correo</div>
+      </div>
+      <div class="sl-row">
+        <div class="sl-label"><div class="sl-dot" style="background:#f57c00"></div>Grt. Operaciones</div>
+        <div class="sl-act">—</div><div class="sl-act">—</div><div class="sl-act">—</div><div class="sl-act">—</div><div class="sl-act">—</div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e3f2fd;color:#1565c0">R</span></div>
+        <div class="sl-act"><span class="sl-pill" style="background:#e8f5e9;color:#1b5e20">C</span></div>
+        <div class="sl-act" style="font-size:.65rem">Banner ERP</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Inefficiencies table -->
+  <h3 style="font-size:1.05rem;margin-bottom:14px">Puntos de Ineficiencia y Redundancia</h3>
+  <table class="comparison-table">
+    <thead>
+      <tr>
+        <th>Etapa</th>
+        <th>Ineficiencia Identificada</th>
+        <th>Redundancia</th>
+        <th>Herramienta Actual</th>
+        <th>Impacto</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>E.1 Presentación</td>
+        <td class="td-bad">Sin plantilla estándar. Propuestas heterogéneas.</td>
+        <td>Múltiples versiones en correo</td>
+        <td>Word / Email</td>
+        <td><span class="badge badge-amber">Medio</span></td>
+      </tr>
+      <tr>
+        <td>E.2 Revisión</td>
+        <td class="td-bad">Verificación Plan=MEN no ocurre aquí. Gate ausente.</td>
+        <td>Revisión informal sin checklist</td>
+        <td>Excel / Reuniones</td>
+        <td><span class="badge badge-red">Alto</span></td>
+      </tr>
+      <tr>
+        <td>E.3 Evaluación</td>
+        <td class="td-bad">Concepto financiero se elabora sobre versión potencialmente obsoleta del plan.</td>
+        <td>Proyecciones rehachas en 30% de casos</td>
+        <td>Excel</td>
+        <td><span class="badge badge-red">Alto</span></td>
+      </tr>
+      <tr>
+        <td>E.4 Aprobación</td>
+        <td class="td-bad">No se verifica si todos los prerequisitos previos están completos.</td>
+        <td>Aprobaciones parciales por email</td>
+        <td>Correo / Acta física</td>
+        <td><span class="badge badge-amber">Medio</span></td>
+      </tr>
+      <tr>
+        <td>E.6 Producción</td>
+        <td class="td-bad">Módulos solicitados sin cruzar contra malla completa. Sílabos tardíos.</td>
+        <td>Revisiones de QA sobre módulos ya aprobados</td>
+        <td>Correo / LMS</td>
+        <td><span class="badge badge-red">Alto</span></td>
+      </tr>
+      <tr>
+        <td>E.7 Convenios</td>
+        <td class="td-bad">Rutas de homologación entregadas fuera de plazo o incompletas.</td>
+        <td>Coordinación 1:1 sin proceso formal</td>
+        <td>Correo</td>
+        <td><span class="badge badge-red">Alto</span></td>
+      </tr>
+      <tr>
+        <td>E.8 Banner</td>
+        <td class="td-bad">Formatos incompletos: 25 min → 8h por módulo. 20× el tiempo.</td>
+        <td>Devoluciones y reenvíos múltiples</td>
+        <td>Banner ERP</td>
+        <td><span class="badge badge-red">Alto</span></td>
+      </tr>
+      <tr>
+        <td>E.9 Publicación</td>
+        <td class="td-bad">Publicación sin flujo formal: créditos incorrectos en web.</td>
+        <td>Correcciones post-publicación</td>
+        <td>CMS / Web</td>
+        <td><span class="badge badge-red">Alto</span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S3 — CUELLOS DE BOTELLA
+══════════════════════════════════════════ -->
+<section id="s3" style="background:var(--white)">
+  <div class="section-tag tag-red">03 · Análisis de Riesgos</div>
+  <h2>Cuellos de Botella y Mapa de Riesgos</h2>
+  <p class="sec-lead">Clasificación de los principales obstáculos operativos, riesgos de trazabilidad y actividades manuales críticas identificadas en el proceso actual.</p>
+
+  <!-- Bottleneck bar chart -->
+  <div class="bottleneck-map mb-24">
+    <p style="font-size:.75rem;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--ink-3);margin-bottom:16px">Severidad del cuello de botella por etapa</p>
+    <div class="bm-row">
+      <div class="bm-stage">E.2 Revisión</div>
+      <div class="bm-arr">→</div>
+      <div class="bm-bar-wrap">
+        <div class="bm-bar" style="width:90%;background:var(--accent-3)">Gate Plan=MEN ausente · 90%</div>
+      </div>
+    </div>
+    <div class="bm-row">
+      <div class="bm-stage">E.8 Parametriz.</div>
+      <div class="bm-arr">→</div>
+      <div class="bm-bar-wrap">
+        <div class="bm-bar" style="width:85%;background:var(--accent-3)">Formatos incompletos · 85%</div>
+      </div>
+    </div>
+    <div class="bm-row">
+      <div class="bm-stage">E.3 Concepto Fin.</div>
+      <div class="bm-arr">→</div>
+      <div class="bm-bar-wrap">
+        <div class="bm-bar" style="width:75%;background:var(--accent-4)">Versión obsoleta del plan · 75%</div>
+      </div>
+    </div>
+    <div class="bm-row">
+      <div class="bm-stage">E.6 Sílabos</div>
+      <div class="bm-arr">→</div>
+      <div class="bm-bar-wrap">
+        <div class="bm-bar" style="width:68%;background:var(--accent-4)">Entregas tardías · 68%</div>
+      </div>
+    </div>
+    <div class="bm-row">
+      <div class="bm-stage">E.9 Publicación</div>
+      <div class="bm-arr">→</div>
+      <div class="bm-bar-wrap">
+        <div class="bm-bar" style="width:55%;background:var(--accent-4)">Sin flujo de autorización · 55%</div>
+      </div>
+    </div>
+    <div class="bm-row">
+      <div class="bm-stage">E.7 Convenios</div>
+      <div class="bm-arr">→</div>
+      <div class="bm-bar-wrap">
+        <div class="bm-bar" style="width:45%;background:#fbc02d">Rutas homologación incompletas · 45%</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Risks -->
+  <div class="two-col">
+    <div>
+      <h3 style="font-size:1rem;margin-bottom:14px">🔴 Riesgos de Alta Severidad</h3>
+      <div class="finding high">
+        <div class="finding-head"><h4>Riesgo Regulatorio MEN</h4><span class="badge badge-red">Severo</span></div>
+        <p>Programas publicados con créditos o estructura diferente a la resolución MEN vigente generan riesgo de sanciones y derechos de petición. Caso activo: Esp. Finanzas (250+ estudiantes).</p>
+      </div>
+      <div class="finding high">
+        <div class="finding-head"><h4>Riesgo Financiero — Inversión sin Aval</h4><span class="badge badge-red">Severo</span></div>
+        <p>Producción de contenidos avanza sin concepto financiero aprobado. Si el concepto es desfavorable, la inversión en autoría, diseño instruccional y producción audiovisual se pierde parcialmente.</p>
+      </div>
+      <div class="finding high">
+        <div class="finding-head"><h4>Riesgo de Reputación — Publicación Errónea</h4><span class="badge badge-red">Alto</span></div>
+        <p>Información incorrecta en web afecta decisión de matrícula de estudiantes futuros y puede generar problemas legales por publicidad engañosa.</p>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-size:1rem;margin-bottom:14px">🟡 Actividades Manuales Críticas</h3>
+      <div class="action-list">
+        <li><span class="a-ico">📝</span><div><strong>Control Maestro en Excel</strong> — Actualización manual propensa a errores. Sin validaciones, sin historial de cambios, sin control de acceso.</div></li>
+        <li><span class="a-ico">📧</span><div><strong>Coordinación por correo electrónico</strong> — Las aprobaciones, devoluciones y avances del proceso ocurren por email sin registro centralizado ni trazabilidad.</div></li>
+        <li><span class="a-ico">🔢</span><div><strong>Cruce manual Plan vs. MEN vs. Banner</strong> — Realizado campo a campo por Aseguramiento sin apoyo automatizado, generando omisiones.</div></li>
+        <li><span class="a-ico">📊</span><div><strong>Proyecciones financieras</strong> — Elaboración en Excel con fórmulas no estandarizadas, dependientes del analista.</div></li>
+        <li><span class="a-ico">🗂️</span><div><strong>Carga de formatos en Banner</strong> — Digitación manual de 86+ módulos por 3 analistas; sin automatización de carga masiva.</div></li>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S4 — PROPUESTA 1
+══════════════════════════════════════════ -->
+<section id="s4">
+  <div class="section-tag tag-blue">04 · Propuesta TO BE 1</div>
+  <h2>Optimización Operativa</h2>
+  <p class="sec-lead">Primer nivel de transformación: estandarización, control básico de versiones y centralización sin cambios tecnológicos disruptivos. Impacto rápido, bajo costo, alta aceptación organizacional.</p>
+
+  <div class="proposal-card">
+    <div class="proposal-header" style="background:linear-gradient(135deg,#e3f2fd,#f8fbff)">
+      <div class="proposal-num" style="background:var(--prop-1)">1</div>
+      <div>
+        <h3 style="color:var(--prop-1)">🔹 Optimización Operativa</h3>
+        <p>Estandarizar formatos, establecer gates formales documentados, centralizar la información en repositorio único (SharePoint/Drive) y definir roles explícitos sin requerir nuevas herramientas tecnológicas.</p>
+      </div>
+    </div>
+    <div class="proposal-body">
+      <div class="callout"><strong>Principio rector:</strong> "Lo que no está documentado no existe, lo que no tiene versión no es confiable, lo que no tiene responsable no se hace." Formalizar lo que ya existe antes de automatizarlo.</div>
+
+      <h4 style="margin-bottom:12px;font-size:.9rem">Acciones Clave</h4>
+      <div class="action-list">
+        <li><span class="a-ico">📋</span><div><strong>Control Maestro versionado</strong> — Migrar a Google Sheets / SharePoint con historial de cambios habilitado. Nombrar un custodio del documento. Bloquear celdas protegidas.</div></li>
+        <li><span class="a-ico">🚦</span><div><strong>Checklists de gates</strong> — Crear checklist estandarizado (Word/PDF) para cada gate bloqueante: Gate E.2 (Plan=MEN), Gate E.3 (Concepto Fin.), Gate E.6 (Sílabos completos), Gate E.8 (Formato Banner completo).</div></li>
+        <li><span class="a-ico">📂</span><div><strong>Repositorio centralizado de formatos</strong> — Carpeta única en SharePoint/Drive con estructura estandarizada por programa, etapa y versión. Convención de nombres obligatoria: [COD_PROG]_[ETAPA]_v[N]_[AAAAMM].</div></li>
+        <li><span class="a-ico">🗓️</span><div><strong>Cronograma maestro del proceso</strong> — Tabla única con fechas límite por programa y etapa. Actualización semanal. Visibilidad para todas las áreas involucradas.</div></li>
+        <li><span class="a-ico">👤</span><div><strong>RACI formalizado</strong> — Matriz de roles aprobada por Vicerrectoría y comunicada a todas las áreas. Incluye reglas de escalamiento para bloqueos.</div></li>
+        <li><span class="a-ico">🔄</span><div><strong>Protocolo de modificación de asignaturas transversales</strong> — Formulario con lista de programas afectados. Aprobación de Vicerrectoría obligatoria antes de ejecutar.</div></li>
+      </div>
+
+      <div class="horizon-grid">
+        <div class="horizon-card">
+          <div class="h-period" style="color:var(--prop-1)">⚡ 0–3 meses · Quick Wins</div>
+          <ul>
+            <li>Versionar el Control Maestro y migrar a SharePoint</li>
+            <li>Publicar RACI del proceso en canal institucional</li>
+            <li>Crear checklists de los 4 gates bloqueantes</li>
+            <li>Definir convención de nombres de archivos</li>
+            <li>Cronograma maestro 2026-2 publicado y vivo</li>
+          </ul>
+        </div>
+        <div class="horizon-card">
+          <div class="h-period" style="color:var(--prop-1)">🏗️ 3–9 meses · Implementación</div>
+          <ul>
+            <li>Repositorio de formatos operativo al 100%</li>
+            <li>Gates aplicados en el 100% de programas del ciclo</li>
+            <li>Protocolo de asignaturas transversales en SGC</li>
+            <li>Tablero de seguimiento en Excel/Sheets centralizado</li>
+            <li>Capacitación de todos los actores del proceso</li>
+          </ul>
+        </div>
+        <div class="horizon-card">
+          <div class="h-period" style="color:var(--prop-1)">🎯 9–18 meses · Madurez</div>
+          <ul>
+            <li>Auditorías trimestrales de cumplimiento del proceso</li>
+            <li>Mapa de dependencias entre programas documentado</li>
+            <li>Indicadores de proceso publicados mensualmente</li>
+            <li>Manual de proceso aprobado y en SGC</li>
+            <li>Base para escalar a Propuesta 2</li>
+          </ul>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="card-grid-3" style="margin-top:16px">
+        <div class="card"><h3 style="font-size:.85rem;color:var(--accent-6)">✅ Fortalezas</h3><p>Sin inversión en nuevas herramientas. Alta probabilidad de adopción. Resultados visibles en semanas.</p></div>
+        <div class="card"><h3 style="font-size:.85rem;color:var(--accent-4)">⚠️ Limitaciones</h3><p>No elimina trabajo manual. Depende de disciplina organizacional. No resuelve escalabilidad a largo plazo.</p></div>
+        <div class="card"><h3 style="font-size:.85rem;color:var(--accent-1)">🎯 KPI Esperado</h3><p>Reducción del 40% en reprocesos en Banner. Tiempo de ciclo total reducido en 25%. Cero programas publicados con error de créditos.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S5 — PROPUESTA 2
+══════════════════════════════════════════ -->
+<section id="s5" style="background:var(--white)">
+  <div class="section-tag tag-teal">05 · Propuesta TO BE 2</div>
+  <h2>Automatización Inteligente</h2>
+  <p class="sec-lead">Segundo nivel: automatización de tareas repetitivas, repositorio centralizado con reglas de negocio, trazabilidad completa del proceso y reducción significativa de la intervención manual.</p>
+
+  <div class="proposal-card">
+    <div class="proposal-header" style="background:linear-gradient(135deg,#e0f2f1,#f5fffd)">
+      <div class="proposal-num" style="background:var(--prop-2)">2</div>
+      <div>
+        <h3 style="color:var(--prop-2)">🔷 Automatización Inteligente</h3>
+        <p>Implementar un sistema de gestión de flujo de trabajo (Power Automate / n8n / Jira) integrado con SharePoint como repositorio único, con reglas de negocio que bloqueen automáticamente el avance cuando los prerequisitos no estén cumplidos.</p>
+      </div>
+    </div>
+    <div class="proposal-body">
+      <div class="callout" style="border-left-color:var(--accent-2)"><strong>Principio rector:</strong> "El sistema debe ser el guardián del proceso, no las personas." Las reglas de negocio se codifican en el flujo; un gate fallido bloquea automáticamente y notifica al responsable.</div>
+
+      <h4 style="margin-bottom:12px;font-size:.9rem">Componentes de Automatización</h4>
+      <div class="action-list">
+        <li><span class="a-ico">⚡</span><div><strong>Motor de Flujo de Trabajo (Power Automate / n8n)</strong> — Automatiza: notificaciones de vencimiento de plazos, bloqueo de etapas cuando prerequisitos no están marcados como completos, escalamiento a Vicerrectoría si un gate lleva más de X días sin resolverse.</div></li>
+        <li><span class="a-ico">🗄️</span><div><strong>Repositorio único en SharePoint + Listas</strong> — Una "Lista de Programas" central con estado de cada etapa, responsable, fecha límite y semáforo de cumplimiento. Reemplaza el Excel del Control Maestro con estructura relacional.</div></li>
+        <li><span class="a-ico">📊</span><div><strong>Power BI Dashboard de Seguimiento</strong> — Panel en tiempo real: estado de cada programa por etapa, % de formatos completos, cuellos de botella actuales, tiempo de ciclo promedio por etapa. Actualización automática desde SharePoint.</div></li>
+        <li><span class="a-ico">🤖</span><div><strong>Script de Validación de Formato Banner</strong> — Script Python (conocimiento intermedio del equipo) que verifica completitud del formato antes de enviarlo a Operaciones: banco de preguntas ≥ N ítems, tipologías definidas, recursos presentes, distribución equilibrada.</div></li>
+        <li><span class="a-ico">📧</span><div><strong>Plantillas de Notificación Estandarizadas</strong> — Reemplazo de emails ad-hoc por notificaciones automáticas con contexto: qué falta, quién es responsable, cuál es la fecha límite y el impacto si no se resuelve.</div></li>
+        <li><span class="a-ico">🔗</span><div><strong>Integración Banner → SharePoint</strong> — Export automático del estado de parametrización de Banner a la lista central para visibilidad unificada del proceso.</div></li>
+      </div>
+
+      <div class="horizon-grid">
+        <div class="horizon-card">
+          <div class="h-period" style="color:var(--prop-2)">⚡ 0–3 meses · Quick Wins</div>
+          <ul>
+            <li>Migrar Control Maestro a SharePoint Listas</li>
+            <li>Power BI básico conectado a SharePoint</li>
+            <li>Script validación formato Banner (Python)</li>
+            <li>Alertas automáticas de vencimiento (Power Automate)</li>
+          </ul>
+        </div>
+        <div class="horizon-card">
+          <div class="h-period" style="color:var(--prop-2)">🏗️ 3–9 meses · Implementación</div>
+          <ul>
+            <li>Flujo completo Gates 1-4 automatizados</li>
+            <li>Dashboard de seguimiento operativo 100%</li>
+            <li>Integración Banner → SharePoint activa</li>
+            <li>Notificaciones automáticas en todas las etapas</li>
+            <li>Repositorio documental con versionado automático</li>
+          </ul>
+        </div>
+        <div class="horizon-card">
+          <div class="h-period" style="color:var(--prop-2)">🎯 9–18 meses · Madurez</div>
+          <ul>
+            <li>API de integración con sistema académico</li>
+            <li>Analítica predictiva de riesgo de incumplimiento</li>
+            <li>Automatización carga masiva a Banner (RPA)</li>
+            <li>SLA por etapa medido y publicado</li>
+            <li>Reducción 70% trabajo manual en gestión del proceso</li>
+          </ul>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="card-grid-3" style="margin-top:16px">
+        <div class="card"><h3 style="font-size:.85rem;color:var(--accent-6)">✅ Fortalezas</h3><p>Trazabilidad completa. Gates garantizados por sistema. Visibilidad en tiempo real. Escalable. Reducción masiva de reprocesos.</p></div>
+        <div class="card"><h3 style="font-size:.85rem;color:var(--accent-4)">⚠️ Inversión Requerida</h3><p>Licencias Power Platform / Office 365. 3–4 meses de configuración e integración. Capacitación del equipo (2 semanas).</p></div>
+        <div class="card"><h3 style="font-size:.85rem;color:var(--accent-2)">🎯 KPI Esperado</h3><p>Reducción 70% reprocesos. Tiempo ciclo total: -45%. Tiempo montaje Banner: -60%. Cero errores de publicación web.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S6 — PROPUESTA 3
+══════════════════════════════════════════ -->
+<section id="s6">
+  <div class="section-tag tag-purple">06 · Propuesta TO BE 3</div>
+  <h2>Transformación con IA y Agentes</h2>
+  <p class="sec-lead">Tercer nivel: sistema integrado de gestión curricular potenciado por inteligencia artificial para validación automática, extracción de documentos, generación asistida de contenidos y analítica avanzada en tiempo real.</p>
+
+  <div class="proposal-card">
+    <div class="proposal-header" style="background:linear-gradient(135deg,#f3e5f5,#fdf7ff)">
+      <div class="proposal-num" style="background:var(--prop-3)">3</div>
+      <div>
+        <h3 style="color:var(--prop-3)">🟣 Transformación con IA y Agentes</h3>
+        <p>Plataforma de gestión curricular donde la IA actúa como copiloto en cada etapa: extrae datos de resoluciones MEN, valida consistencia automáticamente, genera borradores de sílabos y proyecciones financieras, y un agente conversacional guía a los actores en tiempo real.</p>
+      </div>
+    </div>
+    <div class="proposal-body">
+      <div class="callout ai"><strong>Principio rector:</strong> "La IA no reemplaza al experto curricular; lo potencia eliminando el 80% del trabajo mecánico para que se enfoque en el 20% que requiere criterio académico."</div>
+
+      <h4 style="margin-bottom:12px;font-size:.9rem">Módulos de IA Propuestos</h4>
+      <div class="card-grid-2">
+        <div class="card" style="border-left:3px solid var(--accent-5)">
+          <h3 style="color:var(--accent-5);font-size:.9rem">🧠 Agente de Validación Documental</h3>
+          <p>Recibe resolución MEN en PDF → extrae automáticamente: nombre del programa, créditos, modalidad, semestres, asignaturas → los cruza contra el Control Maestro → genera reporte de discrepancias en segundos. Elimina la verificación campo a campo manual.</p>
+        </div>
+        <div class="card" style="border-left:3px solid var(--accent-5)">
+          <h3 style="color:var(--accent-5);font-size:.9rem">📄 Extractor de Datos de Resoluciones (PDF → Datos)</h3>
+          <p>Pipeline de extracción: PDF resolución MEN → OCR/parsing → JSON estructurado → validación automática → alerta si difiere del plan registrado. Compatible con Python (pdfplumber + Claude API para extracción semántica).</p>
+        </div>
+        <div class="card" style="border-left:3px solid var(--accent-5)">
+          <h3 style="color:var(--accent-5);font-size:.9rem">✍️ Generador Asistido de Sílabos</h3>
+          <p>El docente-autor ingresa: nombre de la asignatura, competencias, créditos, modalidad → la IA genera un borrador de sílabo alineado con la Matriz de Resultados de Aprendizaje → el docente revisa y ajusta. Reduce tiempo de elaboración de 3 días a 4 horas.</p>
+        </div>
+        <div class="card" style="border-left:var(--accent-5) solid 3px">
+          <h3 style="color:var(--accent-5);font-size:.9rem">💬 Copiloto del Proceso (Agente Conversacional)</h3>
+          <p>Chatbot institucional integrado en Teams/Web que responde: "¿Cuál es el estado de mi programa?", "¿Qué le falta al formato de Negocios Internacionales para pasar a Banner?", "¿Cuándo es la fecha límite de entrega de sílabos para 2026-2?" en tiempo real.</p>
+        </div>
+        <div class="card" style="border-left:3px solid var(--accent-5)">
+          <h3 style="color:var(--accent-5);font-size:.9rem">📊 Analítica Predictiva de Riesgo</h3>
+          <p>Modelo que predice qué programas tienen mayor probabilidad de no cumplir el deadline de apertura, basado en: estado actual de producción, historial de entregas, carga de trabajo del área. Alerta temprana 4–6 semanas antes del vencimiento.</p>
+        </div>
+        <div class="card" style="border-left:3px solid var(--accent-5)">
+          <h3 style="color:var(--accent-5);font-size:.9rem">🏦 Proyecciones Financieras Asistidas</h3>
+          <p>La IA genera una primera versión de proyecciones financieras a partir de la malla curricular y datos históricos de matrícula. Planeación Financiera revisa y ajusta, enfocándose en validación en lugar de elaboración desde cero.</p>
+        </div>
+      </div>
+
+      <div class="horizon-grid mt-24">
+        <div class="horizon-card">
+          <div class="h-period" style="color:var(--prop-3)">⚡ 0–3 meses · Fundamentos IA</div>
+          <ul>
+            <li>POC extractor PDF resoluciones MEN (Python)</li>
+            <li>Prototipo validador Plan=Banner automatizado</li>
+            <li>Integración básica Claude API con flujo de proceso</li>
+            <li>Primeras plantillas de sílabos asistidas por IA</li>
+          </ul>
+        </div>
+        <div class="horizon-card">
+          <div class="h-period" style="color:var(--prop-3)">🏗️ 3–9 meses · Plataforma Core</div>
+          <ul>
+            <li>Agente de validación documental en producción</li>
+            <li>Generador de sílabos integrado al LMS</li>
+            <li>Copiloto conversacional (Teams / web)</li>
+            <li>Dashboard analítico con alertas predictivas</li>
+            <li>Sistema integrado de gestión curricular v1</li>
+          </ul>
+        </div>
+        <div class="horizon-card">
+          <div class="h-period" style="color:var(--prop-3)">🎯 9–18 meses · Plataforma Madura</div>
+          <ul>
+            <li>Automatización carga Banner por IA (RPA+ML)</li>
+            <li>Modelo predictivo de deserción por cambio curricular</li>
+            <li>BI avanzado: impacto financiero por reforma</li>
+            <li>Integración con MEN: notificaciones automáticas</li>
+            <li>Centro de excelencia curricular digital</li>
+          </ul>
+        </div>
+      </div>
+
+      <hr class="divider">
+      <div class="card-grid-3" style="margin-top:16px">
+        <div class="card"><h3 style="font-size:.85rem;color:var(--accent-6)">✅ Fortalezas</h3><p>Eliminación del 80% trabajo mecánico. Cero errores de consistencia Plan=MEN. Ciclo de reforma reducido de 12 a 4 meses. Escalable a todos los programas.</p></div>
+        <div class="card"><h3 style="font-size:.85rem;color:var(--accent-4)">⚠️ Consideraciones</h3><p>Requiere gestión del cambio robusta. Inversión en infraestructura cloud y API. Personal técnico dedicado (1 data engineer, 1 dev). Horizonte de ROI: 18 meses.</p></div>
+        <div class="card"><h3 style="font-size:.85rem;color:var(--accent-5)">🎯 KPI Esperado</h3><p>Reducción 85% reprocesos. Tiempo ciclo: -70%. Cero discrepancias Plan=MEN. Tiempo elaboración sílabos: -75%. NPS del proceso +40 puntos.</p></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S7 — HORIZONTES (RESUMEN)
+══════════════════════════════════════════ -->
+<section id="s7" style="background:var(--mist)">
+  <div class="section-tag tag-blue">07 · Horizontes de Tiempo</div>
+  <h2>Hoja de Ruta Integrada — 3 Propuestas</h2>
+  <p class="sec-lead">Visión consolidada de los tres horizontes de tiempo para las propuestas de transformación, con dependencias entre propuestas y criterios de transición.</p>
+
+  <table class="comparison-table mb-24">
+    <thead>
+      <tr>
+        <th>Horizonte</th>
+        <th style="color:#93c5fd">🔹 Propuesta 1 · Optimización</th>
+        <th style="color:#5eead4">🔷 Propuesta 2 · Automatización</th>
+        <th style="color:#c4b5fd">🟣 Propuesta 3 · IA</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>⚡ 0–3 meses<br><span style="font-weight:400;font-size:.75rem;color:var(--ink-3)">Quick Wins</span></td>
+        <td class="td-good">Control Maestro versionado · RACI publicado · 4 gates documentados · Convención de nombres</td>
+        <td>Migrar a SharePoint Listas · Power BI básico · Script validación Banner · Alertas automáticas</td>
+        <td>POC extractor PDF · Prototipo validador · Integración Claude API básica</td>
+      </tr>
+      <tr>
+        <td>🏗️ 3–9 meses<br><span style="font-weight:400;font-size:.75rem;color:var(--ink-3)">Implementación</span></td>
+        <td class="td-good">Repositorio 100% operativo · Gates aplicados · Protocolo asignaturas transversales · Capacitación</td>
+        <td class="td-great">Flujo completo automatizado · Dashboard en vivo · Integración Banner · SLA por etapa</td>
+        <td>Agente validación documental · Generador sílabos · Copiloto conversacional</td>
+      </tr>
+      <tr>
+        <td>🎯 9–18 meses<br><span style="font-weight:400;font-size:.75rem;color:var(--ink-3)">Madurez</span></td>
+        <td>Auditorías trimestrales · Manual en SGC · Base para P2</td>
+        <td class="td-great">API integración académica · Analítica predictiva · RPA carga Banner · SLA medido</td>
+        <td class="td-great">Plataforma integrada · Predictivo deserción · BI avanzado · Centro excelencia curricular</td>
+      </tr>
+      <tr>
+        <td>💰 Inversión estimada</td>
+        <td class="td-good"><strong>Baja</strong> — Solo horas persona y licencias existentes</td>
+        <td><strong>Media</strong> — Power Platform + 3–4 meses dev. ~$15–30M COP</td>
+        <td><strong>Alta</strong> — Cloud + API + Personal técnico. ~$80–150M COP/año</td>
+      </tr>
+      <tr>
+        <td>🎯 Reducción reprocesos</td>
+        <td>~40%</td>
+        <td>~70%</td>
+        <td>~85–90%</td>
+      </tr>
+      <tr>
+        <td>⏱️ Reducción tiempo ciclo</td>
+        <td>~25%</td>
+        <td>~45%</td>
+        <td>~70%</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <div class="callout success"><strong>Recomendación de ruta:</strong> Iniciar con Propuesta 1 de inmediato (0 inversión en tecnología). Planificar Propuesta 2 en paralelo para el ciclo 2027-1. Construir la base técnica de Propuesta 3 como evolución natural de la Propuesta 2 hacia 2028. Las propuestas son acumulativas: cada una construye sobre la anterior.</div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S8 — GOBIERNO
+══════════════════════════════════════════ -->
+<section id="s8">
+  <div class="section-tag tag-amber">08 · Gobierno de la Información</div>
+  <h2>Estrategia de Gobierno de Datos e Información</h2>
+  <p class="sec-lead">Marco de gobierno para el control de versiones documental, estandarización de formatos, gestión centralizada de datos, roles y trazabilidad del proceso de reforma curricular.</p>
+
+  <!-- Control de versiones -->
+  <div class="two-col mb-24">
+    <div>
+      <h3 style="font-size:1rem;margin-bottom:14px">📁 Control de Versiones Documental</h3>
+      <div class="card">
+        <h3 style="font-size:.85rem">Convención de Nombres Estándar</h3>
+        <p style="font-family:'JetBrains Mono',monospace;font-size:.8rem;background:var(--mist);padding:10px;border-radius:6px;margin-top:8px;line-height:1.7">
+          [COD_PROG]_[ETAPA]_[TIPO]_v[N.N]_[AAAAMM].xlsx<br>
+          <span style="color:var(--accent-2)">NIV_E02_PLAN_v1.3_202604.xlsx</span><br>
+          <span style="color:var(--accent-2)">DER_E06_SYL_v2.0_202605.pdf</span>
+        </p>
+        <p style="margin-top:10px">Versionado semántico: MAYOR.MENOR. Incremento mayor = cambio estructural aprobado por Vicerrectoría. Incremento menor = corrección o ajuste dentro de la etapa.</p>
+      </div>
+    </div>
+    <div>
+      <h3 style="font-size:1rem;margin-bottom:14px">🏛️ Jerarquía Documental</h3>
+      <div class="action-list">
+        <li><span class="a-ico">📜</span><div><strong>Nivel 1 — Resolución MEN</strong> (fuente de verdad legal). Solo lectura. Custodio: Aseguramiento.</div></li>
+        <li><span class="a-ico">📋</span><div><strong>Nivel 2 — Control Maestro</strong> (fuente de verdad operativa). Edición controlada. Custodio: Dir. Currículo.</div></li>
+        <li><span class="a-ico">📄</span><div><strong>Nivel 3 — Formatos de proceso</strong> (sílabos, formatos Banner, etc.). Versionados. Custodio: escuela / área dueña.</div></li>
+        <li><span class="a-ico">💬</span><div><strong>Nivel 4 — Comunicaciones</strong> (correos, actas de reunión). Archivadas. Sin valor regulatorio.</div></li>
+      </div>
+    </div>
+  </div>
+
+  <!-- RACI -->
+  <h3 style="font-size:1rem;margin-bottom:16px">🗂️ Matriz RACI del Proceso</h3>
+  <div style="overflow-x:auto;margin-bottom:28px">
+    <table class="raci-table">
+      <thead>
+        <tr>
+          <th style="text-align:left;padding-left:16px;min-width:200px">Actividad / Decisión</th>
+          <th>Dir. Escuela</th>
+          <th>Dir. Currículo</th>
+          <th>Vice Acad.</th>
+          <th>Aseguramie.</th>
+          <th>Pla. Fin.</th>
+          <th>Grt. Virtual</th>
+          <th>Grt. Oper.</th>
+          <th>Mercadeo</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Elaborar propuesta de reforma</td>
+          <td><span class="r-R">R</span></td><td><span class="r-C">C</span></td><td><span class="r-A">A</span></td>
+          <td></td><td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td>Validar Plan = Resolución MEN</td>
+          <td></td><td><span class="r-C">C</span></td><td><span class="r-A">A</span></td>
+          <td><span class="r-R">R</span></td><td></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td>Emitir Concepto Financiero</td>
+          <td><span class="r-I">I</span></td><td><span class="r-I">I</span></td><td><span class="r-A">A</span></td>
+          <td></td><td><span class="r-R">R</span></td><td></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td>Elaborar Plan de Virtualización</td>
+          <td><span class="r-C">C</span></td><td><span class="r-C">C</span></td><td><span class="r-A">A</span></td>
+          <td></td><td></td><td><span class="r-R">R</span></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td>Entregar Sílabos</td>
+          <td><span class="r-R">R</span></td><td><span class="r-A">A</span></td><td><span class="r-I">I</span></td>
+          <td></td><td></td><td><span class="r-C">C</span></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td>Producir contenidos virtuales</td>
+          <td><span class="r-I">I</span></td><td><span class="r-C">C</span></td><td><span class="r-A">A</span></td>
+          <td></td><td></td><td><span class="r-R">R</span></td><td></td><td></td>
+        </tr>
+        <tr>
+          <td>Actualizar convenios / homologación</td>
+          <td><span class="r-I">I</span></td><td><span class="r-C">C</span></td><td><span class="r-A">A</span></td>
+          <td></td><td></td><td></td><td><span class="r-C">C</span></td><td></td>
+        </tr>
+        <tr>
+          <td>Parametrizar en Banner</td>
+          <td><span class="r-I">I</span></td><td><span class="r-I">I</span></td><td><span class="r-A">A</span></td>
+          <td><span class="r-C">C</span></td><td></td><td></td><td><span class="r-R">R</span></td><td></td>
+        </tr>
+        <tr>
+          <td>Aprobar y publicar oferta</td>
+          <td><span class="r-I">I</span></td><td><span class="r-C">C</span></td><td><span class="r-A">A</span></td>
+          <td><span class="r-C">C</span></td><td></td><td></td><td><span class="r-I">I</span></td><td><span class="r-R">R</span></td>
+        </tr>
+        <tr>
+          <td>Modificar asignatura transversal</td>
+          <td><span class="r-R">R</span></td><td><span class="r-R">R</span></td><td><span class="r-A">A</span></td>
+          <td><span class="r-C">C</span></td><td></td><td><span class="r-I">I</span></td><td><span class="r-I">I</span></td><td></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+  <div class="card-grid-4 mb-24">
+    <div class="card"><span style="font-size:.75rem;font-weight:700">R — Responsable</span><p style="margin-top:4px">Ejecuta la actividad. Solo uno por actividad.</p></div>
+    <div class="card"><span style="font-size:.75rem;font-weight:700">A — Aprobador</span><p style="margin-top:4px">Rinde cuentas del resultado. Solo uno.</p></div>
+    <div class="card"><span style="font-size:.75rem;font-weight:700">C — Consultado</span><p style="margin-top:4px">Aporta criterio experto antes de ejecutar.</p></div>
+    <div class="card"><span style="font-size:.75rem;font-weight:700">I — Informado</span><p style="margin-top:4px">Recibe notificación del resultado.</p></div>
+  </div>
+
+  <!-- Estandarización formatos -->
+  <h3 style="font-size:1rem;margin-bottom:14px">📐 Estandarización de Formatos (12+ formatos)</h3>
+  <div class="callout warn"><strong>Estado actual:</strong> Más de 12 formatos vigentes sin control de versiones, sin fecha de aprobación visible y sin custodio formal asignado. Esto es el origen del 35% de los reprocesos documentados.</div>
+  <div class="three-col mt-16">
+    <div class="card">
+      <h3 style="font-size:.85rem">🔴 Acción Inmediata (2 semanas)</h3>
+      <p>Inventario de todos los formatos vigentes. Asignar custodio a cada uno. Publicar versión vigente en repositorio único. Archivar versiones anteriores.</p>
+    </div>
+    <div class="card">
+      <h3 style="font-size:.85rem">🟡 Corto Plazo (1–3 meses)</h3>
+      <p>Revisar y unificar formatos redundantes. Definir ciclo de revisión semestral. Automatizar distribución de versión actualizada mediante alert automática a usuarios.</p>
+    </div>
+    <div class="card">
+      <h3 style="font-size:.85rem">🟢 Mediano Plazo (3–6 meses)</h3>
+      <p>Formularios digitales que reemplacen archivos adjuntos. Validaciones automáticas en el formulario. Generación automática del formato completo al finalizar.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S9 — ARQUITECTURA
+══════════════════════════════════════════ -->
+<section id="s9" style="background:var(--white)">
+  <div class="section-tag tag-teal">09 · Arquitectura de Solución</div>
+  <h2>Arquitectura Tecnológica (Alto Nivel)</h2>
+  <p class="sec-lead">Componentes tecnológicos, integraciones y capas funcionales de la solución propuesta, alineada con las capacidades actuales del equipo (Python intermedio, Excel/Power BI avanzado, HTML/JS básico).</p>
+
+  <!-- Architecture diagram -->
+  <div class="flow-container mb-24">
+    <p style="font-size:.72rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--ink-3);margin-bottom:18px">Arquitectura en Capas</p>
+    <div style="display:flex;flex-direction:column;gap:12px;min-width:700px">
+      <!-- Layer 5 - Users -->
+      <div style="background:#f0f7ff;border:2px dashed #93c5fd;border-radius:10px;padding:16px 20px">
+        <div style="font-size:.68rem;font-weight:700;color:#1565c0;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">👤 Capa de Presentación — Usuarios Finales</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <span style="background:white;border:1px solid #dbeafe;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Power BI Dashboard</span>
+          <span style="background:white;border:1px solid #dbeafe;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">SharePoint Portal</span>
+          <span style="background:white;border:1px solid #dbeafe;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Copiloto Teams / Web</span>
+          <span style="background:white;border:1px solid #dbeafe;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Notificaciones Email</span>
+        </div>
+      </div>
+      <!-- Layer 4 - IA -->
+      <div style="background:#fdf4ff;border:2px dashed #d8b4fe;border-radius:10px;padding:16px 20px">
+        <div style="font-size:.68rem;font-weight:700;color:#7b2fbe;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">🧠 Capa de IA y Automatización</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <span style="background:white;border:1px solid #e9d5ff;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Claude API (validación docs)</span>
+          <span style="background:white;border:1px solid #e9d5ff;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Power Automate (flujos)</span>
+          <span style="background:white;border:1px solid #e9d5ff;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Python Scripts (ETL, validación)</span>
+          <span style="background:white;border:1px solid #e9d5ff;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">n8n / Make (orquestación)</span>
+        </div>
+      </div>
+      <!-- Layer 3 - Process -->
+      <div style="background:#f0fdf4;border:2px dashed #86efac;border-radius:10px;padding:16px 20px">
+        <div style="font-size:.68rem;font-weight:700;color:#166534;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">⚙️ Capa de Proceso y Lógica de Negocio</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <span style="background:white;border:1px solid #bbf7d0;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Motor de Gates (reglas)</span>
+          <span style="background:white;border:1px solid #bbf7d0;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Workflow Engine (etapas)</span>
+          <span style="background:white;border:1px solid #bbf7d0;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Validador de Formatos</span>
+          <span style="background:white;border:1px solid #bbf7d0;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Alertas y Escalamiento</span>
+        </div>
+      </div>
+      <!-- Layer 2 - Storage -->
+      <div style="background:#fff7ed;border:2px dashed #fde68a;border-radius:10px;padding:16px 20px">
+        <div style="font-size:.68rem;font-weight:700;color:#92400e;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">🗄️ Capa de Datos y Almacenamiento</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <span style="background:white;border:1px solid #fde68a;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">SharePoint Listas (proceso)</span>
+          <span style="background:white;border:1px solid #fde68a;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">SharePoint Docs (repositorio)</span>
+          <span style="background:white;border:1px solid #fde68a;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">SQL / Dataverse (histórico)</span>
+          <span style="background:white;border:1px solid #fde68a;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Azure Blob (PDFs / archivos)</span>
+        </div>
+      </div>
+      <!-- Layer 1 - Source -->
+      <div style="background:#fef2f2;border:2px dashed #fca5a5;border-radius:10px;padding:16px 20px">
+        <div style="font-size:.68rem;font-weight:700;color:#991b1b;letter-spacing:.1em;text-transform:uppercase;margin-bottom:8px">📡 Sistemas Fuente (Integración)</div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap">
+          <span style="background:white;border:1px solid #fecaca;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Banner ERP</span>
+          <span style="background:white;border:1px solid #fecaca;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">LMS (Blackboard / Moodle)</span>
+          <span style="background:white;border:1px solid #fecaca;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Portal MEN (resoluciones)</span>
+          <span style="background:white;border:1px solid #fecaca;border-radius:6px;padding:6px 12px;font-size:.75rem;font-weight:600">Microsoft 365 (correo / Teams)</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Tools grid -->
+  <h3 style="font-size:1rem;margin-bottom:16px">🛠️ Stack Tecnológico Recomendado</h3>
+  <div class="tools-grid">
+    <div class="tool-card">
+      <div class="t-ico">📊</div>
+      <div class="t-name">Microsoft Power BI</div>
+      <div class="t-cat" style="color:var(--accent-1)">Visualización · Analítica</div>
+      <div class="t-desc">Dashboard de seguimiento del proceso en tiempo real. Semáforos por programa, tiempo de ciclo, métricas de cumplimiento. Compatible con SharePoint y Excel.</div>
+      <div class="t-compat"><span class="compat-pill">P1</span><span class="compat-pill">P2</span><span class="compat-pill">P3</span><span class="compat-pill" style="background:#e3f2fd;color:#1565c0">Equipo ya capacitado</span></div>
+    </div>
+    <div class="tool-card">
+      <div class="t-ico">⚡</div>
+      <div class="t-name">Power Automate</div>
+      <div class="t-cat" style="color:var(--accent-2)">Automatización · Flujos</div>
+      <div class="t-desc">Automatización de notificaciones, gates, escalamientos y aprobaciones. Integración nativa con SharePoint, Teams, Outlook y Forms. Sin código requerido para flujos básicos.</div>
+      <div class="t-compat"><span class="compat-pill">P2</span><span class="compat-pill">P3</span></div>
+    </div>
+    <div class="tool-card">
+      <div class="t-ico">🗂️</div>
+      <div class="t-name">SharePoint + Listas</div>
+      <div class="t-cat" style="color:var(--accent-4)">Repositorio · Base de datos</div>
+      <div class="t-desc">Repositorio central de documentos con versionado automático. Listas como base de datos relacional del proceso. Permisos por rol. Integración nativa con Power Platform.</div>
+      <div class="t-compat"><span class="compat-pill">P1</span><span class="compat-pill">P2</span><span class="compat-pill">P3</span></div>
+    </div>
+    <div class="tool-card">
+      <div class="t-ico">🐍</div>
+      <div class="t-name">Python (pdfplumber + pandas)</div>
+      <div class="t-cat" style="color:var(--accent-5)">ETL · Validación · Extracción</div>
+      <div class="t-desc">Scripts de extracción de datos de PDFs (resoluciones MEN), validación de formatos Banner, ETL hacia SharePoint. Accesible con conocimiento intermedio del equipo.</div>
+      <div class="t-compat"><span class="compat-pill">P2</span><span class="compat-pill">P3</span><span class="compat-pill" style="background:#f3e5f5;color:#6a1b9a">Equipo tiene base</span></div>
+    </div>
+    <div class="tool-card">
+      <div class="t-ico">🧠</div>
+      <div class="t-name">Claude API (Anthropic)</div>
+      <div class="t-cat" style="color:var(--accent-5)">IA · NLP · Validación semántica</div>
+      <div class="t-desc">Extracción semántica de resoluciones MEN, validación de coherencia documental, generación asistida de sílabos, copiloto conversacional del proceso. API REST compatible con Python.</div>
+      <div class="t-compat"><span class="compat-pill">P3</span></div>
+    </div>
+    <div class="tool-card">
+      <div class="t-ico">🔗</div>
+      <div class="t-name">n8n / Make</div>
+      <div class="t-cat" style="color:var(--accent-2)">Orquestación · Integración</div>
+      <div class="t-desc">Plataforma de integración low-code para conectar Banner, SharePoint, LMS y API de IA. Alternativa open-source (n8n) o SaaS (Make). Manejo visual de flujos complejos.</div>
+      <div class="t-compat"><span class="compat-pill">P2</span><span class="compat-pill">P3</span></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══════════════════════════════════════════
+     S10 — INDICADORES
+══════════════════════════════════════════ -->
+<section id="s10" style="background:var(--mist)">
+  <div class="section-tag tag-green">10 · Indicadores de Mejora</div>
+  <h2>KPIs Esperados y Comparativa AS IS vs. TO BE</h2>
+  <p class="sec-lead">Indicadores clave de rendimiento del proceso con línea base AS IS y proyecciones de mejora para cada propuesta de transformación.</p>
+
+  <table class="comparison-table mb-24">
+    <thead>
+      <tr>
+        <th>Indicador</th>
+        <th style="color:#fca5a5">📉 AS IS (Actual)</th>
+        <th style="color:#93c5fd">🔹 TO BE 1</th>
+        <th style="color:#5eead4">🔷 TO BE 2</th>
+        <th style="color:#c4b5fd">🟣 TO BE 3</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr>
+        <td>Tiempo ciclo total reforma</td>
+        <td class="td-bad">12–18 meses</td>
+        <td>9–13 meses (−25%)</td>
+        <td class="td-good">6–9 meses (−45%)</td>
+        <td class="td-great">3–6 meses (−70%)</td>
+      </tr>
+      <tr>
+        <td>Tiempo montaje módulo en Banner</td>
+        <td class="td-bad">8 h (incompleto) / 25 min (completo)</td>
+        <td>~40 min (gates previos)</td>
+        <td class="td-good">~25 min consistente</td>
+        <td class="td-great">~15 min (carga asistida)</td>
+      </tr>
+      <tr>
+        <td>% programas con error Plan ≠ MEN</td>
+        <td class="td-bad">~35% (estimado)</td>
+        <td>~20%</td>
+        <td class="td-good">~5%</td>
+        <td class="td-great">~0% (validación automática)</td>
+      </tr>
+      <tr>
+        <td>Formatos incompletos enviados a Oper.</td>
+        <td class="td-bad">Alto (sin datos exactos)</td>
+        <td>~60% reducción (gate)</td>
+        <td class="td-good">~90% reducción (validación automática)</td>
+        <td class="td-great">~99% reducción (IA)</td>
+      </tr>
+      <tr>
+        <td>Programas sin concepto financiero</td>
+        <td class="td-bad">5 activos en 2026-2</td>
+        <td>0 (gate bloqueante)</td>
+        <td class="td-good">0 (automatizado)</td>
+        <td class="td-great">0 + proyección asistida IA</td>
+      </tr>
+      <tr>
+        <td>Tiempo elaboración sílabo docente</td>
+        <td class="td-bad">3–5 días</td>
+        <td>3 días (plantilla estándar)</td>
+        <td>2 días (plantilla digital)</td>
+        <td class="td-great">4–8 horas (asistencia IA)</td>
+      </tr>
+      <tr>
+        <td>Visibilidad del estado del proceso</td>
+        <td class="td-bad">Solo en reuniones manuales</td>
+        <td>Cronograma maestro semanal</td>
+        <td class="td-good">Dashboard en tiempo real</td>
+        <td class="td-great">Dashboard predictivo + alertas</td>
+      </tr>
+      <tr>
+        <td>Reprocesos por etapa</td>
+        <td class="td-bad">Múltiples por ciclo (28 casuísticas activas)</td>
+        <td>~40% reducción</td>
+        <td class="td-good">~70% reducción</td>
+        <td class="td-great">~85% reducción</td>
+      </tr>
+      <tr>
+        <td>Errores en publicación web</td>
+        <td class="td-bad">Frecuentes (detectados post-publicación)</td>
+        <td>~50% reducción (flujo autorización)</td>
+        <td class="td-good">~95% reducción (gates automáticos)</td>
+        <td class="td-great">0 errores (validación IA pre-publi.)</td>
+      </tr>
+      <tr>
+        <td>Trazabilidad del proceso</td>
+        <td class="td-bad">Nula (correos y reuniones)</td>
+        <td>Parcial (repositorio + cronograma)</td>
+        <td class="td-good">Completa (log automático)</td>
+        <td class="td-great">Completa + auditable + predictiva</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- Final callout -->
+  <div class="callout success">
+    <strong>Conclusión estratégica:</strong> El proceso de reforma curricular se encuentra en nivel de madurez 2/5. Los 28 hallazgos documentados generan reprocesos cuantificables, riesgo regulatorio activo ante el MEN y retrasos en la oferta académica. La ruta recomendada es una transformación progresiva en tres horizontes: <strong>Propuesta 1 inmediatamente</strong> (sin inversión, alta visibilidad), <strong>Propuesta 2 en 2026-2H</strong> (automatización con Power Platform, accesible para el equipo actual) y <strong>Propuesta 3 como visión 2027–2028</strong> (IA y agentes). El stack tecnológico propuesto está alineado con las capacidades del equipo (Python intermedio, Power BI avanzado) y con la infraestructura Microsoft 365 ya disponible en la institución.
+  </div>
+
+  <!-- Footer -->
+  <div style="margin-top:40px;padding-top:24px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;flex-wrap:gap;font-size:.75rem;color:var(--ink-3)">
+    <div>PMO · Reforma Curricular · Politécnico Grancolombiano · Abril 2026</div>
+    <div style="display:flex;gap:16px">
+      <span>📋 60 programas</span>
+      <span>🔍 8 etapas analizadas</span>
+      <span>💡 3 propuestas TO BE</span>
+    </div>
+  </div>
+</section>
+
+</main>
+</div>
+
+<script>
+// Scroll progress bar
+window.addEventListener('scroll', () => {
+  const el = document.getElementById('spb');
+  if (!el) return;
+  const doc = document.documentElement;
+  const scrolled = doc.scrollTop;
+  const total = doc.scrollHeight - doc.clientHeight;
+  el.style.width = total ? (scrolled / total * 100) + '%' : '0%';
+});
+
+// Sidebar scroll spy
+const sections = document.querySelectorAll('section[id]');
+const navItems = document.querySelectorAll('.nav-item');
+
+const observer = new IntersectionObserver(entries => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      const id = e.target.id;
+      navItems.forEach(n => {
+        n.classList.toggle('active', n.getAttribute('href') === '#' + id);
+      });
+    }
+  });
+}, { threshold: 0.3 });
+
+sections.forEach(s => observer.observe(s));
+</script>
+</body>
+</html>
