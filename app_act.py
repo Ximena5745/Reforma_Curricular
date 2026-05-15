@@ -5,9 +5,6 @@ Fuente: hoja Etapas · CONTROL MAESTRO DE REFORMA CURRICULAR_VACT.xlsx
 
 import html as html_lib
 import io
-import json
-import math
-import time
 from pathlib import Path
 
 import pandas as pd
@@ -26,6 +23,27 @@ from utils.data_loader_vact import (
     color_for_pct,
     load_etapas_data,
 )
+from utils.poli_theme import (
+    BG_ROW,
+    BG_ROW_ALT,
+    BG_TABLE,
+    BORDER_ROW,
+    BORDER_TABLE,
+    BRAND_ACCENT,
+    BRAND_HIGHLIGHT,
+    BRAND_PRIMARY,
+    BRAND_SECONDARY,
+    MODALIDAD_CLR,
+    PERIODO_CLR,
+    TEXT_LIGHT,
+    TEXT_MUTED,
+    TEXT_NA,
+    TEXT_PRIMARY,
+    TEXT_SUBTLE,
+    badge_html,
+    p_bar_html,
+    streamlit_global_css,
+)
 
 st.set_page_config(
     page_title="Reforma Curricular · Fase 2 · POLI",
@@ -33,27 +51,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-_DEBUG_LOG = Path(__file__).resolve().parent / "debug-758968.log"
-
-
-def _dbg_log(hypothesis_id: str, location: str, message: str, data: dict | None = None) -> None:
-    # #region agent log
-    try:
-        payload = {
-            "sessionId": "758968",
-            "hypothesisId": hypothesis_id,
-            "location": location,
-            "message": message,
-            "data": data or {},
-            "timestamp": int(time.time() * 1000),
-        }
-        with open(_DEBUG_LOG, "a", encoding="utf-8") as f:
-            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
-    except Exception:
-        pass
-    # #endregion
-
 
 def _registered_page_targets() -> set[str]:
     """Rutas/nombres de script registrados como páginas Streamlit."""
@@ -85,80 +82,7 @@ def _safe_page_link(page: str, **kwargs) -> bool:
     except st.errors.StreamlitPageNotFoundError:
         return False
 
-# ── CSS global (filtros + Gantt Fase 2) ───────────────────────────────────────
-st.markdown("""
-<style>
-[data-testid="stAppViewContainer"] { background: #EEF3F8; }
-[data-testid="stHeader"] {
-    background: linear-gradient(135deg, #0F385A 0%, #1A5276 50%, #1FB2DE 100%) !important;
-    border-bottom: 3px solid #42F2F2 !important;
-}
-h1,h2,h3,h4 { font-family: 'Segoe UI', sans-serif; color: #0F385A !important; }
-.block-container { padding-top: 3.5rem !important; }
-[data-testid="stSidebar"] {
-    background: linear-gradient(180deg, #0F385A 0%, #1A5276 45%, #1FB2DE 100%) !important;
-}
-[data-testid="stSidebarNav"] { display: none !important; }
-[data-testid="stSidebar"] p, [data-testid="stSidebar"] span, [data-testid="stSidebar"] label {
-    color: rgba(255,255,255,0.80) !important;
-}
-[data-testid="stPills"] button {
-    border: 2px solid #1A5276 !important; color: #1A5276 !important;
-    background: #FFFFFF !important; border-radius: 20px !important;
-    font-size: 12px !important; font-weight: 600 !important;
-}
-[data-testid="stPills"] button[aria-checked="true"],
-[data-testid="stPills"] button[aria-pressed="true"] {
-    background: #0F385A !important; color: #FFFFFF !important; border-color: #0F385A !important;
-}
-[data-testid="stBaseButton-primary"] {
-    background: linear-gradient(135deg,#1FB2DE,#0891b2) !important;
-    border-color: #1FB2DE !important; color: #FFFFFF !important;
-    font-size: 11px !important; font-weight: 700 !important; border-radius: 8px !important;
-}
-button[data-baseweb="tab"][aria-selected="true"] {
-    color: #0F385A !important; border-bottom-color: #1FB2DE !important; font-weight: 700 !important;
-}
-/* ── Fase 2: tarjetas etapa ── */
-.f2-scard {
-    background: #fff; border-radius: 12px; padding: 16px 18px;
-    border-left: 5px solid var(--accent, #1FB2DE);
-    box-shadow: 0 2px 8px rgba(15,56,90,0.08); height: 100%;
-}
-.f2-scard-title { font-size: 11px; font-weight: 700; color: #6a8a9e;
-    text-transform: uppercase; letter-spacing: .5px; margin-bottom: 6px; }
-.f2-scard-pct { font-size: 36px; font-weight: 800; color: #0F385A; line-height: 1; }
-.f2-scard-sub { font-size: 11px; color: #6a8a9e; margin-top: 6px; }
-.f2-bar-wrap { height: 8px; background: #e2e8f0; border-radius: 4px; margin-top: 10px; overflow: hidden; }
-.f2-bar-fill { height: 100%; border-radius: 4px; transition: width .3s; }
-/* ── Gantt ── */
-.f2-gantt { font-family: 'Segoe UI', sans-serif; }
-.f2-gantt-row { display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }
-.f2-gantt-label { width: 200px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: #0F385A; }
-.f2-gantt-track { flex: 1; height: 28px; background: #e8eef4; border-radius: 6px; overflow: hidden; position: relative; }
-.f2-gantt-fill { height: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; min-width: 36px; }
-.f2-gantt-pct { font-size: 12px; font-weight: 700; color: #fff; text-shadow: 0 1px 2px rgba(0,0,0,.25); }
-.f2-gantt-pct-out { width: 48px; text-align: right; font-size: 13px; font-weight: 700; color: #0F385A; flex-shrink: 0; }
-.f2-gantt-general .f2-gantt-label { font-weight: 800; }
-.f2-gantt-general .f2-gantt-track { height: 34px; }
-/* ── Programa card ── */
-.f2-prog-card {
-    background: #fff; border-radius: 12px; padding: 18px 22px;
-    box-shadow: 0 2px 10px rgba(15,56,90,0.09); margin-bottom: 16px;
-    display: flex; gap: 24px; align-items: stretch; flex-wrap: wrap;
-}
-.f2-prog-info { flex: 1; min-width: 280px; }
-.f2-prog-info h3 { margin: 0 0 12px; font-size: 18px; color: #0F385A; }
-.f2-prog-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px 20px; font-size: 13px; }
-.f2-prog-grid span.lbl { color: #6a8a9e; font-size: 10px; text-transform: uppercase; letter-spacing: .4px; display: block; }
-.f2-prog-badge {
-    min-width: 120px; text-align: center; padding: 16px; border-radius: 12px;
-    display: flex; flex-direction: column; justify-content: center; align-items: center;
-}
-.f2-prog-badge-pct { font-size: 42px; font-weight: 800; line-height: 1; }
-.f2-prog-badge-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; margin-top: 6px; opacity: .85; }
-</style>
-""", unsafe_allow_html=True)
+st.markdown(streamlit_global_css(), unsafe_allow_html=True)
 
 # ── Datos ─────────────────────────────────────────────────────────────────────
 df_raw = load_etapas_data()
@@ -170,38 +94,19 @@ pers_ops = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist(
 niveles_ops = [n for n in ["Pregrado", "Posgrado"] if n in df_raw.get("NIVEL_HOMOLOGADO", pd.Series(dtype=str)).values]
 
 _use_pills = hasattr(st, "pills")
-_LBL = 'style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px;white-space:nowrap"'
+_LBL = (
+    f'style="padding-top:8px;font-size:11px;font-weight:700;color:{TEXT_PRIMARY};'
+    f'letter-spacing:.4px;white-space:nowrap"'
+)
 
 
 def _esc(s):
     return html_lib.escape(str(s) if s is not None else "—")
 
 
-# ── Helpers HTML (patrón Priorización · app.py) ─────────────────────────────
 def _p_esc(s):
     return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
-
-def _p_bar(pct):
-    try:
-        pct = float(pct if pct is not None else 0)
-    except Exception:
-        pct = 0.0
-    if math.isnan(pct):
-        pct = 0.0
-    clr = "#15803d" if pct >= 70 else ("#d97706" if pct >= 40 else "#dc2626")
-    bar = "#22c55e" if pct >= 70 else ("#f59e0b" if pct >= 40 else "#ef4444")
-    return (
-        f'<div style="min-width:70px;text-align:center">'
-        f'<div style="font-size:12px;font-weight:700;color:{clr};margin-bottom:3px">{int(pct)}%</div>'
-        f'<div style="height:6px;background:#e2e8f0;border-radius:4px;overflow:hidden">'
-        f'<div style="width:{min(pct, 100):.0f}%;height:100%;background:{bar};border-radius:4px;'
-        f'box-shadow:0 1px 2px rgba(0,0,0,.15)"></div></div></div>'
-    )
-
-
-_PER_HDR_CLR = {"2026-2": "#A6CE38", "2027-1": "#FBAF17", "2027-2": "#EC0677"}
-_MOD_CLR = {"Presencial": "#1FB2DE", "Virtual": "#EC0677", "Distancia": "#A6CE38"}
 
 _VACT_ACT_EMOJI = {
     "done": "✅",
@@ -212,24 +117,16 @@ _VACT_ACT_EMOJI = {
 }
 
 
-def _p_badge(txt, clr):
-    r, g, b = int(clr[1:3], 16), int(clr[3:5], 16), int(clr[5:7], 16)
-    return (
-        f'<span style="background:rgba({r},{g},{b},0.12);color:{clr};font-size:10px;'
-        f'font-weight:700;padding:3px 9px;border-radius:12px;white-space:nowrap">{_p_esc(txt)}</span>'
-    )
-
-
 def _vact_act_icon(cl: str, val=None) -> str:
     lbl = STATUS_LABEL.get(cl, cl)
     if cl == "info" and val and str(val).strip() not in ("—", "", "nan", "None"):
         return (
-            f'<span style="font-size:10px;color:#4a6a7e;display:inline-block;max-width:90px;'
+            f'<span style="font-size:10px;color:{TEXT_SUBTLE};display:inline-block;max-width:90px;'
             f'line-height:1.2;word-break:break-word" title="{_p_esc(lbl)}">{_p_esc(str(val)[:24])}</span>'
         )
     if cl == "na":
         return (
-            f'<span style="color:#b0bec5;font-size:13px;font-weight:600" title="{_p_esc(lbl)}">N/A</span>'
+            f'<span style="color:{TEXT_NA};font-size:13px;font-weight:600" title="{_p_esc(lbl)}">N/A</span>'
         )
     emoji = _VACT_ACT_EMOJI.get(cl, "—")
     return f'<span style="font-size:16px" title="{_p_esc(lbl)}">{emoji}</span>'
@@ -240,16 +137,16 @@ def _status_legend_html() -> str:
     for cl in ("done", "inprog", "nostart", "devuelto", "info", "na"):
         lbl = STATUS_LABEL.get(cl, cl)
         if cl == "na":
-            icon = '<span style="color:#b0bec5;font-weight:600">N/A</span>'
+            icon = f'<span style="color:{TEXT_NA};font-weight:600">N/A</span>'
         else:
             icon = f'<span style="font-size:14px">{_VACT_ACT_EMOJI.get(cl, "")}</span>'
         parts.append(
-            f'<span style="margin-right:16px;font-size:11px;color:#6a8a9e">{icon} {lbl}</span>'
+            f'<span style="margin-right:16px;font-size:11px;color:{TEXT_MUTED}">{icon} {lbl}</span>'
         )
     return (
         '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;padding:8px 4px">'
         + "".join(parts)
-        + '<span style="font-size:10px;color:#9aabb5;margin-left:8px">'
+        + f'<span style="font-size:10px;color:{TEXT_LIGHT};margin-left:8px">'
         "· Pulse + en cada etapa para ver actividades</span></div>"
     )
 
@@ -273,14 +170,6 @@ def _apply_current_filters():
 
 def _render_filter_bar(key_prefix: str, show_count: bool = True):
     """Barra de filtros (mismo formato que app.py). Una sola instancia por página."""
-    # #region agent log
-    _dbg_log(
-        "H1",
-        "app_act.py:_render_filter_bar",
-        "render",
-        {"key_prefix": key_prefix, "show_count": show_count},
-    )
-    # #endregion
     with st.container():
         lb1, in1, sp, lb2, in2, btn = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
         with lb1:
@@ -319,9 +208,9 @@ def _render_filter_bar(key_prefix: str, show_count: bool = True):
             df_tmp, *_ = _apply_current_filters()
             with cnt:
                 st.markdown(
-                    f'<div style="padding-top:9px;font-size:12px;color:#6a8a9e;text-align:right">'
-                    f'Mostrando <b style="color:#0F385A">{len(df_tmp)}</b> de '
-                    f'<b style="color:#0F385A">{len(df_raw)}</b></div>',
+                    f'<div style="padding-top:9px;font-size:12px;color:{TEXT_MUTED};text-align:right">'
+                    f'Mostrando <b style="color:{TEXT_PRIMARY}">{len(df_tmp)}</b> de '
+                    f'<b style="color:{TEXT_PRIMARY}">{len(df_raw)}</b></div>',
                     unsafe_allow_html=True,
                 )
 
@@ -389,7 +278,7 @@ def _render_gantt_bars(row=None, df: pd.DataFrame | None = None, title: str = ""
             f'<div class="f2-gantt-pct-out">{pct:.0f}%</div></div>'
         )
 
-    hdr = f'<div style="font-size:13px;font-weight:700;color:#0F385A;margin:12px 0 8px">{_esc(title)}</div>' if title else ""
+    hdr = f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin:12px 0 8px">{_esc(title)}</div>' if title else ""
     return f'<div class="f2-gantt">{hdr}{"".join(rows_html)}</div>'
 
 
@@ -400,20 +289,12 @@ def _short_label(text: str, max_len: int = 28) -> str:
 
 def _render_filter_summary(df: pd.DataFrame):
     """Tarjeta resumen del filtro actual."""
-    # #region agent log
-    _dbg_log(
-        "H1",
-        "app_act.py:_render_filter_summary",
-        "called",
-        {"n_programas": len(df), "defined": True},
-    )
-    # #endregion
     n = len(df)
     gen_avg = round(float(df["avance_general_vact"].mean()), 1) if n else 0
     gen_color = color_for_pct(gen_avg)
     st.markdown(
         f'<div class="f2-prog-card"><div class="f2-prog-info"><h3>Programas en el filtro actual</h3>'
-        f'<p style="color:#6a8a9e;font-size:13px;margin:0"><b style="color:#0F385A">{n}</b> programa(s) · '
+        f'<p style="color:{TEXT_MUTED};font-size:13px;margin:0"><b style="color:{TEXT_PRIMARY}">{n}</b> programa(s) · '
         f'Avance general promedio <b style="color:{gen_color}">{gen_avg:.0f}%</b><br>'
         f'Use <b>+</b> en cada etapa de la tabla para ver actividades.</p></div>'
         f'<div class="f2-prog-badge" style="background:{gen_color}22;border:2px solid {gen_color}">'
@@ -459,17 +340,17 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
     ncols += 1  # columna % Avance General Reforma
 
     TH = (
-        'style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:700;'
+        f'style="background:{BRAND_PRIMARY};color:#FFFFFF;font-size:9px;font-weight:700;'
         'padding:6px 4px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;'
         'border-right:1px solid rgba(255,255,255,0.10)"'
     )
     TH_GEN = (
-        'style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:800;'
+        f'style="background:{BRAND_PRIMARY};color:#FFFFFF;font-size:9px;font-weight:800;'
         'padding:8px 6px;text-align:center;white-space:normal;line-height:1.25;'
-        'position:sticky;top:0;z-index:2;border-left:2px solid #42F2F2;min-width:88px"'
+        f'position:sticky;top:0;z-index:2;border-left:2px solid {BRAND_HIGHLIGHT};min-width:88px"'
     )
     THL = (
-        'style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:700;'
+        f'style="background:{BRAND_PRIMARY};color:#FFFFFF;font-size:9px;font-weight:700;'
         'padding:6px 8px;text-align:left;white-space:nowrap;position:sticky;top:0;left:0;z-index:4;'
         'border-right:1px solid rgba(255,255,255,0.10);min-width:140px;max-width:200px"'
     )
@@ -485,7 +366,7 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
     h2 = []
     for blk in etapa_blocks:
         slug, etapa, meta = blk["slug"], blk["etapa"], blk["meta"]
-        clr = ETAPA_HEADER_CLR.get(etapa, "#0F385A")
+        clr = ETAPA_HEADER_CLR.get(etapa, BRAND_PRIMARY)
         r, g, b = int(clr[1:3], 16), int(clr[3:5], 16), int(clr[5:7], 16)
         n_span_expanded = 1 + len(meta)
         short = etapa.replace(" Curricular", "")
@@ -537,7 +418,7 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
         per = str(row.get("PERIODO DE IMPLEMENTACIÓN", "—")).strip()
         if per != cur_per:
             cur_per = per
-            ph_clr = _PER_HDR_CLR.get(per, "#9aabb5")
+            ph_clr = PERIODO_CLR.get(per, TEXT_LIGHT)
             per_cnt = int((df_sorted["PERIODO DE IMPLEMENTACIÓN"].astype(str).str.strip() == per).sum())
             rows.append(
                 f'<tr><td colspan="{ncols}" style="background:{ph_clr};color:#FFFFFF;'
@@ -545,32 +426,32 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
                 f'{_p_esc(per)} · {per_cnt} PROGRAMAS</td></tr>'
             )
             row_idx = 0
-        rbg = "#FFFFFF" if row_idx % 2 == 0 else "#f8fafc"
+        rbg = BG_ROW if row_idx % 2 == 0 else BG_ROW_ALT
         row_idx += 1
         TD = (
             f'style="padding:4px 3px;text-align:center;vertical-align:middle;'
-            f'border-bottom:1px solid #eef3f8;background:{rbg}"'
+            f'border-bottom:1px solid {BORDER_ROW};background:{rbg}"'
         )
         TDL = (
             f'style="padding:4px 6px;text-align:left;vertical-align:middle;'
-            f'border-bottom:1px solid #eef3f8;background:{rbg};min-width:140px;max-width:200px;'
+            f'border-bottom:1px solid {BORDER_ROW};background:{rbg};min-width:140px;max-width:200px;'
             f'position:sticky;left:0;z-index:1;box-shadow:2px 0 4px rgba(0,0,0,.04)"'
         )
         prog = _p_esc(row.get("NOMBRE DEL PROGRAMA", "—"))
         fac_s = row.get("FACULTAD_ABREV", "—")
         fac_c = row.get("FACULTAD_COLOR", "#9aabb5")
         mod = str(row.get("MODALIDAD", "—"))
-        mod_c = _MOD_CLR.get(mod, "#9aabb5")
-        per_c = _PER_HDR_CLR.get(per, "#9aabb5")
+        mod_c = MODALIDAD_CLR.get(mod, TEXT_LIGHT)
+        per_c = PERIODO_CLR.get(per, TEXT_LIGHT)
         nivel = row.get("NIVEL_HOMOLOGADO", row.get("NIVEL", "—"))
 
         cells = [
-            f'<td {TDL}><span style="font-size:11px;font-weight:600;color:#0F385A">{prog}</span></td>',
+            f'<td {TDL}><span style="font-size:11px;font-weight:600;color:{TEXT_PRIMARY}">{prog}</span></td>',
             f'<td {TD}><span style="font-size:10px;font-weight:700;color:{fac_c}">{_p_esc(fac_s)}</span></td>',
-            f'<td {TD}>{_p_badge(mod, mod_c)}</td>',
-            f'<td {TD}><span style="font-size:10px;color:#4a6a7e">{_p_esc(nivel)}</span></td>',
-            f'<td {TD}><span style="font-size:10px;color:#4a6a7e">{_p_esc(row.get("SEDE", "—"))}</span></td>',
-            f'<td {TD}>{_p_badge(per, per_c)}</td>',
+            f'<td {TD}>{badge_html(mod, mod_c)}</td>',
+            f'<td {TD}><span style="font-size:10px;color:{TEXT_SUBTLE}">{_p_esc(nivel)}</span></td>',
+            f'<td {TD}><span style="font-size:10px;color:{TEXT_SUBTLE}">{_p_esc(row.get("SEDE", "—"))}</span></td>',
+            f'<td {TD}>{badge_html(per, per_c)}</td>',
         ]
         for blk in etapa_blocks:
             slug = blk["slug"]
@@ -582,21 +463,21 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
                     f'<td class="col-act-{slug}" {TD} style="display:none">'
                     f'{_vact_act_icon(cl, val)}</td>'
                 )
-            cells.append(f'<td class="col-pct-{slug}" {TD}>{_p_bar(pct)}</td>')
+            cells.append(f'<td class="col-pct-{slug}" {TD}>{p_bar_html(pct)}</td>')
         gen_pct = float(row.get("avance_general_vact", 0) or 0)
         cells.append(
-            f'<td class="col-pct-general" {TD} style="border-left:2px solid #e2e8f0">'
-            f'{_p_bar(gen_pct)}</td>'
+            f'<td class="col-pct-general" {TD} style="border-left:2px solid {BORDER_ROW}">'
+            f'{p_bar_html(gen_pct)}</td>'
         )
         rows.append("<tr>" + "".join(cells) + "</tr>")
 
     if not rows:
-        return "<p style='padding:20px;color:#6a8a9e'>No hay programas con los filtros seleccionados.</p>"
+        return f"<p style='padding:20px;color:{TEXT_MUTED}'>No hay programas con los filtros seleccionados.</p>"
 
     return (
         _TOGGLE_JS
-        + '<div style="overflow-x:auto;border-radius:12px;border:1.5px solid #b5c9d8;'
-        'box-shadow:0 2px 12px rgba(15,56,90,.10);background:#fafdff">'
+        + f'<div style="overflow-x:auto;border-radius:12px;border:1.5px solid {BORDER_TABLE};'
+        f'box-shadow:0 2px 12px rgba(15,56,90,.10);background:{BG_TABLE}">'
         '<table style="width:100%;table-layout:auto;border-collapse:separate;border-spacing:0;'
         'font-family:\'Segoe UI\',sans-serif;min-width:max-content">'
         "<thead><tr>" + "".join(h1) + "</tr><tr>" + "".join(h2) + "</tr></thead><tbody>"
@@ -676,8 +557,8 @@ with st.sidebar:
 # ── Header ────────────────────────────────────────────────────────────────────
 st.markdown(
     '<div style="'
-    "background:linear-gradient(135deg,#0F385A 0%,#1A5276 50%,#1FB2DE 100%);"
-    'padding:18px 24px 14px;border-radius:0 0 12px 12px;border-bottom:3px solid #42F2F2;">'
+    f"background:linear-gradient(135deg,{BRAND_PRIMARY} 0%,{BRAND_SECONDARY} 50%,{BRAND_ACCENT} 100%);"
+    f'padding:18px 24px 14px;border-radius:0 0 12px 12px;border-bottom:3px solid {BRAND_HIGHLIGHT};">'
     '<div style="font-size:21px;font-weight:700;color:#FFFFFF">'
     "Reforma Curricular de Programas Académicos Poli</div>"
     '<div style="font-size:12px;color:rgba(255,255,255,0.70);margin-top:5px">'
@@ -685,14 +566,6 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-# #region agent log
-_dbg_log(
-    "H1",
-    "app_act.py:module",
-    "pre_tabs_symbol_check",
-    {"has_render_filter_summary": callable(globals().get("_render_filter_summary"))},
-)
-# #endregion
 
 # Filtros globales (una sola vez; evita StreamlitDuplicateElementKey en tabs)
 _render_filter_bar("global", show_count=True)
@@ -715,14 +588,14 @@ with tab_avance:
         st.warning("No hay programas que coincidan con los filtros seleccionados.")
     else:
         st.markdown(
-            '<div style="font-size:14px;font-weight:700;color:#0F385A;margin:16px 0 8px">'
+            f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin:16px 0 8px">'
             "Resumen por etapa (promedio del filtro)</div>",
             unsafe_allow_html=True,
         )
         _render_stage_cards(df)
 
         st.markdown(
-            '<div style="font-size:14px;font-weight:700;color:#0F385A;margin:20px 0 8px">'
+            f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin:20px 0 8px">'
             "Línea de avance (Gantt)</div>",
             unsafe_allow_html=True,
         )
@@ -732,7 +605,7 @@ with tab_avance:
         )
 
         st.markdown(
-            '<div style="font-size:14px;font-weight:700;color:#0F385A;margin:24px 0 8px">'
+            f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin:24px 0 8px">'
             "Estado de actividades · todos los programas</div>",
             unsafe_allow_html=True,
         )
@@ -756,7 +629,7 @@ with tab_detalle:
     else:
         _render_filter_summary(df)
         st.markdown(
-            '<div style="font-size:13px;color:#6a8a9e;margin:12px 0">'
+            f'<div style="font-size:13px;color:{TEXT_MUTED};margin:12px 0">'
             "Tabla única por programa. Pulse + en el encabezado de cada etapa para ver sus actividades.</div>",
             unsafe_allow_html=True,
         )

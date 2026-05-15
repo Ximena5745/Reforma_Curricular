@@ -144,7 +144,10 @@ def p_bar_html(pct, min_width: int = 70) -> str:
     w = min(max(pct, 0), 100)
     return (
         f'<div style="min-width:{min_width}px;text-align:center">'
-        f'<motion style="display:none"></motion>'
+        f'<div style="font-size:12px;font-weight:700;color:{clr};margin-bottom:3px">{int(pct)}%</div>'
+        f'<div style="height:6px;background:{BG_TRACK};border-radius:4px;overflow:hidden">'
+        f'<div style="width:{w:.0f}%;height:100%;background:{bar};border-radius:4px;'
+        f'box-shadow:0 1px 2px rgba(0,0,0,.15)"></div></div></div>'
     )
 
 
@@ -220,10 +223,20 @@ button[data-baseweb="tab"][aria-selected="true"] {{
 .f2-gantt-fill {{ height: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; min-width: 36px; }}
 .f2-gantt-pct {{ font-size: 12px; font-weight: 700; color: {TEXT_ON_DARK}; text-shadow: 0 1px 2px rgba(0,0,0,.25); }}
 .f2-gantt-pct-out {{ width: 48px; text-align: right; font-size: 13px; font-weight: 700; color: {TEXT_PRIMARY}; flex-shrink: 0; }}
+.f2-gantt-general .f2-gantt-label {{ font-weight: 800; }}
+.f2-gantt-general .f2-gantt-track {{ height: 34px; }}
 .f2-prog-card {{
     background: {BG_CARD}; border-radius: 12px; padding: 18px 22px;
     box-shadow: 0 2px 10px rgba(15,56,90,0.09); margin-bottom: 16px;
+    display: flex; gap: 24px; align-items: stretch; flex-wrap: wrap;
 }}
+.f2-prog-info {{ flex: 1; min-width: 280px; }}
 .f2-prog-info h3 {{ margin: 0 0 12px; font-size: 18px; color: {TEXT_PRIMARY}; }}
+.f2-prog-badge {{
+    min-width: 120px; text-align: center; padding: 16px; border-radius: 12px;
+    display: flex; flex-direction: column; justify-content: center; align-items: center;
+}}
+.f2-prog-badge-pct {{ font-size: 42px; font-weight: 800; line-height: 1; }}
+.f2-prog-badge-lbl {{ font-size: 10px; text-transform: uppercase; letter-spacing: .5px; margin-top: 6px; opacity: .85; }}
 </style>
 """

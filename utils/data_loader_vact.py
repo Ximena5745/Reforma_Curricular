@@ -35,12 +35,14 @@ FAC_ABREV = {
     "Facultad de Negocios, Gestión y Sostenibilidad": "FNGS",
 }
 
-FAC_COLORS = {
-    "FSCC": "#EC0677",
-    "FIDI": "#1FB2DE",
-    "FNGS": "#A6CE38",
-}
+from utils.poli_theme import (
+    ETAPA_CLR,
+    FACULTAD_CLR,
+    STATUS_CLR,
+    color_for_pct,
+)
 
+FAC_COLORS = FACULTAD_CLR
 FAC_ABREV_INV = {v: k for k, v in FAC_ABREV.items()}
 
 STATUS_LABEL = {
@@ -52,14 +54,7 @@ STATUS_LABEL = {
     "na": "No aplica",
 }
 
-STATUS_COLOR = {
-    "done": "#A6CE38",
-    "inprog": "#1FB2DE",
-    "nostart": "#EC0677",
-    "devuelto": "#F47B20",
-    "info": "#FBAF17",
-    "na": "#9aabb5",
-}
+STATUS_COLOR = STATUS_CLR
 
 # Etapas canónicas (orden de visualización)
 ETAPAS_ORDEN = [
@@ -83,12 +78,7 @@ ETAPA_SLUG = {
     "Implementación Curricular": "implementacion",
 }
 
-ETAPA_HEADER_CLR = {
-    "Alistamiento Curricular": "#0F385A",
-    "Diseño Curricular": "#1FB2DE",
-    "Desarrollo Curricular": "#EC0677",
-    "Implementación Curricular": "#A6CE38",
-}
+ETAPA_HEADER_CLR = ETAPA_CLR
 
 
 def _norm(s) -> str:
@@ -169,19 +159,6 @@ def _activity_score(cl: str) -> float | None:
     if cl == "devuelto":
         return 25.0
     return None  # na / info no cuentan
-
-
-def color_for_pct(p) -> str:
-    if p is None or (isinstance(p, float) and np.isnan(p)):
-        return "#6e7681"
-    p = float(p)
-    if p >= 70:
-        return "#3ecf8e"
-    if p >= 45:
-        return "#4f8ef7"
-    if p >= 25:
-        return "#f97316"
-    return "#ef4444"
 
 
 def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
