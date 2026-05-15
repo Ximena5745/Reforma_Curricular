@@ -75,7 +75,7 @@ STATUS_CLR = {
 
 # ── Etapas reforma curricular ─────────────────────────────────────────────────
 ETAPA_CLR = {
-    "Alistamiento Curricular": "#0F385A",
+    "Alistamiento Curricular": "#2980B9",  # azul medio — distinto del avance general (#0F385A)
     "Diseño Curricular": "#1FB2DE",
     "Desarrollo Curricular": "#EC0677",
     "Implementación Curricular": "#A6CE38",
