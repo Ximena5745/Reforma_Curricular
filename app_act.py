@@ -20,7 +20,6 @@ from utils.data_loader_vact import (
     STATUS_LABEL,
     _ensure_activities_meta,
     apply_filters_vact,
-    color_for_pct,
     load_etapas_data,
 )
 from utils.poli_theme import (
@@ -209,6 +208,13 @@ def _render_filter_bar(key_prefix: str, show_count: bool = True):
                 )
 
 
+def _etapa_repr_color(etapa: str | None = None, *, general: bool = False) -> str:
+    """Color institucional fijo por etapa (no depende del % de avance)."""
+    if general:
+        return BRAND_PRIMARY
+    return ETAPA_HEADER_CLR.get(etapa or "", BRAND_PRIMARY)
+
+
 def _mini_bar(pct: float, color: str) -> str:
     w = min(max(float(pct), 0), 100)
     return (
@@ -222,7 +228,7 @@ def _render_stage_cards(df: pd.DataFrame):
     for i, etapa in enumerate(ETAPAS_ORDEN):
         pct_col = ETAPA_PCT_COL[etapa]
         avg = round(float(df[pct_col].mean()), 1) if len(df) and pct_col in df.columns else 0
-        color = color_for_pct(avg)
+        color = _etapa_repr_color(etapa)
         with cols[i]:
             st.markdown(
                 f'<div class="f2-scard" style="--accent:{color}">'
@@ -234,7 +240,7 @@ def _render_stage_cards(df: pd.DataFrame):
             )
 
     gen_avg = round(float(df["avance_general_vact"].mean()), 1) if len(df) else 0
-    gen_color = color_for_pct(gen_avg)
+    gen_color = _etapa_repr_color(general=True)
     with cols[-1]:
         st.markdown(
             f'<div class="f2-scard" style="--accent:{gen_color};border-left-width:6px">'
@@ -260,7 +266,7 @@ def _render_gantt_bars(row=None, df: pd.DataFrame | None = None, title: str = ""
             pct = round(float(df[col_key].mean()), 1) if col_key in df.columns else 0
         else:
             pct = 0
-        color = color_for_pct(pct)
+        color = _etapa_repr_color(label if not is_general else None, general=is_general)
         short = label.replace(" Curricular", "").replace("Avance General de Reforma", "General")
         cls = "f2-gantt-row f2-gantt-general" if is_general else "f2-gantt-row"
         rows_html.append(
@@ -285,7 +291,7 @@ def _render_filter_summary(df: pd.DataFrame):
     """Tarjeta resumen del filtro actual."""
     n = len(df)
     gen_avg = round(float(df["avance_general_vact"].mean()), 1) if n else 0
-    gen_color = color_for_pct(gen_avg)
+    gen_color = _etapa_repr_color(general=True)
     st.markdown(
         f'<div class="f2-prog-card"><div class="f2-prog-info"><h3>Programas en el filtro actual</h3>'
         f'<p style="color:{TEXT_MUTED};font-size:13px;margin:0"><b style="color:{TEXT_PRIMARY}">{n}</b> programa(s) · '
