@@ -5,7 +5,9 @@ Fuente: hoja Etapas · CONTROL MAESTRO DE REFORMA CURRICULAR_VACT.xlsx
 
 import html as html_lib
 import io
+import json
 import math
+import time
 from pathlib import Path
 
 import pandas as pd
@@ -31,6 +33,27 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+_DEBUG_LOG = Path(__file__).resolve().parent / "debug-758968.log"
+
+
+def _dbg_log(hypothesis_id: str, location: str, message: str, data: dict | None = None) -> None:
+    # #region agent log
+    try:
+        payload = {
+            "sessionId": "758968",
+            "hypothesisId": hypothesis_id,
+            "location": location,
+            "message": message,
+            "data": data or {},
+            "timestamp": int(time.time() * 1000),
+        }
+        with open(_DEBUG_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+    # #endregion
+
 
 def _registered_page_targets() -> set[str]:
     """Rutas/nombres de script registrados como páginas Streamlit."""
@@ -367,6 +390,31 @@ def _short_label(text: str, max_len: int = 28) -> str:
     return t if len(t) <= max_len else t[: max_len - 1] + "…"
 
 
+def _render_filter_summary(df: pd.DataFrame):
+    """Tarjeta resumen del filtro actual."""
+    # #region agent log
+    _dbg_log(
+        "H1",
+        "app_act.py:_render_filter_summary",
+        "called",
+        {"n_programas": len(df), "defined": True},
+    )
+    # #endregion
+    n = len(df)
+    gen_avg = round(float(df["avance_general_vact"].mean()), 1) if n else 0
+    gen_color = color_for_pct(gen_avg)
+    st.markdown(
+        f'<div class="f2-prog-card"><div class="f2-prog-info"><h3>Programas en el filtro actual</h3>'
+        f'<p style="color:#6a8a9e;font-size:13px;margin:0"><b style="color:#0F385A">{n}</b> programa(s) · '
+        f'Avance general promedio <b style="color:{gen_color}">{gen_avg:.0f}%</b><br>'
+        f'Use <b>+</b> en cada etapa de la tabla para ver actividades.</p></div>'
+        f'<div class="f2-prog-badge" style="background:{gen_color}22;border:2px solid {gen_color}">'
+        f'<div class="f2-prog-badge-pct" style="color:{gen_color}">{gen_avg:.0f}%</div>'
+        f'<div class="f2-prog-badge-lbl" style="color:{gen_color}">Promedio general</div>'
+        f"</div></div>",
+        unsafe_allow_html=True,
+    )
+
 
 _TOGGLE_JS = """
 <script>
@@ -592,6 +640,15 @@ st.markdown(
     "Fase 2 · Seguimiento de avance por etapa de reforma</div></div>",
     unsafe_allow_html=True,
 )
+
+# #region agent log
+_dbg_log(
+    "H1",
+    "app_act.py:module",
+    "pre_tabs_symbol_check",
+    {"has_render_filter_summary": callable(globals().get("_render_filter_summary"))},
+)
+# #endregion
 
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab_avance, tab_detalle, tab_programas = st.tabs(
