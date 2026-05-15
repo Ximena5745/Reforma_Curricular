@@ -272,7 +272,15 @@ def _apply_current_filters():
 
 
 def _render_filter_bar(key_prefix: str, show_count: bool = True):
-    """Barra de filtros (mismo formato que app.py)."""
+    """Barra de filtros (mismo formato que app.py). Una sola instancia por página."""
+    # #region agent log
+    _dbg_log(
+        "H1",
+        "app_act.py:_render_filter_bar",
+        "render",
+        {"key_prefix": key_prefix, "show_count": show_count},
+    )
+    # #endregion
     with st.container():
         lb1, in1, sp, lb2, in2, btn = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
         with lb1:
@@ -420,12 +428,15 @@ _TOGGLE_JS = """
 <script>
 function toggleEtapa(slug) {
   var cols = document.querySelectorAll('.col-act-' + slug);
+  var hdr = document.getElementById('hdr-etapa-' + slug);
   var btn = document.getElementById('btn-etapa-' + slug);
-  if (!cols.length || !btn) return;
-  var show = cols[0].style.display === 'none';
+  if (!hdr || !btn) return;
+  var show = cols.length && cols[0].style.display === 'none';
   for (var i = 0; i < cols.length; i++) {
     cols[i].style.display = show ? 'table-cell' : 'none';
   }
+  var expanded = parseInt(hdr.getAttribute('data-colspan-expanded') || '1', 10);
+  hdr.colSpan = show ? expanded : 1;
   btn.textContent = show ? '\u2212' : '+';
 }
 </script>
@@ -451,6 +462,11 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
         'padding:6px 4px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;'
         'border-right:1px solid rgba(255,255,255,0.10)"'
     )
+    TH_PCT = (
+        'style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:700;'
+        'padding:6px 4px;text-align:center;white-space:normal;line-height:1.2;'
+        'position:sticky;top:0;z-index:2;border-right:1px solid rgba(255,255,255,0.10);min-width:72px"'
+    )
     THL = (
         'style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:700;'
         'padding:6px 8px;text-align:left;white-space:nowrap;position:sticky;top:0;left:0;z-index:4;'
@@ -470,10 +486,13 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
         slug, etapa, meta = blk["slug"], blk["etapa"], blk["meta"]
         clr = ETAPA_HEADER_CLR.get(etapa, "#0F385A")
         r, g, b = int(clr[1:3], 16), int(clr[3:5], 16), int(clr[5:7], 16)
-        n_span = 1 + len(meta)
+        n_span_expanded = 1 + len(meta)
         short = etapa.replace(" Curricular", "")
+        pct_lbl = f"% Av. {_short_label(short, 18)}"
         h1.append(
-            f'<th colspan="{n_span}" style="background:rgba({r},{g},{b},0.18);color:{clr};'
+            f'<th id="hdr-etapa-{slug}" colspan="1" data-colspan-expanded="{n_span_expanded}"'
+            f' class="hdr-etapa-{slug}"'
+            f' style="background:rgba({r},{g},{b},0.18);color:{clr};'
             f'font-size:10px;font-weight:800;padding:6px 8px;text-align:center;'
             f'border-right:1px solid rgba(255,255,255,0.10);position:sticky;top:0;z-index:2">'
             f'<button type="button" id="btn-etapa-{slug}" onclick="toggleEtapa(\'{slug}\')" '
@@ -481,12 +500,14 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
             f'border-radius:4px;width:22px;height:22px;font-weight:800;margin-right:6px">+</button>'
             f'{_p_esc(short)}</th>'
         )
-        h2.append(f'<th {TH}>% Av.</th>')
         for m in meta:
             h2.append(
                 f'<th class="col-act-{slug}" {TH} style="display:none" title="{_p_esc(m["name"])}">'
                 f'{_p_esc(_short_label(m["name"], 22))}</th>'
             )
+        h2.append(
+            f'<th class="col-pct-{slug}" {TH_PCT} title="{_p_esc(etapa)}">{_p_esc(pct_lbl)}</th>'
+        )
 
     rows = []
     cur_per = None
@@ -536,7 +557,6 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
         for blk in etapa_blocks:
             slug = blk["slug"]
             pct = float(row.get(blk["pct_col"], 0) or 0)
-            cells.append(f'<td {TD}>{_p_bar(pct)}</td>')
             for m in blk["meta"]:
                 cl = row.get(f"cl_act_{m['idx']}", "na")
                 val = row.get(f"val_act_{m['idx']}", "—")
@@ -544,6 +564,7 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
                     f'<td class="col-act-{slug}" {TD} style="display:none">'
                     f'{_vact_act_icon(cl, val)}</td>'
                 )
+            cells.append(f'<td class="col-pct-{slug}" {TD}>{_p_bar(pct)}</td>')
         rows.append("<tr>" + "".join(cells) + "</tr>")
 
     if not rows:
@@ -650,6 +671,9 @@ _dbg_log(
 )
 # #endregion
 
+# Filtros globales (una sola vez; evita StreamlitDuplicateElementKey en tabs)
+_render_filter_bar("global", show_count=True)
+
 # ── Tabs ──────────────────────────────────────────────────────────────────────
 tab_avance, tab_detalle, tab_programas = st.tabs(
     ["📊 Avance General", "📋 Detalle por Etapa", "🏛️ Por Programa"]
@@ -659,7 +683,6 @@ tab_avance, tab_detalle, tab_programas = st.tabs(
 # TAB 1: Avance General
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_avance:
-    _render_filter_bar("t1")
     df, *_ = _apply_current_filters()
     n = len(df)
 
@@ -703,7 +726,6 @@ with tab_avance:
 # TAB 2: Detalle por Etapa
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_detalle:
-    _render_filter_bar("t2", show_count=False)
     df, *_ = _apply_current_filters()
 
     if len(df) == 0:
@@ -721,7 +743,6 @@ with tab_detalle:
 # TAB 3: Por Programa
 # ══════════════════════════════════════════════════════════════════════════════
 with tab_programas:
-    _render_filter_bar("t3", show_count=False)
     df, *_ = _apply_current_filters()
 
     if len(df) == 0:
