@@ -456,16 +456,17 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
             "pct_col": ETAPA_PCT_COL[etapa],
         })
         ncols += 1 + len(meta)
+    ncols += 1  # columna % Avance General Reforma
 
     TH = (
         'style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:700;'
         'padding:6px 4px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;'
         'border-right:1px solid rgba(255,255,255,0.10)"'
     )
-    TH_PCT = (
-        'style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:700;'
-        'padding:6px 4px;text-align:center;white-space:normal;line-height:1.2;'
-        'position:sticky;top:0;z-index:2;border-right:1px solid rgba(255,255,255,0.10);min-width:72px"'
+    TH_GEN = (
+        'style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:800;'
+        'padding:8px 6px;text-align:center;white-space:normal;line-height:1.25;'
+        'position:sticky;top:0;z-index:2;border-left:2px solid #42F2F2;min-width:88px"'
     )
     THL = (
         'style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:700;'
@@ -500,14 +501,31 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
             f'border-radius:4px;width:22px;height:22px;font-weight:800;margin-right:6px">+</button>'
             f'{_p_esc(short)}</th>'
         )
+        th_act = (
+            f'style="background:rgba({r},{g},{b},0.22);color:{clr};font-size:9px;font-weight:700;'
+            f'padding:6px 5px;text-align:center;white-space:normal;line-height:1.3;'
+            f'word-break:break-word;overflow-wrap:anywhere;min-width:90px;max-width:180px;'
+            f'vertical-align:bottom;position:sticky;top:0;z-index:2;'
+            f'border-right:1px solid rgba({r},{g},{b},0.35);display:none"'
+        )
+        th_pct_etapa = (
+            f'style="background:rgba({r},{g},{b},0.12);color:{clr};font-size:9px;font-weight:700;'
+            f'padding:6px 4px;text-align:center;white-space:normal;line-height:1.2;'
+            f'position:sticky;top:0;z-index:2;border-right:1px solid rgba({r},{g},{b},0.25);min-width:72px"'
+        )
         for m in meta:
             h2.append(
-                f'<th class="col-act-{slug}" {TH} style="display:none" title="{_p_esc(m["name"])}">'
-                f'{_p_esc(_short_label(m["name"], 22))}</th>'
+                f'<th class="col-act-{slug}" {th_act} title="{_p_esc(m["name"])}">'
+                f'{_p_esc(m["name"])}</th>'
             )
         h2.append(
-            f'<th class="col-pct-{slug}" {TH_PCT} title="{_p_esc(etapa)}">{_p_esc(pct_lbl)}</th>'
+            f'<th class="col-pct-{slug}" {th_pct_etapa} title="{_p_esc(etapa)}">{_p_esc(pct_lbl)}</th>'
         )
+
+    h1.append(
+        f'<th rowspan="2" {TH_GEN} title="Avance General de Reforma">'
+        f'% Av.<br>General<br>Reforma</th>'
+    )
 
     rows = []
     cur_per = None
@@ -565,6 +583,11 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
                     f'{_vact_act_icon(cl, val)}</td>'
                 )
             cells.append(f'<td class="col-pct-{slug}" {TD}>{_p_bar(pct)}</td>')
+        gen_pct = float(row.get("avance_general_vact", 0) or 0)
+        cells.append(
+            f'<td class="col-pct-general" {TD} style="border-left:2px solid #e2e8f0">'
+            f'{_p_bar(gen_pct)}</td>'
+        )
         rows.append("<tr>" + "".join(cells) + "</tr>")
 
     if not rows:
