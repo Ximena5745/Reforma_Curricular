@@ -46,6 +46,8 @@ from utils.poli_theme import (
     streamlit_global_css,
 )
 
+_HDR_ROW1_H = 36  # altura fija fila etapas (px) — debe coincidir con top de fila actividades
+
 st.set_page_config(
     page_title="Reforma Curricular · Fase 2 · POLI",
     page_icon="🎓",
@@ -317,14 +319,20 @@ html, body {{ margin: 0; padding: 0; height: 100%; background: {BG_TABLE}; }}
   position: sticky;
   top: 0;
   z-index: 4;
+  height: {_HDR_ROW1_H}px;
+  padding: 5px 8px;
+  border-bottom: none;
   background-clip: padding-box;
+  vertical-align: middle;
 }}
 .vact-master-table thead tr.hdr-act th {{
   position: sticky;
-  top: 40px;
+  top: {_HDR_ROW1_H}px;
   z-index: 3;
+  padding: 5px 5px;
+  border-top: none;
   background-clip: padding-box;
-  box-shadow: 0 2px 4px rgba(15,56,90,0.08);
+  vertical-align: bottom;
 }}
 .vact-master-table thead th.th-pin-left {{
   left: 0;
@@ -336,6 +344,23 @@ html, body {{ margin: 0; padding: 0; height: 100%; background: {BG_TABLE}; }}
 }}
 </style>
 """
+
+def _etapa_hdr_tints(clr: str) -> dict[str, str]:
+    """Fondos y textos para encabezados y celdas de actividades por etapa."""
+    h = clr.lstrip("#")
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    return {
+        "etapa_bg": clr,
+        "etapa_fg": "#FFFFFF",
+        "act_bg": f"rgba({r},{g},{b},0.07)",
+        "act_fg": TEXT_PRIMARY,
+        "pct_bg": f"rgba({r},{g},{b},0.14)",
+        "pct_fg": TEXT_PRIMARY,
+        "cell_act": f"rgba({r},{g},{b},0.05)",
+        "cell_act_alt": f"rgba({r},{g},{b},0.10)",
+        "border": f"rgba({r},{g},{b},0.22)",
+    }
+
 
 _TOGGLE_JS = """
 <script>
@@ -362,11 +387,13 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
     ncols = 6
     for etapa in ETAPAS_ORDEN:
         meta = [m for m in meta_all if m["phase"] == etapa]
+        clr_etapa = ETAPA_HEADER_CLR.get(etapa, BRAND_PRIMARY)
         etapa_blocks.append({
             "etapa": etapa,
             "slug": ETAPA_SLUG[etapa],
             "meta": meta,
             "pct_col": ETAPA_PCT_COL[etapa],
+            "tints": _etapa_hdr_tints(clr_etapa),
         })
         ncols += 1 + len(meta)
     ncols += 1  # columna % Avance General Reforma
@@ -398,33 +425,31 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
     h2 = []
     for blk in etapa_blocks:
         slug, etapa, meta = blk["slug"], blk["etapa"], blk["meta"]
-        clr = ETAPA_HEADER_CLR.get(etapa, BRAND_PRIMARY)
-        r, g, b = int(clr[1:3], 16), int(clr[3:5], 16), int(clr[5:7], 16)
+        t = blk["tints"]
         n_span_expanded = 1 + len(meta)
         short = etapa.replace(" Curricular", "")
         pct_lbl = f"% Av. {_short_label(short, 18)}"
         h1.append(
             f'<th id="hdr-etapa-{slug}" colspan="1" data-colspan-expanded="{n_span_expanded}"'
             f' class="hdr-etapa-{slug}"'
-            f' style="background:rgba({r},{g},{b},0.92);color:{clr};'
-            f'font-size:10px;font-weight:800;padding:6px 8px;text-align:center;'
-            f'border-right:1px solid rgba(255,255,255,0.10)">'
+            f' style="background:{t["etapa_bg"]};color:{t["etapa_fg"]};'
+            f'font-size:10px;font-weight:800;text-align:center;'
+            f'border-right:1px solid rgba(255,255,255,0.15)">'
             f'<button type="button" id="btn-etapa-{slug}" onclick="toggleEtapa(\'{slug}\')" '
-            f'style="cursor:pointer;border:1px solid {clr};background:#fff;color:{clr};'
-            f'border-radius:4px;width:22px;height:22px;font-weight:800;margin-right:6px">+</button>'
+            f'style="cursor:pointer;border:1px solid rgba(255,255,255,0.55);background:rgba(255,255,255,0.15);'
+            f'color:#fff;border-radius:4px;width:22px;height:22px;font-weight:800;margin-right:6px">+</button>'
             f'{_p_esc(short)}</th>'
         )
         th_act = (
-            f'style="background:rgba({r},{g},{b},0.95);color:{clr};font-size:9px;font-weight:700;'
-            f'padding:6px 5px;text-align:center;white-space:normal;line-height:1.3;'
+            f'style="background:{t["act_bg"]};color:{t["act_fg"]};font-size:9px;font-weight:700;'
+            f'text-align:center;white-space:normal;line-height:1.3;'
             f'word-break:break-word;overflow-wrap:anywhere;min-width:90px;max-width:180px;'
-            f'vertical-align:bottom;'
-            f'border-right:1px solid rgba({r},{g},{b},0.35);display:none"'
+            f'border-right:1px solid {t["border"]};display:none"'
         )
         th_pct_etapa = (
-            f'style="background:rgba({r},{g},{b},0.90);color:{clr};font-size:9px;font-weight:700;'
-            f'padding:6px 4px;text-align:center;white-space:normal;line-height:1.2;'
-            f'border-right:1px solid rgba({r},{g},{b},0.25);min-width:72px"'
+            f'style="background:{t["pct_bg"]};color:{t["pct_fg"]};font-size:9px;font-weight:700;'
+            f'text-align:center;white-space:normal;line-height:1.2;'
+            f'border-right:1px solid {t["border"]};min-width:72px"'
         )
         for m in meta:
             h2.append(
@@ -487,15 +512,22 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
         ]
         for blk in etapa_blocks:
             slug = blk["slug"]
+            t = blk["tints"]
             pct = float(row.get(blk["pct_col"], 0) or 0)
+            act_bg = t["cell_act_alt"] if row_idx % 2 == 0 else t["cell_act"]
             for m in blk["meta"]:
                 cl = row.get(f"cl_act_{m['idx']}", "na")
                 val = row.get(f"val_act_{m['idx']}", "—")
                 cells.append(
-                    f'<td class="col-act-{slug}" {TD} style="display:none">'
+                    f'<td class="col-act-{slug}" style="display:none;padding:4px 3px;text-align:center;'
+                    f'vertical-align:middle;border-bottom:1px solid {BORDER_ROW};background:{act_bg}">'
                     f'{_vact_act_icon(cl, val)}</td>'
                 )
-            cells.append(f'<td class="col-pct-{slug}" {TD}>{p_bar_html(pct)}</td>')
+            cells.append(
+                f'<td class="col-pct-{slug}" style="padding:4px 3px;text-align:center;'
+                f'vertical-align:middle;border-bottom:1px solid {BORDER_ROW};background:{rbg}">'
+                f'{p_bar_html(pct)}</td>'
+            )
         gen_pct = float(row.get("avance_general_vact", 0) or 0)
         cells.append(
             f'<td class="col-pct-general" {TD} style="border-left:2px solid {BORDER_ROW}">'
