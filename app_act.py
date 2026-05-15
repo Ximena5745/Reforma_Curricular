@@ -5,6 +5,9 @@ Fuente: hoja Etapas · CONTROL MAESTRO DE REFORMA CURRICULAR_VACT.xlsx
 
 import html as html_lib
 import io
+import json
+import time
+from pathlib import Path
 
 import pandas as pd
 import streamlit as st
@@ -29,6 +32,72 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+_DEBUG_LOG = Path(__file__).resolve().parent / "debug-758968.log"
+
+
+def _agent_log(hypothesis_id: str, location: str, message: str, data: dict) -> None:
+    # #region agent log
+    try:
+        payload = {
+            "sessionId": "758968",
+            "hypothesisId": hypothesis_id,
+            "location": location,
+            "message": message,
+            "data": data,
+            "timestamp": int(time.time() * 1000),
+        }
+        with open(_DEBUG_LOG, "a", encoding="utf-8") as f:
+            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+    # #endregion
+
+
+def _registered_page_targets() -> set[str]:
+    """Rutas/nombres de script registrados como páginas Streamlit."""
+    targets: set[str] = set()
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+
+        ctx = get_script_run_ctx()
+        if ctx is None:
+            return targets
+        pm = ctx.pages_manager
+        for info in pm.get_pages().values():
+            sp = str(info.get("script_path", "")).replace("\\", "/")
+            if not sp:
+                continue
+            targets.add(sp)
+            targets.add(Path(sp).name)
+            targets.add(Path(sp).as_posix())
+    except Exception as exc:
+        _agent_log("H3", "app_act.py:_registered_page_targets", "pages_manager_error", {"error": str(exc)})
+    return targets
+
+
+def _safe_page_link(page: str, **kwargs) -> bool:
+    """Solo enlaza si la página existe en el registro multipágina actual."""
+    targets = _registered_page_targets()
+    page_norm = page.replace("\\", "/")
+    _agent_log(
+        "H1",
+        "app_act.py:_safe_page_link",
+        "page_link_attempt",
+        {"page": page, "page_norm": page_norm, "registered": sorted(targets)},
+    )
+    try:
+        st.page_link(page, **kwargs)
+        _agent_log("H1", "app_act.py:_safe_page_link", "page_link_ok", {"page": page})
+        return True
+    except st.errors.StreamlitPageNotFoundError as exc:
+        _agent_log(
+            "H1",
+            "app_act.py:_safe_page_link",
+            "page_link_not_found",
+            {"page": page, "error": type(exc).__name__},
+        )
+        return False
 
 # ── CSS global (filtros + Gantt Fase 2) ───────────────────────────────────────
 st.markdown("""
@@ -457,8 +526,24 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.markdown("<hr style='margin:10px 0;border-color:rgba(255,255,255,.2)'>", unsafe_allow_html=True)
-    st.page_link("app.py", label="Fase 1 · Producción", icon="📊")
-    st.page_link("app_act.py", label="Fase 2 · Etapas (VACT)", icon="📋")
+    _main_script = ""
+    try:
+        from streamlit.runtime.scriptrunner import get_script_run_ctx
+
+        ctx = get_script_run_ctx()
+        if ctx is not None:
+            _main_script = Path(ctx.pages_manager.main_script_path).name.replace("\\", "/")
+    except Exception:
+        pass
+    _agent_log(
+        "H2",
+        "app_act.py:sidebar",
+        "main_script",
+        {"main_script": _main_script, "registered": sorted(_registered_page_targets())},
+    )
+    if not _safe_page_link("app.py", label="Fase 1 · Producción", icon="📊"):
+        st.caption("Fase 1 no disponible en este despliegue (entrada: app_act.py).")
+    _safe_page_link("app_act.py", label="Fase 2 · Etapas (VACT)", icon="📋")
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
     st.markdown(
         '<div style="padding:12px;font-size:10px;color:rgba(255,255,255,.4);text-align:center">'
