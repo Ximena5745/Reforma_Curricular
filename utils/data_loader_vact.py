@@ -83,6 +83,13 @@ ETAPA_SLUG = {
     "Implementación Curricular": "implementacion",
 }
 
+ETAPA_HEADER_CLR = {
+    "Alistamiento Curricular": "#0F385A",
+    "Diseño Curricular": "#1FB2DE",
+    "Desarrollo Curricular": "#EC0677",
+    "Implementación Curricular": "#A6CE38",
+}
+
 
 def _norm(s) -> str:
     return re.sub(r"\s+", " ", str(s).strip().lower())
@@ -135,6 +142,8 @@ def _cls_status(v) -> str:
     ]
     if any(k in s for k in keywords_inprog):
         return "inprog"
+    if s == "informativo" or "informativo" in s:
+        return "info"
     return "inprog" if s else "na"
 
 

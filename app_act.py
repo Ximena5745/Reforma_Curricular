@@ -5,8 +5,7 @@ Fuente: hoja Etapas · CONTROL MAESTRO DE REFORMA CURRICULAR_VACT.xlsx
 
 import html as html_lib
 import io
-import json
-import time
+import math
 from pathlib import Path
 
 import pandas as pd
@@ -15,11 +14,11 @@ import streamlit.components.v1 as html_comp
 
 from utils.data_loader_vact import (
     ETAPAS_ORDEN,
+    ETAPA_HEADER_CLR,
     ETAPA_PCT_COL,
+    ETAPA_SLUG,
     FAC_ABREV_INV,
-    STATUS_COLOR,
     STATUS_LABEL,
-    _activity_score,
     _ensure_activities_meta,
     apply_filters_vact,
     color_for_pct,
@@ -32,27 +31,6 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
-
-_DEBUG_LOG = Path(__file__).resolve().parent / "debug-758968.log"
-
-
-def _agent_log(hypothesis_id: str, location: str, message: str, data: dict) -> None:
-    # #region agent log
-    try:
-        payload = {
-            "sessionId": "758968",
-            "hypothesisId": hypothesis_id,
-            "location": location,
-            "message": message,
-            "data": data,
-            "timestamp": int(time.time() * 1000),
-        }
-        with open(_DEBUG_LOG, "a", encoding="utf-8") as f:
-            f.write(json.dumps(payload, ensure_ascii=False) + "\n")
-    except Exception:
-        pass
-    # #endregion
-
 
 def _registered_page_targets() -> set[str]:
     """Rutas/nombres de script registrados como páginas Streamlit."""
@@ -71,32 +49,17 @@ def _registered_page_targets() -> set[str]:
             targets.add(sp)
             targets.add(Path(sp).name)
             targets.add(Path(sp).as_posix())
-    except Exception as exc:
-        _agent_log("H3", "app_act.py:_registered_page_targets", "pages_manager_error", {"error": str(exc)})
+    except Exception:
+        pass
     return targets
 
 
 def _safe_page_link(page: str, **kwargs) -> bool:
     """Solo enlaza si la página existe en el registro multipágina actual."""
-    targets = _registered_page_targets()
-    page_norm = page.replace("\\", "/")
-    _agent_log(
-        "H1",
-        "app_act.py:_safe_page_link",
-        "page_link_attempt",
-        {"page": page, "page_norm": page_norm, "registered": sorted(targets)},
-    )
     try:
         st.page_link(page, **kwargs)
-        _agent_log("H1", "app_act.py:_safe_page_link", "page_link_ok", {"page": page})
         return True
-    except st.errors.StreamlitPageNotFoundError as exc:
-        _agent_log(
-            "H1",
-            "app_act.py:_safe_page_link",
-            "page_link_not_found",
-            {"page": page, "error": type(exc).__name__},
-        )
+    except st.errors.StreamlitPageNotFoundError:
         return False
 
 # ── CSS global (filtros + Gantt Fase 2) ───────────────────────────────────────
@@ -171,42 +134,6 @@ button[data-baseweb="tab"][aria-selected="true"] {
 }
 .f2-prog-badge-pct { font-size: 42px; font-weight: 800; line-height: 1; }
 .f2-prog-badge-lbl { font-size: 10px; text-transform: uppercase; letter-spacing: .5px; margin-top: 6px; opacity: .85; }
-.f2-fac-badge {
-    display: inline-block; padding: 3px 10px; border-radius: 12px;
-    font-size: 11px; font-weight: 700; color: #fff;
-}
-/* ── Tabla actividades ── */
-.f2-act-tbl { width: 100%; border-collapse: collapse; font-size: 12px; margin-top: 8px; }
-.f2-act-tbl th { background: #f1f5f9; padding: 8px 10px; text-align: left; font-weight: 700; color: #0F385A; }
-.f2-act-tbl td { padding: 7px 10px; border-bottom: 1px solid #eef2f6; color: #2a4a5e; }
-.f2-act-tbl tr:hover td { background: #f8fafc; }
-.f2-st-badge {
-    display: inline-block; padding: 2px 10px; border-radius: 10px;
-    font-size: 10px; font-weight: 700; color: #fff;
-}
-/* ── Tabla programas ── */
-.f2-tbl { width: 100%; border-collapse: collapse; font-size: 12px; }
-.f2-tbl th { background: #0F385A; color: #fff; padding: 10px 8px; text-align: center; font-weight: 600; }
-.f2-tbl td { padding: 8px; border-bottom: 1px solid #e8eef4; text-align: center; }
-.f2-tbl td.prog-name { text-align: left; font-weight: 600; color: #0F385A; cursor: pointer; }
-.f2-tbl tr:hover td { background: #f0f7fc; }
-.f2-mini-bar { height: 6px; background: #e2e8f0; border-radius: 3px; overflow: hidden; margin-top: 3px; }
-/* ── Matriz programas × actividades ── */
-.f2-matrix-scroll {
-    overflow-x: auto; max-width: 100%; background: #fff;
-    border-radius: 8px; border: 1px solid rgba(15,56,90,0.10);
-    box-shadow: 0 1px 4px rgba(15,56,90,0.06);
-}
-.f2-matrix { min-width: max-content; }
-.f2-matrix th { font-size: 10px; padding: 8px 6px; vertical-align: bottom; max-width: 120px;
-    white-space: normal; line-height: 1.2; }
-.f2-matrix td { font-size: 11px; padding: 6px 8px; text-align: center; }
-.f2-matrix td.prog-name { text-align: left; font-weight: 600; color: #0F385A;
-    min-width: 160px; max-width: 220px; white-space: normal; position: sticky; left: 0;
-    background: #fff; z-index: 1; box-shadow: 2px 0 4px rgba(0,0,0,.04); }
-.f2-matrix thead th:first-child { position: sticky; left: 0; z-index: 3; }
-.f2-matrix .f2-act-hdr { display: block; max-width: 110px; }
-.f2-matrix .f2-val-cell { font-size: 10px; color: #6a8a9e; display: block; margin-top: 2px; }
 </style>
 """, unsafe_allow_html=True)
 
@@ -225,6 +152,83 @@ _LBL = 'style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;lett
 
 def _esc(s):
     return html_lib.escape(str(s) if s is not None else "—")
+
+
+# ── Helpers HTML (patrón Priorización · app.py) ─────────────────────────────
+def _p_esc(s):
+    return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+
+
+def _p_bar(pct):
+    try:
+        pct = float(pct if pct is not None else 0)
+    except Exception:
+        pct = 0.0
+    if math.isnan(pct):
+        pct = 0.0
+    clr = "#15803d" if pct >= 70 else ("#d97706" if pct >= 40 else "#dc2626")
+    bar = "#22c55e" if pct >= 70 else ("#f59e0b" if pct >= 40 else "#ef4444")
+    return (
+        f'<div style="min-width:70px;text-align:center">'
+        f'<div style="font-size:12px;font-weight:700;color:{clr};margin-bottom:3px">{int(pct)}%</div>'
+        f'<div style="height:6px;background:#e2e8f0;border-radius:4px;overflow:hidden">'
+        f'<div style="width:{min(pct, 100):.0f}%;height:100%;background:{bar};border-radius:4px;'
+        f'box-shadow:0 1px 2px rgba(0,0,0,.15)"></div></div></div>'
+    )
+
+
+_PER_HDR_CLR = {"2026-2": "#A6CE38", "2027-1": "#FBAF17", "2027-2": "#EC0677"}
+_MOD_CLR = {"Presencial": "#1FB2DE", "Virtual": "#EC0677", "Distancia": "#A6CE38"}
+
+_VACT_ACT_EMOJI = {
+    "done": "✅",
+    "inprog": "⚠️",
+    "nostart": "🔴",
+    "devuelto": "↩️",
+    "info": "ℹ️",
+}
+
+
+def _p_badge(txt, clr):
+    r, g, b = int(clr[1:3], 16), int(clr[3:5], 16), int(clr[5:7], 16)
+    return (
+        f'<span style="background:rgba({r},{g},{b},0.12);color:{clr};font-size:10px;'
+        f'font-weight:700;padding:3px 9px;border-radius:12px;white-space:nowrap">{_p_esc(txt)}</span>'
+    )
+
+
+def _vact_act_icon(cl: str, val=None) -> str:
+    lbl = STATUS_LABEL.get(cl, cl)
+    if cl == "info" and val and str(val).strip() not in ("—", "", "nan", "None"):
+        return (
+            f'<span style="font-size:10px;color:#4a6a7e;display:inline-block;max-width:90px;'
+            f'line-height:1.2;word-break:break-word" title="{_p_esc(lbl)}">{_p_esc(str(val)[:24])}</span>'
+        )
+    if cl == "na":
+        return (
+            f'<span style="color:#b0bec5;font-size:13px;font-weight:600" title="{_p_esc(lbl)}">N/A</span>'
+        )
+    emoji = _VACT_ACT_EMOJI.get(cl, "—")
+    return f'<span style="font-size:16px" title="{_p_esc(lbl)}">{emoji}</span>'
+
+
+def _status_legend_html() -> str:
+    parts = []
+    for cl in ("done", "inprog", "nostart", "devuelto", "info", "na"):
+        lbl = STATUS_LABEL.get(cl, cl)
+        if cl == "na":
+            icon = '<span style="color:#b0bec5;font-weight:600">N/A</span>'
+        else:
+            icon = f'<span style="font-size:14px">{_VACT_ACT_EMOJI.get(cl, "")}</span>'
+        parts.append(
+            f'<span style="margin-right:16px;font-size:11px;color:#6a8a9e">{icon} {lbl}</span>'
+        )
+    return (
+        '<div style="display:flex;flex-wrap:wrap;gap:4px;margin-top:8px;padding:8px 4px">'
+        + "".join(parts)
+        + '<span style="font-size:10px;color:#9aabb5;margin-left:8px">'
+        "· Pulse + en cada etapa para ver actividades</span></div>"
+    )
 
 
 def _clear_filters():
@@ -363,120 +367,161 @@ def _short_label(text: str, max_len: int = 28) -> str:
     return t if len(t) <= max_len else t[: max_len - 1] + "…"
 
 
-def _activities_matrix_html(df: pd.DataFrame, etapa: str) -> str:
-    meta = [m for m in _ensure_activities_meta(df) if m["phase"] == etapa]
-    if not meta:
-        return "<p style='color:#6a8a9e;padding:12px'>Sin actividades en esta etapa.</p>"
-    pct_col = ETAPA_PCT_COL[etapa]
-    headers = ["<th>Programa</th>", "<th>Fac.</th>", "<th>% Etapa</th>"]
-    for m in meta:
-        headers.append(
-            f'<th title="{_esc(m["name"])}"><span class="f2-act-hdr">{_esc(_short_label(m["name"]))}</span></th>'
+
+_TOGGLE_JS = """
+<script>
+function toggleEtapa(slug) {
+  var cols = document.querySelectorAll('.col-act-' + slug);
+  var btn = document.getElementById('btn-etapa-' + slug);
+  if (!cols.length || !btn) return;
+  var show = cols[0].style.display === 'none';
+  for (var i = 0; i < cols.length; i++) {
+    cols[i].style.display = show ? 'table-cell' : 'none';
+  }
+  btn.textContent = show ? '\u2212' : '+';
+}
+</script>
+"""
+
+
+def _master_activities_table_html(df: pd.DataFrame) -> str:
+    meta_all = _ensure_activities_meta(df)
+    etapa_blocks = []
+    ncols = 6
+    for etapa in ETAPAS_ORDEN:
+        meta = [m for m in meta_all if m["phase"] == etapa]
+        etapa_blocks.append({
+            "etapa": etapa,
+            "slug": ETAPA_SLUG[etapa],
+            "meta": meta,
+            "pct_col": ETAPA_PCT_COL[etapa],
+        })
+        ncols += 1 + len(meta)
+
+    TH = (
+        'style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:700;'
+        'padding:6px 4px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;'
+        'border-right:1px solid rgba(255,255,255,0.10)"'
+    )
+    THL = (
+        'style="background:#0F385A;color:#FFFFFF;font-size:9px;font-weight:700;'
+        'padding:6px 8px;text-align:left;white-space:nowrap;position:sticky;top:0;left:0;z-index:4;'
+        'border-right:1px solid rgba(255,255,255,0.10);min-width:140px;max-width:200px"'
+    )
+
+    h1 = [
+        f'<th rowspan="2" {THL}>Programa</th>',
+        f'<th rowspan="2" {TH}>Facultad</th>',
+        f'<th rowspan="2" {TH}>Modalidad</th>',
+        f'<th rowspan="2" {TH}>Nivel</th>',
+        f'<th rowspan="2" {TH}>Sede</th>',
+        f'<th rowspan="2" {TH}>Período</th>',
+    ]
+    h2 = []
+    for blk in etapa_blocks:
+        slug, etapa, meta = blk["slug"], blk["etapa"], blk["meta"]
+        clr = ETAPA_HEADER_CLR.get(etapa, "#0F385A")
+        r, g, b = int(clr[1:3], 16), int(clr[3:5], 16), int(clr[5:7], 16)
+        n_span = 1 + len(meta)
+        short = etapa.replace(" Curricular", "")
+        h1.append(
+            f'<th colspan="{n_span}" style="background:rgba({r},{g},{b},0.18);color:{clr};'
+            f'font-size:10px;font-weight:800;padding:6px 8px;text-align:center;'
+            f'border-right:1px solid rgba(255,255,255,0.10);position:sticky;top:0;z-index:2">'
+            f'<button type="button" id="btn-etapa-{slug}" onclick="toggleEtapa(\'{slug}\')" '
+            f'style="cursor:pointer;border:1px solid {clr};background:#fff;color:{clr};'
+            f'border-radius:4px;width:22px;height:22px;font-weight:800;margin-right:6px">+</button>'
+            f'{_p_esc(short)}</th>'
         )
-    rows = []
-    for _, row in df.sort_values("NOMBRE DEL PROGRAMA").iterrows():
-        fac, fc = row.get("FACULTAD_ABREV", "—"), row.get("FACULTAD_COLOR", "#6e7681")
-        pct, pc = float(row.get(pct_col, 0) or 0), color_for_pct(float(row.get(pct_col, 0) or 0))
-        cells = [
-            f'<td class="prog-name">{_esc(row["NOMBRE DEL PROGRAMA"])}</td>',
-            f'<td><span class="f2-fac-badge" style="background:{fc}">{_esc(fac)}</span></td>',
-            f'<td><b style="color:{pc}">{pct:.0f}%</b></td>',
-        ]
+        h2.append(f'<th {TH}>% Av.</th>')
         for m in meta:
-            cl = row.get(f"cl_act_{m['idx']}", "na")
-            val = row.get(f"val_act_{m['idx']}", "—")
-            color, lbl = STATUS_COLOR.get(cl, "#9aabb5"), STATUS_LABEL.get(cl, cl)
-            score = _activity_score(cl)
-            pct_act = f"{score:.0f}%" if score is not None else "—"
-            val_short = _short_label(val, 18) if str(val).strip() not in ("—", "", "None", "nan") else ""
-            val_html = f'<span class="f2-val-cell">{_esc(val_short)}</span>' if val_short else ""
-            cells.append(
-                f'<td><span class="f2-st-badge" style="background:{color}">{_esc(lbl)}</span>'
-                f'<span style="display:block;font-size:10px;font-weight:700;color:#0F385A;margin-top:2px">'
-                f"{_esc(pct_act)}</span>{val_html}</td>"
+            h2.append(
+                f'<th class="col-act-{slug}" {TH} style="display:none" title="{_p_esc(m["name"])}">'
+                f'{_p_esc(_short_label(m["name"], 22))}</th>'
             )
-        rows.append("<tr>" + "".join(cells) + "</tr>")
-    return (
-        '<div class="f2-matrix-scroll"><table class="f2-tbl f2-matrix"><thead><tr>'
-        + "".join(headers) + "</tr></thead><tbody>" + "".join(rows) + "</tbody></table></div>"
-    )
 
-
-def _render_filter_summary(df: pd.DataFrame):
-    n = len(df)
-    gen_avg = round(float(df["avance_general_vact"].mean()), 1) if n else 0
-    gen_color = color_for_pct(gen_avg)
-    st.markdown(
-        f'<div class="f2-prog-card"><div class="f2-prog-info"><h3>Programas en el filtro actual</h3>'
-        f'<p style="color:#6a8a9e;font-size:13px;margin:0"><b style="color:#0F385A">{n}</b> programa(s) · '
-        f'Avance general promedio <b style="color:{gen_color}">{gen_avg:.0f}%</b><br>'
-        f'Las tablas muestran el estado de <b>cada actividad</b> para todos los programas filtrados.</p></div>'
-        f'<div class="f2-prog-badge" style="background:{gen_color}22;border:2px solid {gen_color}">'
-        f'<div class="f2-prog-badge-pct" style="color:{gen_color}">{gen_avg:.0f}%</div>'
-        f'<div class="f2-prog-badge-lbl" style="color:{gen_color}">Promedio general</div>'
-        f"</div></div>",
-        unsafe_allow_html=True,
-    )
-
-
-def _render_etapas_actividades(df: pd.DataFrame, expanded_first: bool = False):
-    for i, etapa in enumerate(ETAPAS_ORDEN):
-        pct_col = ETAPA_PCT_COL[etapa]
-        pct_avg = round(float(df[pct_col].mean()), 1) if len(df) and pct_col in df.columns else 0
-        meta = [m for m in _ensure_activities_meta(df) if m["phase"] == etapa]
-        done = sum(
-            1 for _, row in df.iterrows() for m in meta if row.get(f"cl_act_{m['idx']}") == "done"
-        )
-        color = color_for_pct(pct_avg)
-        with st.expander(
-            f"Etapa: {etapa}  ·  {pct_avg:.0f}% promedio  ·  {len(df)} programas  ·  "
-            f"{len(meta)} actividades  ·  {done} finalizadas",
-            expanded=(expanded_first and i == 0),
-        ):
-            st.markdown(
-                f'<div style="margin-bottom:10px">{_mini_bar(pct_avg, color)}</div>',
-                unsafe_allow_html=True,
-            )
-            html_comp.html(_activities_matrix_html(df, etapa), height=min(90 + 34 * len(df), 900), scrolling=True)
-
-
-
-def _programs_table_html(df: pd.DataFrame) -> str:
     rows = []
-    for _, r in df.sort_values("avance_general_vact", ascending=False).iterrows():
-        prog = r["NOMBRE DEL PROGRAMA"]
-        fac = r.get("FACULTAD_ABREV", "—")
-        fc = r.get("FACULTAD_COLOR", "#6e7681")
-        pa = r.get("pct_alistamiento", 0)
-        pd_ = r.get("pct_diseno", 0)
-        pde = r.get("pct_desarrollo", 0)
-        pi = r.get("pct_implementacion", 0)
-        pg = r.get("avance_general_vact", 0)
+    cur_per = None
+    row_idx = 0
+    sort_cols = [c for c in ("PERIODO DE IMPLEMENTACIÓN", "NOMBRE DEL PROGRAMA") if c in df.columns]
+    df_sorted = df.sort_values(sort_cols) if sort_cols else df
 
-        def _cell(p):
-            c = color_for_pct(p)
-            return (
-                f"<td><b style='color:{c}'>{p:.0f}%</b>"
-                f'<div class="f2-mini-bar"><div style="width:{min(p,100):.0f}%;height:100%;background:{c}"></div></div></td>'
+    for _, row in df_sorted.iterrows():
+        per = str(row.get("PERIODO DE IMPLEMENTACIÓN", "—")).strip()
+        if per != cur_per:
+            cur_per = per
+            ph_clr = _PER_HDR_CLR.get(per, "#9aabb5")
+            per_cnt = int((df_sorted["PERIODO DE IMPLEMENTACIÓN"].astype(str).str.strip() == per).sum())
+            rows.append(
+                f'<tr><td colspan="{ncols}" style="background:{ph_clr};color:#FFFFFF;'
+                f'font-size:11px;font-weight:800;padding:7px 12px;letter-spacing:.3px">'
+                f'{_p_esc(per)} · {per_cnt} PROGRAMAS</td></tr>'
             )
-
-        rows.append(
-            f"<tr>"
-            f'<td class="prog-name">{_esc(prog)}</td>'
-            f'<td><span class="f2-fac-badge" style="background:{fc}">{_esc(fac)}</span></td>'
-            f"<td>{_esc(r.get('MODALIDAD','—'))}</td>"
-            f"<td>{_esc(r.get('PERIODO DE IMPLEMENTACIÓN','—'))}</td>"
-            f"{_cell(pa)}{_cell(pd_)}{_cell(pde)}{_cell(pi)}{_cell(pg)}"
-            f"</tr>"
+            row_idx = 0
+        rbg = "#FFFFFF" if row_idx % 2 == 0 else "#f8fafc"
+        row_idx += 1
+        TD = (
+            f'style="padding:4px 3px;text-align:center;vertical-align:middle;'
+            f'border-bottom:1px solid #eef3f8;background:{rbg}"'
         )
+        TDL = (
+            f'style="padding:4px 6px;text-align:left;vertical-align:middle;'
+            f'border-bottom:1px solid #eef3f8;background:{rbg};min-width:140px;max-width:200px;'
+            f'position:sticky;left:0;z-index:1;box-shadow:2px 0 4px rgba(0,0,0,.04)"'
+        )
+        prog = _p_esc(row.get("NOMBRE DEL PROGRAMA", "—"))
+        fac_s = row.get("FACULTAD_ABREV", "—")
+        fac_c = row.get("FACULTAD_COLOR", "#9aabb5")
+        mod = str(row.get("MODALIDAD", "—"))
+        mod_c = _MOD_CLR.get(mod, "#9aabb5")
+        per_c = _PER_HDR_CLR.get(per, "#9aabb5")
+        nivel = row.get("NIVEL_HOMOLOGADO", row.get("NIVEL", "—"))
+
+        cells = [
+            f'<td {TDL}><span style="font-size:11px;font-weight:600;color:#0F385A">{prog}</span></td>',
+            f'<td {TD}><span style="font-size:10px;font-weight:700;color:{fac_c}">{_p_esc(fac_s)}</span></td>',
+            f'<td {TD}>{_p_badge(mod, mod_c)}</td>',
+            f'<td {TD}><span style="font-size:10px;color:#4a6a7e">{_p_esc(nivel)}</span></td>',
+            f'<td {TD}><span style="font-size:10px;color:#4a6a7e">{_p_esc(row.get("SEDE", "—"))}</span></td>',
+            f'<td {TD}>{_p_badge(per, per_c)}</td>',
+        ]
+        for blk in etapa_blocks:
+            slug = blk["slug"]
+            pct = float(row.get(blk["pct_col"], 0) or 0)
+            cells.append(f'<td {TD}>{_p_bar(pct)}</td>')
+            for m in blk["meta"]:
+                cl = row.get(f"cl_act_{m['idx']}", "na")
+                val = row.get(f"val_act_{m['idx']}", "—")
+                cells.append(
+                    f'<td class="col-act-{slug}" {TD} style="display:none">'
+                    f'{_vact_act_icon(cl, val)}</td>'
+                )
+        rows.append("<tr>" + "".join(cells) + "</tr>")
+
     if not rows:
         return "<p style='padding:20px;color:#6a8a9e'>No hay programas con los filtros seleccionados.</p>"
+
     return (
-        '<table class="f2-tbl"><thead><tr>'
-        "<th>Programa</th><th>Facultad</th><th>Modalidad</th><th>Período</th>"
-        "<th>Alistamiento</th><th>Diseño</th><th>Desarrollo</th><th>Implementación</th><th>General</th>"
-        f"</tr></thead><tbody>{''.join(rows)}</tbody></table>"
+        _TOGGLE_JS
+        + '<div style="overflow-x:auto;border-radius:12px;border:1.5px solid #b5c9d8;'
+        'box-shadow:0 2px 12px rgba(15,56,90,.10);background:#fafdff">'
+        '<table style="width:100%;table-layout:auto;border-collapse:separate;border-spacing:0;'
+        'font-family:\'Segoe UI\',sans-serif;min-width:max-content">'
+        "<thead><tr>" + "".join(h1) + "</tr><tr>" + "".join(h2) + "</tr></thead><tbody>"
+        + "".join(rows)
+        + "</tbody></table></div>"
+        + _status_legend_html()
     )
+
+
+def _render_master_table(df: pd.DataFrame):
+    if len(df) == 0:
+        st.info("Sin programas para los filtros seleccionados.")
+        return
+    n_per = df["PERIODO DE IMPLEMENTACIÓN"].nunique() if "PERIODO DE IMPLEMENTACIÓN" in df.columns else 0
+    h = min(120 + 42 * len(df) + 42 * n_per, 900)
+    html_comp.html(_master_activities_table_html(df), height=h, scrolling=True)
+
 
 
 def _excel_export_bytes(df: pd.DataFrame) -> bytes:
@@ -526,21 +571,6 @@ with st.sidebar:
         unsafe_allow_html=True,
     )
     st.markdown("<hr style='margin:10px 0;border-color:rgba(255,255,255,.2)'>", unsafe_allow_html=True)
-    _main_script = ""
-    try:
-        from streamlit.runtime.scriptrunner import get_script_run_ctx
-
-        ctx = get_script_run_ctx()
-        if ctx is not None:
-            _main_script = Path(ctx.pages_manager.main_script_path).name.replace("\\", "/")
-    except Exception:
-        pass
-    _agent_log(
-        "H2",
-        "app_act.py:sidebar",
-        "main_script",
-        {"main_script": _main_script, "registered": sorted(_registered_page_targets())},
-    )
     if not _safe_page_link("app.py", label="Fase 1 · Producción", icon="📊"):
         st.caption("Fase 1 no disponible en este despliegue (entrada: app_act.py).")
     _safe_page_link("app_act.py", label="Fase 2 · Etapas (VACT)", icon="📋")
@@ -603,7 +633,7 @@ with tab_avance:
             "Estado de actividades · todos los programas</div>",
             unsafe_allow_html=True,
         )
-        _render_etapas_actividades(df, expanded_first=True)
+        _render_master_table(df)
 
         st.download_button(
             "⬇ Descargar Excel",
@@ -625,11 +655,10 @@ with tab_detalle:
         _render_filter_summary(df)
         st.markdown(
             '<div style="font-size:13px;color:#6a8a9e;margin:12px 0">'
-            "Cada fila es un programa; cada columna es una actividad. "
-            "Desplace horizontalmente si hay muchas actividades.</div>",
+            "Tabla única por programa. Pulse + en el encabezado de cada etapa para ver sus actividades.</div>",
             unsafe_allow_html=True,
         )
-        _render_etapas_actividades(df, expanded_first=True)
+        _render_master_table(df)
 
 # ══════════════════════════════════════════════════════════════════════════════
 # TAB 3: Por Programa
@@ -643,20 +672,7 @@ with tab_programas:
     else:
         _render_filter_summary(df)
 
-        st.markdown(
-            '<div style="font-size:14px;font-weight:700;color:#0F385A;margin:16px 0 8px">'
-            "Resumen por programa (% por etapa)</div>",
-            unsafe_allow_html=True,
-        )
-        html_comp.html(_programs_table_html(df), height=min(120 + 42 * len(df), 700), scrolling=True)
-
-        st.markdown(
-            '<div style="font-size:14px;font-weight:700;color:#0F385A;margin:24px 0 8px">'
-            "Detalle de actividades · todos los programas</div>",
-            unsafe_allow_html=True,
-        )
-        _render_etapas_actividades(df, expanded_first=False)
-
+        _render_master_table(df)
 
         st.download_button(
             "⬇ Descargar Excel",
