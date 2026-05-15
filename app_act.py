@@ -333,6 +333,10 @@ html, body {{ margin: 0; padding: 0; height: 100%; background: {BG_TABLE}; }}
   border-top: none;
   background-clip: padding-box;
   vertical-align: bottom;
+  opacity: 1;
+}}
+.vact-master-table td[class^="col-act-"] {{
+  opacity: 1;
 }}
 .vact-master-table thead th.th-pin-left {{
   left: 0;
@@ -345,20 +349,32 @@ html, body {{ margin: 0; padding: 0; height: 100%; background: {BG_TABLE}; }}
 </style>
 """
 
+def _blend_with_white(hex_color: str, tint: float) -> str:
+    """Mezcla color de etapa sobre blanco → hex opaco (sin transparencia)."""
+    h = hex_color.lstrip("#")
+    if len(h) != 6:
+        return BG_ROW
+    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
+    w = 1.0 - tint
+    return (
+        f"#{int(255 * w + r * tint):02x}"
+        f"{int(255 * w + g * tint):02x}"
+        f"{int(255 * w + b * tint):02x}"
+    )
+
+
 def _etapa_hdr_tints(clr: str) -> dict[str, str]:
     """Fondos y textos para encabezados y celdas de actividades por etapa."""
-    h = clr.lstrip("#")
-    r, g, b = int(h[0:2], 16), int(h[2:4], 16), int(h[4:6], 16)
     return {
         "etapa_bg": clr,
         "etapa_fg": "#FFFFFF",
-        "act_bg": f"rgba({r},{g},{b},0.07)",
+        "act_bg": _blend_with_white(clr, 0.09),
         "act_fg": TEXT_PRIMARY,
-        "pct_bg": f"rgba({r},{g},{b},0.14)",
+        "pct_bg": _blend_with_white(clr, 0.17),
         "pct_fg": TEXT_PRIMARY,
-        "cell_act": f"rgba({r},{g},{b},0.05)",
-        "cell_act_alt": f"rgba({r},{g},{b},0.10)",
-        "border": f"rgba({r},{g},{b},0.22)",
+        "cell_act": _blend_with_white(clr, 0.06),
+        "cell_act_alt": _blend_with_white(clr, 0.11),
+        "border": _blend_with_white(clr, 0.28),
     }
 
 
