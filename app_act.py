@@ -297,6 +297,46 @@ def _render_filter_summary(df: pd.DataFrame):
     )
 
 
+_MASTER_TABLE_CSS = f"""
+<style>
+html, body {{ margin: 0; padding: 0; height: 100%; background: {BG_TABLE}; }}
+.vact-table-scroller {{
+  height: 100%;
+  overflow: auto;
+  -webkit-overflow-scrolling: touch;
+  border-radius: 12px;
+  border: 1.5px solid {BORDER_TABLE};
+  box-shadow: 0 2px 12px rgba(15,56,90,.10);
+  background: {BG_TABLE};
+}}
+.vact-master-table {{
+  width: 100%; table-layout: auto; border-collapse: separate; border-spacing: 0;
+  font-family: 'Segoe UI', sans-serif; min-width: max-content;
+}}
+.vact-master-table thead tr.hdr-etapa th {{
+  position: sticky;
+  top: 0;
+  z-index: 4;
+  background-clip: padding-box;
+}}
+.vact-master-table thead tr.hdr-act th {{
+  position: sticky;
+  top: 40px;
+  z-index: 3;
+  background-clip: padding-box;
+  box-shadow: 0 2px 4px rgba(15,56,90,0.08);
+}}
+.vact-master-table thead th.th-pin-left {{
+  left: 0;
+  z-index: 6 !important;
+  box-shadow: 2px 0 4px rgba(0,0,0,.06);
+}}
+.vact-master-table thead th.th-pin-gen {{
+  z-index: 5 !important;
+}}
+</style>
+"""
+
 _TOGGLE_JS = """
 <script>
 function toggleEtapa(slug) {
@@ -333,17 +373,17 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
 
     TH = (
         f'style="background:{BRAND_PRIMARY};color:#FFFFFF;font-size:9px;font-weight:700;'
-        'padding:6px 4px;text-align:center;white-space:nowrap;position:sticky;top:0;z-index:2;'
+        'padding:6px 4px;text-align:center;white-space:nowrap;'
         'border-right:1px solid rgba(255,255,255,0.10)"'
     )
     TH_GEN = (
-        f'style="background:{BRAND_PRIMARY};color:#FFFFFF;font-size:9px;font-weight:800;'
+        f'class="th-pin-gen" style="background:{BRAND_PRIMARY};color:#FFFFFF;font-size:9px;font-weight:800;'
         'padding:8px 6px;text-align:center;white-space:normal;line-height:1.25;'
-        f'position:sticky;top:0;z-index:2;border-left:2px solid {BRAND_HIGHLIGHT};min-width:88px"'
+        f'border-left:2px solid {BRAND_HIGHLIGHT};min-width:88px"'
     )
     THL = (
-        f'style="background:{BRAND_PRIMARY};color:#FFFFFF;font-size:9px;font-weight:700;'
-        'padding:6px 8px;text-align:left;white-space:nowrap;position:sticky;top:0;left:0;z-index:4;'
+        f'class="th-pin-left" style="background:{BRAND_PRIMARY};color:#FFFFFF;font-size:9px;font-weight:700;'
+        'padding:6px 8px;text-align:left;white-space:nowrap;'
         'border-right:1px solid rgba(255,255,255,0.10);min-width:140px;max-width:200px"'
     )
 
@@ -366,25 +406,25 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
         h1.append(
             f'<th id="hdr-etapa-{slug}" colspan="1" data-colspan-expanded="{n_span_expanded}"'
             f' class="hdr-etapa-{slug}"'
-            f' style="background:rgba({r},{g},{b},0.18);color:{clr};'
+            f' style="background:rgba({r},{g},{b},0.92);color:{clr};'
             f'font-size:10px;font-weight:800;padding:6px 8px;text-align:center;'
-            f'border-right:1px solid rgba(255,255,255,0.10);position:sticky;top:0;z-index:2">'
+            f'border-right:1px solid rgba(255,255,255,0.10)">'
             f'<button type="button" id="btn-etapa-{slug}" onclick="toggleEtapa(\'{slug}\')" '
             f'style="cursor:pointer;border:1px solid {clr};background:#fff;color:{clr};'
             f'border-radius:4px;width:22px;height:22px;font-weight:800;margin-right:6px">+</button>'
             f'{_p_esc(short)}</th>'
         )
         th_act = (
-            f'style="background:rgba({r},{g},{b},0.22);color:{clr};font-size:9px;font-weight:700;'
+            f'style="background:rgba({r},{g},{b},0.95);color:{clr};font-size:9px;font-weight:700;'
             f'padding:6px 5px;text-align:center;white-space:normal;line-height:1.3;'
             f'word-break:break-word;overflow-wrap:anywhere;min-width:90px;max-width:180px;'
-            f'vertical-align:bottom;position:sticky;top:0;z-index:2;'
+            f'vertical-align:bottom;'
             f'border-right:1px solid rgba({r},{g},{b},0.35);display:none"'
         )
         th_pct_etapa = (
-            f'style="background:rgba({r},{g},{b},0.12);color:{clr};font-size:9px;font-weight:700;'
+            f'style="background:rgba({r},{g},{b},0.90);color:{clr};font-size:9px;font-weight:700;'
             f'padding:6px 4px;text-align:center;white-space:normal;line-height:1.2;'
-            f'position:sticky;top:0;z-index:2;border-right:1px solid rgba({r},{g},{b},0.25);min-width:72px"'
+            f'border-right:1px solid rgba({r},{g},{b},0.25);min-width:72px"'
         )
         for m in meta:
             h2.append(
@@ -468,11 +508,10 @@ def _master_activities_table_html(df: pd.DataFrame) -> str:
 
     return (
         _TOGGLE_JS
-        + f'<div style="overflow-x:auto;border-radius:12px;border:1.5px solid {BORDER_TABLE};'
-        f'box-shadow:0 2px 12px rgba(15,56,90,.10);background:{BG_TABLE}">'
-        '<table style="width:100%;table-layout:auto;border-collapse:separate;border-spacing:0;'
-        'font-family:\'Segoe UI\',sans-serif;min-width:max-content">'
-        "<thead><tr>" + "".join(h1) + "</tr><tr>" + "".join(h2) + "</tr></thead><tbody>"
+        + _MASTER_TABLE_CSS
+        + '<div class="vact-table-scroller">'
+        '<table class="vact-master-table">'
+        '<thead><tr class="hdr-etapa">' + "".join(h1) + '</tr><tr class="hdr-act">' + "".join(h2) + "</tr></thead><tbody>"
         + "".join(rows)
         + "</tbody></table></div>"
         + _status_legend_html()
@@ -485,7 +524,7 @@ def _render_master_table(df: pd.DataFrame):
         return
     n_per = df["PERIODO DE IMPLEMENTACIÓN"].nunique() if "PERIODO DE IMPLEMENTACIÓN" in df.columns else 0
     h = min(120 + 42 * len(df) + 42 * n_per, 900)
-    html_comp.html(_master_activities_table_html(df), height=h, scrolling=True)
+    html_comp.html(_master_activities_table_html(df), height=h, scrolling=False)
 
 
 

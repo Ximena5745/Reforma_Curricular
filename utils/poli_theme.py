@@ -94,6 +94,15 @@ SEGMENT_INPROG = "#1FB2DE"
 SEGMENT_NOSTART = "#EC0677"
 SEGMENT_NA = "#c8d8e0"
 
+# Escala de avance % (solo colores institucionales; sin naranjas genéricos)
+PCT_HIGH = SEGMENT_DONE          # >= 70 %
+PCT_MID = BRAND_ACCENT           # >= 45 %
+PCT_LOW = "#FBAF17"              # >= 25 % — amarillo institucional
+PCT_CRITICAL = SEGMENT_NOSTART   # < 25 %
+PCT_BAR_TEXT_HIGH = "#5a7a2e"
+PCT_BAR_TEXT_MID = BRAND_ACCENT_DARK
+PCT_BAR_TEXT_LOW = "#9a0050"
+
 
 def rgba_hex(hex_color: str, alpha: float) -> str:
     h = hex_color.lstrip("#")
@@ -104,21 +113,21 @@ def rgba_hex(hex_color: str, alpha: float) -> str:
 
 
 def color_for_pct(p) -> str:
-    """Color sólido para tarjetas y Gantt (utils/data_loader.py)."""
+    """Color sólido para tarjetas y Gantt — escala institucional POLI."""
     if p is None or (isinstance(p, float) and math.isnan(p)):
         return TEXT_LIGHT
     p = float(p)
     if p >= 70:
-        return "#3ecf8e"
+        return PCT_HIGH
     if p >= 45:
-        return "#4f8ef7"
+        return PCT_MID
     if p >= 25:
-        return "#f97316"
-    return "#ef4444"
+        return PCT_LOW
+    return PCT_CRITICAL
 
 
 def pct_bar_colors(pct: float) -> tuple[str, str]:
-    """Texto y relleno de barra de % (app.py _p_bar)."""
+    """Texto y relleno de barra de % — escala institucional POLI."""
     try:
         pct = float(pct if pct is not None else 0)
     except (TypeError, ValueError):
@@ -126,10 +135,10 @@ def pct_bar_colors(pct: float) -> tuple[str, str]:
     if math.isnan(pct):
         pct = 0.0
     if pct >= 70:
-        return "#15803d", "#22c55e"
+        return PCT_BAR_TEXT_HIGH, PCT_HIGH
     if pct >= 40:
-        return "#d97706", "#f59e0b"
-    return "#dc2626", "#ef4444"
+        return PCT_BAR_TEXT_MID, PCT_MID
+    return PCT_BAR_TEXT_LOW, PCT_CRITICAL
 
 
 def p_bar_html(pct, min_width: int = 70) -> str:
