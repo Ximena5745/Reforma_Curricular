@@ -42,6 +42,7 @@ from utils.poli_theme import (
     TEXT_SUBTLE,
     badge_html,
     p_bar_html,
+    status_icon_html,
     streamlit_global_css,
 )
 
@@ -108,15 +109,6 @@ def _p_esc(s):
     return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
-_VACT_ACT_EMOJI = {
-    "done": "✅",
-    "inprog": "⚠️",
-    "nostart": "🔴",
-    "devuelto": "↩️",
-    "info": "ℹ️",
-}
-
-
 def _vact_act_icon(cl: str, val=None) -> str:
     lbl = STATUS_LABEL.get(cl, cl)
     if cl == "info" and val and str(val).strip() not in ("—", "", "nan", "None"):
@@ -128,8 +120,8 @@ def _vact_act_icon(cl: str, val=None) -> str:
         return (
             f'<span style="color:{TEXT_NA};font-size:13px;font-weight:600" title="{_p_esc(lbl)}">N/A</span>'
         )
-    emoji = _VACT_ACT_EMOJI.get(cl, "—")
-    return f'<span style="font-size:16px" title="{_p_esc(lbl)}">{emoji}</span>'
+    icon = status_icon_html(cl, size=16, title=lbl)
+    return icon if icon else f'<span style="color:{TEXT_LIGHT}">—</span>'
 
 
 def _status_legend_html() -> str:
@@ -139,7 +131,7 @@ def _status_legend_html() -> str:
         if cl == "na":
             icon = f'<span style="color:{TEXT_NA};font-weight:600">N/A</span>'
         else:
-            icon = f'<span style="font-size:14px">{_VACT_ACT_EMOJI.get(cl, "")}</span>'
+            icon = status_icon_html(cl, size=14, title=lbl)
         parts.append(
             f'<span style="margin-right:16px;font-size:11px;color:{TEXT_MUTED}">{icon} {lbl}</span>'
         )

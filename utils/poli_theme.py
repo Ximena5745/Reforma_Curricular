@@ -164,6 +164,58 @@ def badge_html(txt: str, fg_hex: str) -> str:
     )
 
 
+def _svg_esc(s: str) -> str:
+    return str(s).replace("&", "&amp;").replace('"', "&quot;")
+
+
+def status_icon_html(cl: str, size: int = 16, title: str = "") -> str:
+    """Icono SVG institucional para estado de actividad (sustituye emojis)."""
+    c = STATUS_CLR.get(cl, TEXT_LIGHT)
+    tip = f' title="{_svg_esc(title)}"' if title else ""
+    paths = {
+        "done": (
+            f'<circle cx="8" cy="8" r="6.5" fill="{c}" fill-opacity="0.15" stroke="{c}" stroke-width="1.4"/>'
+            f'<path d="M5.2 8.2 L7.2 10.2 L10.8 5.8" stroke="{c}" stroke-width="1.5" '
+            f'fill="none" stroke-linecap="round" stroke-linejoin="round"/>'
+        ),
+        "inprog": (
+            f'<circle cx="8" cy="8" r="6.5" fill="{c}" fill-opacity="0.12" stroke="{c}" stroke-width="1.4"/>'
+            f'<path d="M8 8 V5.2" stroke="{c}" stroke-width="1.4" stroke-linecap="round"/>'
+            f'<path d="M8 8 H10.8" stroke="{c}" stroke-width="1.4" stroke-linecap="round"/>'
+        ),
+        "nostart": (
+            f'<circle cx="8" cy="8" r="6.5" fill="none" stroke="{c}" stroke-width="1.4"/>'
+            f'<line x1="5.5" y1="8" x2="10.5" y2="8" stroke="{c}" stroke-width="1.4" '
+            f'stroke-linecap="round"/>'
+        ),
+        "devuelto": (
+            f'<path d="M10.8 5.4a4.2 4.2 0 1 0-5.3 2.6" fill="none" stroke="{c}" '
+            f'stroke-width="1.4" stroke-linecap="round"/>'
+            f'<path d="M5.5 8 L5.5 5.6 M5.5 8 L7.6 8" fill="none" stroke="{c}" '
+            f'stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"/>'
+        ),
+        "info": (
+            f'<rect x="5" y="4.5" width="6" height="7.5" rx="1" fill="{c}" fill-opacity="0.12" '
+            f'stroke="{c}" stroke-width="1.3"/>'
+            f'<line x1="6.5" y1="6.5" x2="9.5" y2="6.5" stroke="{c}" stroke-width="1.2" '
+            f'stroke-linecap="round"/>'
+            f'<line x1="6.5" y1="8" x2="9.5" y2="8" stroke="{c}" stroke-width="1.2" '
+            f'stroke-linecap="round"/>'
+            f'<line x1="6.5" y1="9.5" x2="8.2" y2="9.5" stroke="{c}" stroke-width="1.2" '
+            f'stroke-linecap="round"/>'
+        ),
+    }
+    inner = paths.get(cl)
+    if not inner:
+        return ""
+    return (
+        f'<span class="poli-status-icon" style="display:inline-flex;align-items:center;'
+        f"justify-content:center;width:{size}px;height:{size}px;vertical-align:middle{tip}\">"
+        f'<svg width="{size}" height="{size}" viewBox="0 0 16 16" xmlns="http://www.w3.org/2000/svg" '
+        f'aria-hidden="true">{inner}</svg></span>'
+    )
+
+
 def streamlit_global_css() -> str:
     """Bloque CSS global alineado con app.py."""
     return f"""
