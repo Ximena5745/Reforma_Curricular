@@ -430,13 +430,13 @@ with st.sidebar:
     st.markdown("<hr style='margin:10px 0;border-color:rgba(255,255,255,.2)'>", unsafe_allow_html=True)
     
     # Navigation
-    if not _safe_page_link("app.py", label="Fase 1 · Producción", icon="factory"):
+    if not _safe_page_link("app.py", label="🏭 Fase 1 · Producción"):
         st.caption("Fase 1 no disponible en este despliegue (entrada: app_act.py).")
-    _safe_page_link("app_act.py", label=f"{phosphor_icon_nav('chart-bar')} Resumen Ejecutivo", icon="chart-bar")
-    _safe_page_link("pages/1_Alertas_Riesgos.py", label=f"{phosphor_icon_nav('warning')} Alertas y Riesgos", icon="warning")
-    _safe_page_link("pages/2_Vista_Facultad.py", label=f"{phosphor_icon_nav('buildings')} Vista por Facultad", icon="buildings")
-    _safe_page_link("pages/3_Detalle_Etapa.py", label=f"{phosphor_icon_nav('clipboard-text')} Detalle por Etapa", icon="clipboard-text")
-    _safe_page_link("pages/4_Por_Programa.py", label=f"{phosphor_icon_nav('student')} Por Programa", icon="student")
+    _safe_page_link("app_act.py", label=f"{phosphor_icon_nav('chart-bar')} Resumen Ejecutivo")
+    _safe_page_link("pages/1_Alertas_Riesgos.py", label=f"{phosphor_icon_nav('warning')} Alertas y Riesgos")
+    _safe_page_link("pages/2_Vista_Facultad.py", label=f"{phosphor_icon_nav('buildings')} Vista por Facultad")
+    _safe_page_link("pages/3_Detalle_Etapa.py", label=f"{phosphor_icon_nav('clipboard-text')} Detalle por Etapa")
+    _safe_page_link("pages/4_Por_Programa.py", label=f"{phosphor_icon_nav('student')} Por Programa")
     
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
     st.markdown(
