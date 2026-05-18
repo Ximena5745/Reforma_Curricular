@@ -223,18 +223,21 @@ def _render_kpis(df: pd.DataFrame):
     n = len(df)
     avg_general = round(df["avance_general_vact"].mean(), 1) if n > 0 else 0
     presencial = int((df["MODALIDAD"] == "Presencial").sum()) if n > 0 else 0
-    virtual_hibrido = int(df["MODALIDAD"].isin(["Virtual", "Híbrido"]).sum()) if n > 0 else 0
+    virtual = int((df["MODALIDAD"] == "Virtual").sum()) if n > 0 else 0
+    hibrido = int((df["MODALIDAD"] == "Híbrido").sum()) if n > 0 else 0
     pct_presencial = round(presencial / n * 100, 1) if n > 0 else 0
-    pct_virtual = round(virtual_hibrido / n * 100, 1) if n > 0 else 0
+    pct_virtual = round(virtual / n * 100, 1) if n > 0 else 0
+    pct_hibrido = round(hibrido / n * 100, 1) if n > 0 else 0
 
     kpis = [
         ("Total Programas", str(n), "Programas activos", "#0F385A", 1, phosphor_icon_kpi("books")),
-        ("Avance Promedio", f"{avg_general}%", "Avance general", "#0F385A", avg_general / 100, phosphor_icon_kpi("trend-up")),
+        ("Avance Promedio", f"{avg_general}%", "Avance general", "#059669", avg_general / 100, phosphor_icon_kpi("trend-up")),
         ("Presencial", f"{pct_presencial}%", f"{presencial} programas", "#2980B9", pct_presencial / 100, phosphor_icon_kpi("school")),
-        ("Virtual-Híbrido", f"{pct_virtual}%", f"{virtual_hibrido} programas", "#A6CE38", pct_virtual / 100, phosphor_icon_kpi("monitor-play")),
+        ("Virtual", f"{pct_virtual}%", f"{virtual} programas", "#1FB2DE", pct_virtual / 100, phosphor_icon_kpi("monitor-play")),
+        ("Híbrido", f"{pct_hibrido}%", f"{hibrido} programas", "#FBAF17", pct_hibrido / 100, phosphor_icon_kpi("presentation-chart")),
     ]
 
-    cols = st.columns(4)
+    cols = st.columns(5)
     for i, (label, val, sub, color, pct_bar, icon) in enumerate(kpis):
         with cols[i]:
             st.markdown(_kpi_card(label, val, sub, color, pct_bar, icon), unsafe_allow_html=True)
@@ -358,6 +361,172 @@ def _render_chart_nivel(df: pd.DataFrame):
     )
 
 
+def _render_chart_nivel_anillos(df: pd.DataFrame):
+    if "NIVEL_HOMOLOGADO" not in df.columns:
+        return
+    
+    niveles = df["NIVEL_HOMOLOGADO"].value_counts()
+    colors = ["#2563eb", "#7c3aed", "#059669", "#d97706", "#dc2626"]
+    
+    if len(niveles) == 0:
+        return
+    
+    total = niveles.sum()
+    
+    # Crear gradiente para gráfico de anillos
+    gradient_defs = ""
+    for i, (nivel, count) in enumerate(niveles.items()):
+        color = colors[i % len(colors)]
+        gradient_defs += f'<stop offset="0%" stop-color="{color}"/><stop offset="100%" stop-color="{color}"/>'
+    
+    # Calcular segmentos
+    segments = ""
+    current_angle = 0
+    for i, (nivel, count) in enumerate(niveles.items()):
+        if not nivel:
+            continue
+        pct = count / total * 100
+        angle = (count / total) * 360
+        color = colors[i % len(colors)]
+        
+        # Calcular coordenadas del arco
+        start_angle = current_angle
+        end_angle = current_angle + angle
+        
+        start_rad = (start_angle - 90) * 3.14159 / 180
+        end_rad = (end_angle - 90) * 3.14159 / 180
+        
+        x1 = 70 + 50 * (1 if angle <= 180 else -1) * abs(1 - (angle > 180))
+        x1 = 70 + 50 * (1 if angle <= 180 else 0) if angle <= 180 else 70 + 50 * (-1) if angle > 180 else 70
+        
+        # Usar path simple para el arco
+        large_arc = 1 if angle > 180 else 0
+        
+        x_start = 70 + 45 * (1 if start_angle <= 180 else -1) if start_angle <= 180 else 70 - 45 * (1 - (start_angle - 180) / 180)
+        y_start = 70 + 45 * ((start_angle % 180) / 180) if start_angle <= 90 or start_angle > 270 else 70 - 45 * ((start_angle % 180) / 180)
+        
+        # Simplificar con stroke-dasharray
+        radius = 40
+        circumference = 2 * 3.14159 * radius
+        dash_length = (angle / 360) * circumference
+        dash_gap = circumference - dash_length
+        
+        segments += f'<circle cx="70" cy="70" r="{radius}" fill="none" stroke="{color}" stroke-width="12" stroke-dasharray="{dash_length} {dash_gap}" transform="rotate({-90 + current_angle} 70 70)"/>'
+        current_angle += angle
+    
+    # Leyenda
+    legend = ""
+    for i, (nivel, count) in enumerate(niveles.items()):
+        if not nivel:
+            continue
+        pct = round(count / total * 100, 1)
+        color = colors[i % len(colors)]
+        legend += (
+            f'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
+            f'<div style="width:10px;height:10px;border-radius:3px;background:{color};flex-shrink:0"></div>'
+            f'<span style="font-size:11px;color:#475569;font-weight:600">{nivel}</span>'
+            f'<span style="margin-left:auto;font-size:11px;font-weight:700;color:#0f172a">{count} ({pct}%)</span>'
+            f'</div>'
+        )
+    
+    st.markdown(
+        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
+        f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:12px">Distribución por Nivel Académico</div>'
+        f'<div style="display:flex;align-items:center;gap:20px">'
+        f'<div style="width:140px;height:140px;position:relative">'
+        f'<svg viewBox="0 0 140 140" style="transform:rotate(-90deg)">{segments}</svg>'
+        f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">'
+        f'<div style="font-size:20px;font-weight:800;color:{TEXT_PRIMARY}">{total}</div>'
+        f'<div style="font-size:9px;color:#94a3b8">Programas</div>'
+        f'</div></div>'
+        f'<div style="flex:1">{legend}</div>'
+        f'</div></div>',
+        unsafe_allow_html=True,
+    )
+
+
+def _render_chart_etapas_interactivo(df: pd.DataFrame):
+    if "pct_alistamiento" not in df.columns:
+        return
+    
+    etapas = ["Alistamiento Curricular", "Diseño Curricular", "Desarrollo Curricular", "Implementación Curricular"]
+    pct_cols = ["pct_alistamiento", "pct_diseno", "pct_desarrollo", "pct_implementacion"]
+    colors = ["#2980B9", "#1FB2DE", "#EC0677", "#A6CE38"]
+    
+    # Calcular promedios por etapa
+    promedios = []
+    for col in pct_cols:
+        if col in df.columns:
+            promedios.append(round(df[col].mean(), 1))
+        else:
+            promedios.append(0)
+    
+    # Calcular进度 por estado
+    done_counts = []
+    inprog_counts = []
+    nostart_counts = []
+    
+    for etapa in etapas:
+        slug = etapa.lower().replace(" curricular", "").replace(" ", "_")
+        cl_col = f"cl_act_0"
+        
+        done = 0
+        inprog = 0
+        nostart = 0
+        
+        for i in range(10):
+            cl_col = f"cl_act_{i}"
+            if cl_col in df.columns:
+                fase = df.get(f"act_phase_{i}", pd.Series([""] * len(df)))
+                if fase.str.contains(etapa).any():
+                    done += (df[cl_col] == "done").sum()
+                    inprog += (df[cl_col] == "inprog").sum()
+                    nostart += (df[cl_col] == "nostart").sum()
+        
+        done_counts.append(done)
+        inprog_counts.append(inprog)
+        nostart_counts.append(nostart)
+    
+    # Gráfico de barras agrupadas
+    bars = ""
+    max_val = max(sum(x) for x in zip(done_counts, inprog_counts, nostart_counts)) if done_counts else 1
+    
+    for i, etapa in enumerate(etapas):
+        y = i * 50
+        
+        done_w = (done_counts[i] / max(max_val, 1)) * 100
+        inprog_w = (inprog_counts[i] / max(max_val, 1)) * 100
+        nostart_w = (nostart_counts[i] / max(max_val, 1)) * 100
+        
+        bars += (
+            f'<g transform="translate(0,{y})">'
+            f'<text x="0" y="18" font-family="Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#0f172a">{etapa}</text>'
+            f'<text x="0" y="36" font-family="Segoe UI,sans-serif" font-size="10" fill="#64748b">Avg: {promedios[i]}%</text>'
+            f'<rect x="120" y="8" width="{done_w}%" height="10" rx="2" fill="#22c55e"/>'
+            f'<rect x="120" y="22" width="{inprog_w}%" height="10" rx="2" fill="#f59e0b"/>'
+            f'<rect x="120" y="36" width="{nostart_w}%" height="10" rx="2" fill="#94a3b8"/>'
+            f'</g>'
+        )
+    
+    # Leyenda
+    legend = (
+        f'<div style="display:flex;gap:16px;margin-top:16px;font-size:11px;color:#64748b">'
+        f'<div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;background:#22c55e;border-radius:2px"></div>Finalizado</div>'
+        f'<div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;background:#f59e0b;border-radius:2px"></div>En Proceso</div>'
+        f'<div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;background:#94a3b8;border-radius:2px"></div>Sin Iniciar</div>'
+        f'</div>'
+    )
+    
+    st.markdown(
+        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
+        f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:16px">Avance Consolidado por Etapa</div>'
+        f'<svg viewBox="0 0 500 220">{bars}</svg>'
+        f'{legend}'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+
+
 def _render_rankings(df: pd.DataFrame):
     # Top programas
     top = df.nlargest(8, "avance_general_vact")
@@ -430,13 +599,13 @@ with st.sidebar:
     st.markdown("<hr style='margin:10px 0;border-color:rgba(255,255,255,.2)'>", unsafe_allow_html=True)
     
     # Navigation
-    if not _safe_page_link("app.py", label="🏭 Fase 1 · Producción"):
+    if not _safe_page_link("app.py", label="Fase 1 · Producción", icon="🏭"):
         st.caption("Fase 1 no disponible en este despliegue (entrada: app_act.py).")
-    _safe_page_link("app_act.py", label=f"{phosphor_icon_nav('chart-bar')} Resumen Ejecutivo")
-    _safe_page_link("pages/1_Alertas_Riesgos.py", label=f"{phosphor_icon_nav('warning')} Alertas y Riesgos")
-    _safe_page_link("pages/2_Vista_Facultad.py", label=f"{phosphor_icon_nav('buildings')} Vista por Facultad")
-    _safe_page_link("pages/3_Detalle_Etapa.py", label=f"{phosphor_icon_nav('clipboard-text')} Detalle por Etapa")
-    _safe_page_link("pages/4_Por_Programa.py", label=f"{phosphor_icon_nav('student')} Por Programa")
+    _safe_page_link("app_act.py", label="Resumen Ejecutivo", icon="📊")
+    _safe_page_link("pages/1_Alertas_Riesgos.py", label="Alertas y Riesgos", icon="🚨")
+    _safe_page_link("pages/2_Vista_Facultad.py", label="Vista por Facultad", icon="🏛️")
+    _safe_page_link("pages/3_Detalle_Etapa.py", label="Detalle por Etapa", icon="📋")
+    _safe_page_link("pages/4_Por_Programa.py", label="Por Programa", icon="🎓")
     
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
     st.markdown(
@@ -476,21 +645,16 @@ else:
     # KPIs
     _render_kpis(df)
     
-    st.markdown("<div style='margin-bottom:20px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom:24px'></div>", unsafe_allow_html=True)
     
-    # Gráfico por Facultad
-    _render_chart_facultad(df)
+    # Gráficos fila 1: Nivel Académico (anillos) + Facultad
+    col_chart1, col_chart2 = st.columns([1, 2])
+    with col_chart1:
+        _render_chart_nivel_anillos(df)
+    with col_chart2:
+        _render_chart_facultad(df)
     
-    st.markdown("<div style='margin-bottom:20px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom:24px'></div>", unsafe_allow_html=True)
     
-    # Gráficos fila 2
-    col_chart3, col_chart4 = st.columns([3, 2])
-    with col_chart3:
-        _render_chart_etapas(df)
-    with col_chart4:
-        _render_chart_nivel(df)
-    
-    st.markdown("<div style='margin-bottom:20px'></div>", unsafe_allow_html=True)
-    
-    # Rankings
-    _render_rankings(df)
+    # Gráficos fila 2: Avance Consolidado por Etapa (gráfico interactivo)
+    _render_chart_etapas_interactivo(df)
