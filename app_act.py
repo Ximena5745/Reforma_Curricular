@@ -98,7 +98,7 @@ niveles_ops = [n for n in ["Pregrado", "Posgrado"] if n in df_raw.get("NIVEL_HOM
 _use_pills = hasattr(st, "pills")
 _LBL = (
     f'style="padding-top:8px;font-size:11px;font-weight:700;color:{TEXT_PRIMARY};'
-    f'letter-spacing:.4px;white-space nowrap"'
+    f'letter-spacing:.4px;white-space:nowrap"'
 )
 
 
@@ -179,9 +179,9 @@ def _etapa_repr_color(etapa: str | None = None, *, general: bool = False) -> str
     return ETAPA_HEADER_CLR.get(etapa or "", BRAND_PRIMARY)
 
 
-# ══════════════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════════
 # NUEVOS COMPONENTES - RESUMEN EJECUTIVO
-# ══════════════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════════
 
 def _arc(pct, color, r=22, sz=56):
     circ = 2 * 3.14159 * r
@@ -200,8 +200,6 @@ def _arc(pct, color, r=22, sz=56):
 
 def _kpi_card(label, val, sub, color, pct_bar=None, icon="◈"):
     pct_val = min(pct_bar * 100, 100) if pct_bar is not None else 0
-    pct_width = f"width:{pct_val:.0f}%" if pct_bar is not None else ""
-    pct_display = f"width:{pct_val:.0f}%" if pct_bar is not None else "display:none"
     return (
         f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);'
         f'border-left:4px solid {color};border-radius:12px;'
@@ -266,11 +264,12 @@ def _render_chart_facultad(df: pd.DataFrame):
         width = (avg / max_val) * (svg_w - 80)
         color = colors_map.get(fac, "#6e7681")
         y = i * (bar_h + gap)
+        fill_color = "#fff" if avg > 30 else "#1e293b"
         bars += (
             f'<g transform="translate(0,{y})">'
             f'<rect x="0" y="0" width="{svg_w}" height="{bar_h}" rx="6" fill="rgba(0,0,0,0.03)"/>'
             f'<rect x="0" y="0" width="{max(4, width)}" height="{bar_h}" rx="6" fill="{color}" opacity="0.85"/>'
-            f'<text x="8" y="{bar_h/2+1}" dominant-baseline="middle" fill="{ "#fff" if avg > 30 else "#1e293b"}" font-family="Segoe UI,sans-serif" font-size="11" font-weight="600">{fac}</text>'
+            f'<text x="8" y="{bar_h/2+1}" dominant-baseline="middle" fill="{fill_color}" font-family="Segoe UI,sans-serif" font-size="11" font-weight="600">{fac}</text>'
             f'<text x="{svg_w-8}" y="{bar_h/2+1}" dominant-baseline="middle" text-anchor="end" fill="#475569" font-family="Segoe UI,sans-serif" font-size="11" font-weight="700">{avg}%</text>'
             f'</g>'
         )
@@ -294,39 +293,10 @@ def _render_chart_modalidad(df: pd.DataFrame):
     if total == 0:
         return
     
-    cx, cy, r, ri = 80, 70, 55, 35
-    slices = ""
-    angle = -3.14159 / 2
-    
     legend = ""
     for mod, count in mods.items():
-        if count == 0:
-            continue
-        slice_angle = (count / total) * 2 * 3.14159
-        x1 = cx + r * (angle > -3.14159 and angle < 3.14159 and True or True)  # simplified
-        y1 = cy + r * 0
-        x1 = cx + r * (angle + slice_angle/2) / abs(angle + slice_angle/2 + 0.001) * 0 if angle != -3.14159/2 else cx
-        y1 = cy + r * 0
-        
-        # Full donut calculation
-        x1 = cx + r * 3.14159 * 0
-        y1 = cy + r * 0
-        x2 = cx + r * 3.14159 * 2
-        y2 = cy + r * 0
-        xi1 = cx + ri * 3.14159 * 0
-        yi1 = cy + ri * 0
-        xi2 = cx + ri * 3.14159 * 2
-        yi2 = cy + ri * 0
-        
-        # Calculate properly
-        start_angle = angle
-        end_angle = angle + slice_angle
-        x1 = cx + r * (1 if abs(start_angle) < 3 else -1) * (0 if abs(start_angle) < 0.01 else 1)
-        y1 = cy
-        
         color = colors_map.get(mod, "#6e7681")
         pct = round(count / total * 100)
-        
         legend += (
             f'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
             f'<div style="width:10px;height:10px;border-radius:3px;background:{color};flex-shrink:0"></div>'
@@ -334,10 +304,7 @@ def _render_chart_modalidad(df: pd.DataFrame):
             f'<span style="margin-left:auto;font-size:11px;font-weight:700;color:#0f172a">{count} ({pct}%)</span>'
             f'</div>'
         )
-        
-        angle += slice_angle
     
-    # Simpler donut using conic-gradient
     grad = ""
     current = 0
     for mod, count in mods.items():
@@ -345,7 +312,6 @@ def _render_chart_modalidad(df: pd.DataFrame):
         pct = count / total * 100
         grad += f"{color} {current}% {current + pct}%,"
         current += pct
-    
     grad = grad.rstrip(",")
     
     st.markdown(
@@ -381,12 +347,12 @@ def _render_chart_etapas(df: pd.DataFrame):
         width = avg * 3.6
         color = etapa_colors.get(etapa, "#6e7681")
         y = i * (bar_h + gap)
-        
+        fill_color = "#fff" if avg > 25 else "#1e293b"
         bars += (
             f'<g transform="translate(0,{y})">'
             f'<rect x="0" y="0" width="{svg_w}" height="{bar_h}" rx="6" fill="rgba(0,0,0,0.03)"/>'
             f'<rect x="0" y="0" width="{max(8, width)}" height="{bar_h}" rx="6" fill="{color}" opacity="0.85"/>'
-            f'<text x="6" y="{bar_h/2+1}" dominant-baseline="middle" fill="{ "#fff" if avg > 25 else "#1e293b"}" font-family="Segoe UI,sans-serif" font-size="11" font-weight="600">{etapa.replace(" Curricular", "")}</text>'
+            f'<text x="6" y="{bar_h/2+1}" dominant-baseline="middle" fill="{fill_color}" font-family="Segoe UI,sans-serif" font-size="11" font-weight="600">{etapa.replace(" Curricular", "")}</text>'
             f'<text x="{svg_w-4}" y="{bar_h/2+1}" dominant-baseline="middle" text-anchor="end" fill="#475569" font-family="Segoe UI,sans-serif" font-size="11" font-weight="700">{avg}%</text>'
             f'</g>'
         )
@@ -419,12 +385,13 @@ def _render_chart_nivel(df: pd.DataFrame):
         width = (count / max_count) * 400
         color = colors[i % len(colors)]
         y = i * 28
+        fill_color = "#fff" if count/max_count > 0.25 else "#1e293b"
         
         bars += (
             f'<g transform="translate(0,{y})">'
             f'<rect x="0" y="0" width="460" height="24" rx="5" fill="rgba(0,0,0,0.03)"/>'
             f'<rect x="0" y="0" width="{max(6, width)}" height="24" rx="5" fill="{color}" opacity="0.85"/>'
-            f'<text x="6" y="13" dominant-baseline="middle" fill="{ "#fff" if count/max_count > 0.25 else "#1e293b"}" font-family="Segoe UI,sans-serif" font-size="11" font-weight="600">{nivel}</text>'
+            f'<text x="6" y="13" dominant-baseline="middle" fill="{fill_color}" font-family="Segoe UI,sans-serif" font-size="11" font-weight="600">{nivel}</text>'
             f'<text x="455" y="13" dominant-baseline="middle" text-anchor="end" fill="#475569" font-family="Segoe UI,sans-serif" font-size="11" font-weight="700">{count}</text>'
             f'</g>'
         )
@@ -522,8 +489,7 @@ with st.sidebar:
     
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
     st.markdown(
-        '<div style="padding:12px;font-size:10px;color:rgba(255,255,255,.4);text-align:center">'
-        "POLI · VACT · 2025–2026</div>',
+        '<div style="padding:12px;font-size:10px;color:rgba(255,255,255,.4);text-align:center">POLI - VACT - 2025-2026</div>',
         unsafe_allow_html=True,
     )
 
@@ -552,7 +518,7 @@ else:
     # Título sección
     st.markdown(
         f'<div style="font-size:18px;font-weight:700;color:{TEXT_PRIMARY};margin:20px 0 12px">'
-        "📊 Resumen Ejecutivo</div>',
+        "📊 Resumen Ejecutivo</div>",
         unsafe_allow_html=True,
     )
     

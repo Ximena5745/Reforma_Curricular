@@ -3,6 +3,8 @@ pages/1_Alertas_Riesgos.py — Fase 2: Alertas y Riesgos
 Dashboard de alertas y riesgos operativos
 """
 
+from pathlib import Path
+
 import html as html_lib
 
 import pandas as pd

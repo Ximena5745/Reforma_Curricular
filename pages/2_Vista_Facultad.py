@@ -3,6 +3,8 @@ pages/2_Vista_Facultad.py — Fase 2: Vista por Facultad
 Análisis comparativo entre facultades
 """
 
+from pathlib import Path
+
 import html as html_lib
 
 import pandas as pd
@@ -193,7 +195,7 @@ def _render_chart_programas_facultad(df_fac: pd.DataFrame, fac_name: str):
             f'<g transform="translate(0,{y})">'
             f'<rect x="0" y="0" width="440" height="{bar_h}" rx="4" fill="rgba(0,0,0,0.03)"/>'
             f'<rect x="0" y="0" width="{max(3, width)}" height="{bar_h}" rx="4" fill="{color}" opacity="0.82"/>'
-            f'<text x="4" y="{bar_h/2+1}" dominant-baseline="middle" fill="{ "#fff" if pct > 15 else "#1e293b"}" font-family="Segoe UI,sans-serif" font-size="9.5" font-weight="500">{nombre}</text>'
+            f'<text x="4" y="{bar_h/2+1}" dominant-baseline="middle" fill="{("#fff" if pct > 15 else "#1e293b")}" font-family="Segoe UI,sans-serif" font-size="9.5" font-weight="500">{nombre}</text>'
             f'</g>'
         )
     
@@ -231,7 +233,7 @@ def _render_chart_etapas_facultad(df_fac: pd.DataFrame):
             f'<g transform="translate(0,{y})">'
             f'<rect x="0" y="0" width="380" height="{bar_h}" rx="6" fill="rgba(0,0,0,0.03)"/>'
             f'<rect x="0" y="0" width="{max(4, width)}" height="{bar_h}" rx="6" fill="{color}" opacity="0.85"/>'
-            f'<text x="6" y="{bar_h/2+1}" dominant-baseline="middle" fill="{ "#fff" if avg > 20 else "#1e293b"}" font-family="Segoe UI,sans-serif" font-size="10.5" font-weight="600">{etapa.replace(" Curricular", "")}</text>'
+            f'<text x="6" y="{bar_h/2+1}" dominant-baseline="middle" fill="{("#fff" if avg > 20 else "#1e293b")}" font-family="Segoe UI,sans-serif" font-size="10.5" font-weight="600">{etapa.replace(" Curricular", "")}</text>'
             f'<text x="376" y="{bar_h/2+1}" dominant-baseline="middle" text-anchor="end" fill="#475569" font-family="Segoe UI,sans-serif" font-size="10.5" font-weight="700">{avg}%</text>'
             f'</g>'
         )
