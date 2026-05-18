@@ -368,24 +368,36 @@ def _render_chart_nivel_anillos(df: pd.DataFrame):
     import math
     
     niveles = df["NIVEL_HOMOLOGADO"].value_counts()
-    colors = ["#2563eb", "#7c3aed", "#059669", "#d97706", "#dc2626"]
     
     if len(niveles) == 0:
         return
     
     total = niveles.sum()
     
-    # Aumentar tamaño: 200x200, radio 55, stroke-width 22
+    # Agrupar en Pregrado y Posgrado
+    pregrado_keys = ["Técnico", "Tecnológico", "Profesional"]
+    posgrado_keys = ["Especialización", "Maestría", "Doctorado"]
+    
+    pregrado_count = sum(niveles.get(k, 0) for k in pregrado_keys)
+    posgrado_count = sum(niveles.get(k, 0) for k in posgrado_keys)
+    
+    pregrado_pct = round(pregrado_count / total * 100, 1) if total > 0 else 0
+    posgrado_pct = round(posgrado_count / total * 100, 1) if total > 0 else 0
+    
+    # Generar segmentos solo para Pregrado y Posgrado
     segments = ""
     labels = ""
     current_angle = 0
     
-    for i, (nivel, count) in enumerate(niveles.items()):
-        if not nivel:
+    datos = [
+        ("Pregrado", pregrado_count, pregrado_pct, "#2563eb"),
+        ("Posgrado", posgrado_count, posgrado_pct, "#7c3aed"),
+    ]
+    
+    for nombre, count, pct, color in datos:
+        if count == 0:
             continue
-        pct = round(count / total * 100, 1)
         angle = (count / total) * 360
-        color = colors[i % len(colors)]
         
         radius = 55
         circumference = 2 * math.pi * radius
@@ -404,20 +416,31 @@ def _render_chart_nivel_anillos(df: pd.DataFrame):
         
         current_angle += angle
     
-    # Agregar leyenda
+    # Agregar leyenda solo con Pregrado y Posgrado
+    pregrado_keys = ["Técnico", "Tecnológico", "Profesional"]
+    posgrado_keys = ["Especialización", "Maestría", "Doctorado"]
+    
+    pregrado_count = sum(niveles.get(k, 0) for k in pregrado_keys)
+    posgrado_count = sum(niveles.get(k, 0) for k in posgrado_keys)
+    
+    pregrado_pct = round(pregrado_count / total * 100, 1) if total > 0 else 0
+    posgrado_pct = round(posgrado_count / total * 100, 1) if total > 0 else 0
+    
     legend = ""
-    for i, (nivel, count) in enumerate(niveles.items()):
-        if not nivel:
-            continue
-        pct = round(count / total * 100, 1)
-        color = colors[i % len(colors)]
-        legend += (
-            f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
-            f'<div style="width:12px;height:12px;border-radius:3px;background:{color};flex-shrink:0"></div>'
-            f'<span style="font-size:12px;color:#475569;font-weight:600">{nivel}</span>'
-            f'<span style="margin-left:auto;font-size:12px;font-weight:700;color:#0f172a">{count} ({pct}%)</span>'
-            f'</div>'
-        )
+    legend += (
+        f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+        f'<div style="width:12px;height:12px;border-radius:3px;background:#2563eb;flex-shrink:0"></div>'
+        f'<span style="font-size:12px;color:#475569;font-weight:600">Pregrado</span>'
+        f'<span style="margin-left:auto;font-size:12px;font-weight:700;color:#0f172a">{pregrado_count} ({pregrado_pct}%)</span>'
+        f'</div>'
+    )
+    legend += (
+        f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">'
+        f'<div style="width:12px;height:12px;border-radius:3px;background:#7c3aed;flex-shrink:0"></div>'
+        f'<span style="font-size:12px;color:#475569;font-weight:600">Posgrado</span>'
+        f'<span style="margin-left:auto;font-size:12px;font-weight:700;color:#0f172a">{posgrado_count} ({posgrado_pct}%)</span>'
+        f'</div>'
+    )
     
     st.markdown(
         f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
@@ -451,99 +474,244 @@ def _render_chart_etapas_interactivo(df: pd.DataFrame):
         else:
             promedios.append(0)
     
-    opciones = ["Resumen"] + etapas
-    etapa_sel = st.selectbox("Seleccionar vista:", opciones, key="etapa_select", label_visibility="collapsed")
+    # Toggle entre Drill Down y Stacked
+    modo_viz = st.segmented_control(
+        "Modo de visualización",
+        options=["Drill Down", "Stacked"],
+        default="Drill Down",
+        key="modo_etapas_viz",
+        label_visibility="collapsed"
+    )
     
-    if etapa_sel == "Resumen":
+    if modo_viz == "Drill Down":
+        _render_bar_drill_down(df, etapas, promedios, etapa_colors)
+    else:
+        _render_bar_stacked(df, etapas, promedios, etapa_colors)
+
+
+def _render_bar_drill_down(df, etapas, promedios, etapa_colors):
+    # Inicializar session state para etapa activa
+    if "etapa_activa" not in st.session_state:
+        st.session_state.etapa_activa = "Resumen"
+    
+    col_graf, col_panel = st.columns([2, 1])
+    
+    with col_graf:
         bars = ""
-        max_val = 100
-        
         for i, etapa in enumerate(etapas):
             y = i * 50
             avg = promedios[i]
             color = etapa_colors.get(etapa, "#6e7681")
             bar_w = avg
             
+            es_activa = st.session_state.etapa_activa == etapa
+            border_style = f"border:2px solid {color}" if es_activa else ""
+            
             bars += (
-                f'<g transform="translate(0,{y})">'
+                f'<g transform="translate(0,{y})" style="cursor:pointer" onclick="window.parent.postMessage({{type:\'streamlit:setComponentValue\',value:\'{etapa}\'}},\'*\')">'
                 f'<text x="0" y="18" font-family="Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#0f172a">{etapa}</text>'
-                f'<rect x="130" y="6" width="220" height="14" rx="4" fill="#e2e8f0"/>'
-                f'<rect x="130" y="6" width="{bar_w * 2.2}" height="14" rx="4" fill="{color}"/>'
-                f'<text x="360" y="18" font-family="Segoe UI,sans-serif" font-size="12" font-weight="700" fill="#0f172a">{avg}%</text>'
+                f'<rect x="130" y="6" width="200" height="14" rx="4" fill="#e2e8f0"/>'
+                f'<rect x="130" y="6" width="{bar_w * 2}" height="14" rx="4" fill="{color}"/>'
+                f'<text x="340" y="18" font-family="Segoe UI,sans-serif" font-size="12" font-weight="700" fill="#0f172a">{avg}%</text>'
                 f'</g>'
             )
         
         st.markdown(
             f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
-            f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:16px">Avance por Etapa - Vista General</div>'
-            f'<svg viewBox="0 0 400 220">{bars}</svg>'
+            f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:12px">Avance por Etapa - Drill Down</div>'
+            f'<div style="font-size:10px;color:#64748b;margin-bottom:12px">Click en una barra para ver el detalle</div>'
+            f'<svg viewBox="0 0 380 220">{bars}</svg>'
             f'</div>',
             unsafe_allow_html=True,
         )
-    else:
-        idx_etapa = opciones.index(etapa_sel) - 1
+        
+        # Botones para cambiar etapa activa (alternativa al click)
+        st.caption("Seleccionar etapa:")
+        btn_cols = st.columns(4)
+        for i, etapa in enumerate(etapas):
+            with btn_cols[i]:
+                if st.button(etapa[:10], key=f"btn_etapa_{i}", use_container_width=True):
+                    st.session_state.etapa_activa = etapa
+    
+    with col_panel:
+        etapa_sel = st.session_state.etapa_activa
+        if etapa_sel == "Resumen":
+            idx = -1
+        else:
+            idx = etapas.index(etapa_sel)
+        
+        color_etapa = etapa_colors.get(etapa_sel, "#6e7681") if etapa_sel != "Resumen" else "#6e7681"
+        
+        # Calcular estados
+        done = inprog = nostart = 0
+        if idx >= 0:
+            for i in range(20):
+                cl_col = f"cl_act_{i}"
+                if cl_col in df.columns:
+                    fase_col = f"act_phase_{i}"
+                    if fase_col in df.columns:
+                        fase_vals = df[fase_col].unique()
+                        if any(etapas[idx] in str(f) for f in fase_vals):
+                            done += (df[cl_col] == "done").sum()
+                            inprog += (df[cl_col] == "inprog").sum()
+                            nostart += (df[cl_col] == "nostart").sum()
+        
+        pct_actual = promedios[idx] if idx >= 0 else sum(promedios) / len(promedios)
+        
+        st.markdown(
+            f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
+            f'<div style="font-size:13px;font-weight:700;color:{color_etapa};margin-bottom:12px">{"RESUMEN GENERAL" if etapa_sel=="Resumen" else etapa_sel}</div>'
+            f'<div style="font-size:28px;font-weight:800;color:{color_etapa};margin-bottom:8px">{pct_actual}%</div>'
+            f'<div style="height:8px;background:#e2e8f0;border-radius:4px;margin-bottom:12px">'
+            f'<div style="height:100%;width:{pct_actual}%;background:{color_etapa};border-radius:4px"></div>'
+            f'</div>'
+            f'<div style="font-size:11px;margin-bottom:8px">'
+            f'<span style="color:#22c55e;font-weight:600">✓ {done}</span> · '
+            f'<span style="color:#0ea5e9;font-weight:600">⟳ {inprog}</span> · '
+            f'<span style="color:#94a3b8;font-weight:600">○ {nostart}</span>'
+            f'</div>'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
+        
+        if etapa_sel != "Resumen" and idx >= 0:
+            acts = []
+            for i in range(20):
+                fase_col = f"act_phase_{i}"
+                name_col = f"act_name_{i}"
+                cl_col = f"cl_act_{i}"
+                
+                if fase_col in df.columns and name_col in df.columns:
+                    fase_vals = df[fase_col].unique()
+                    if any(etapa_sel in str(f) for f in fase_vals):
+                        acts.append({"name": name_col, "cl": cl_col})
+            
+            if acts:
+                st.markdown(f'<div style="font-size:11px;font-weight:600;color:#64748b;margin-top:12px;margin-bottom:8px">ACTIVIDADES:</div>', unsafe_allow_html=True)
+                
+                for act in acts[:6]:
+                    if act["cl"] not in df.columns:
+                        continue
+                    done_c = (df[act["cl"]] == "done").sum()
+                    inprog_c = (df[act["cl"]] == "inprog").sum()
+                    nostart_c = (df[act["cl"]] == "nostart").sum()
+                    
+                    max_c = max(done_c, inprog_c, nostart_c)
+                    if max_c == done_c and done_c > 0:
+                        icon, color = "✓", "#22c55e"
+                    elif max_c == inprog_c and inprog_c > 0:
+                        icon, color = "⟳", "#0ea5e9"
+                    else:
+                        icon, color = "○", "#94a3b8"
+                    
+                    nombre = df[act["name"]].iloc[0] if len(df) > 0 else "Actividad"
+                    nombre_corto = nombre[:25] + "..." if len(nombre) > 25 else nombre
+                    
+                    st.markdown(
+                        f'<div style="display:flex;align-items:center;gap:6px;padding:6px 0;border-bottom:1px solid #f1f5f9;font-size:10px">'
+                        f'<span style="color:{color}">{icon}</span>'
+                        f'<span style="color:#475569">{nombre_corto}</span>'
+                        f'</div>',
+                        unsafe_allow_html=True,
+                    )
+
+
+def _render_bar_stacked(df, etapas, promedios, etapa_colors):
+    if "etapa_expandida" not in st.session_state:
+        st.session_state.etapa_expandida = None
+    
+    # Generar barras con botón de expansión
+    bars = ""
+    for i, etapa in enumerate(etapas):
+        y = i * 70
+        avg = promedios[i]
+        color = etapa_colors.get(etapa, "#6e7681")
+        es_expandida = st.session_state.etapa_expandida == etapa
+        
+        bars += (
+            f'<g transform="translate(0,{y})">'
+            f'<text x="0" y="16" font-family="Segoe UI,sans-serif" font-size="11" font-weight="600" fill="#0f172a">{etapa}</text>'
+            f'<text x="0" y="32" font-family="Segoe UI,sans-serif" font-size="10" fill="#64748b">Presiona "Ver" para detalle</text>'
+            f'<rect x="100" y="4" width="180" height="12" rx="3" fill="#e2e8f0"/>'
+            f'<rect x="100" y="4" width="{avg * 1.8}" height="12" rx="3" fill="{color}"/>'
+            f'<text x="290" y="14" font-family="Segoe UI,sans-serif" font-size="11" font-weight="700" fill="#0f172a">{avg}%</text>'
+            f'</g>'
+        )
+    
+    st.markdown(
+        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
+        f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:16px">Avance por Etapa - Stacked</div>'
+        f'<svg viewBox="0 0 320 300">{bars}</svg>'
+        f'</div>',
+        unsafe_allow_html=True,
+    )
+    
+    # Botones para cada etapa
+    st.caption("Ver detalle de etapa:")
+    btn_cols = st.columns(4)
+    for i, etapa in enumerate(etapas):
+        with btn_cols[i]:
+            if st.button(f"Ver {i+1}", key=f"btn_exp_{i}", use_container_width=True):
+                if st.session_state.etapa_expandida == etapa:
+                    st.session_state.etapa_expandida = None
+                else:
+                    st.session_state.etapa_expandida = etapa
+    
+    # Mostrar detalle si hay una etapa expandida
+    if st.session_state.etapa_expandida:
+        idx = etapas.index(st.session_state.etapa_expandida)
+        etapa_sel = st.session_state.etapa_expandida
         
         acts = []
         for i in range(20):
             fase_col = f"act_phase_{i}"
             name_col = f"act_name_{i}"
             cl_col = f"cl_act_{i}"
-            val_col = f"val_act_{i}"
             
             if fase_col in df.columns and name_col in df.columns:
                 fase_vals = df[fase_col].unique()
                 if any(etapa_sel in str(f) for f in fase_vals):
-                    acts.append({"idx": i, "fase": fase_col, "name": name_col, "cl": cl_col, "val": val_col})
+                    acts.append({"name": name_col, "cl": cl_col})
         
-        if not acts:
-            st.markdown(f'<div style="padding:20px;text-align:center;color:#94a3b8">No hay actividades registradas para {etapa_sel}</div>', unsafe_allow_html=True)
-            return
-        
-        items = ""
-        for act in acts:
-            if act["cl"] not in df.columns:
-                continue
+        if acts:
+            items = ""
+            for act in acts:
+                if act["cl"] not in df.columns:
+                    continue
+                
+                done_c = (df[act["cl"]] == "done").sum()
+                inprog_c = (df[act["cl"]] == "inprog").sum()
+                nostart_c = (df[act["cl"]] == "nostart").sum()
+                
+                max_c = max(done_c, inprog_c, nostart_c)
+                if max_c == done_c and done_c > 0:
+                    estado_label, estado_color, estado_icon = "Finalizado", "#22c55e", "✓"
+                elif max_c == inprog_c and inprog_c > 0:
+                    estado_label, estado_color, estado_icon = "En Proceso", "#0ea5e9", "⟳"
+                else:
+                    estado_label, estado_color, estado_icon = "Sin Iniciar", "#94a3b8", "○"
+                
+                nombre = df[act["name"]].iloc[0] if len(df) > 0 else "Actividad"
+                
+                items += (
+                    f'<div style="display:flex;align-items:center;gap:10px;padding:10px;border-bottom:1px solid #e2e8f0">'
+                    f'<div style="width:24px;height:24px;border-radius:50%;background:{estado_color}20;display:flex;align-items:center;justify-content:center;color:{estado_color};font-size:12px">{estado_icon}</div>'
+                    f'<div style="flex:1"><div style="font-size:12px;font-weight:600;color:#0f172a">{nombre}</div>'
+                    f'<div style="font-size:10px;color:#64748b">F:{done_c} I:{inprog_c} N:{nostart_c}</div></div>'
+                    f'<div style="background:{estado_color};color:#fff;padding:3px 8px;border-radius:10px;font-size:9px;font-weight:600">{estado_label}</div>'
+                    f'</div>'
+                )
             
-            done_count = (df[act["cl"]] == "done").sum()
-            inprog_count = (df[act["cl"]] == "inprog").sum()
-            nostart_count = (df[act["cl"]] == "nostart").sum()
-            
-            max_count = max(done_count, inprog_count, nostart_count)
-            if max_count == done_count and done_count > 0:
-                estado = "done"
-                estado_label = "Finalizado"
-                estado_color = "#22c55e"
-                estado_icon = "✓"
-            elif max_count == inprog_count and inprog_count > 0:
-                estado = "inprog"
-                estado_label = "En Proceso"
-                estado_color = "#0ea5e9"
-                estado_icon = "⟳"
-            else:
-                estado = "nostart"
-                estado_label = "Sin Iniciar"
-                estado_color = "#94a3b8"
-                estado_icon = "○"
-            
-            nombre_act = df[act["name"]].iloc[0] if len(df) > 0 else "Actividad"
-            
-            items += (
-                f'<div style="display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid #e2e8f0">'
-                f'<div style="width:28px;height:28px;border-radius:50%;background:{estado_color}20;display:flex;align-items:center;justify-content:center;color:{estado_color};font-size:14px">{estado_icon}</div>'
-                f'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#0f172a">{nombre_act}</div>'
-                f'<div style="font-size:10px;color:#64748b">Finalizado: {done_count} · En Proceso: {inprog_count} · Sin Iniciar: {nostart_count}</div></div>'
-                f'<div style="background:{estado_color};color:#fff;padding:4px 10px;border-radius:12px;font-size:10px;font-weight:600">{estado_label}</div>'
-                f'</div>'
+            color_etapa = etapa_colors.get(etapa_sel, "#6e7681")
+            st.markdown(
+                f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(15,56,90,0.07);margin-top:16px">'
+                f'<div style="font-size:13px;font-weight:700;color:{color_etapa};margin-bottom:12px">Detalle: {etapa_sel} (Promedio: {promedios[idx]}%)</div>'
+                f'{items}'
+                f'</div>',
+                unsafe_allow_html=True,
             )
-        
-        color_etapa = etapa_colors.get(etapa_sel, "#6e7681")
-        st.markdown(
-            f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
-            f'<div style="font-size:14px;font-weight:700;color:{color_etapa};margin-bottom:16px">Detalle: {etapa_sel} (Promedio: {promedios[idx_etapa]}%)</div>'
-            f'{items}'
-            f'</div>',
-            unsafe_allow_html=True,
-        )
+        else:
+            st.info(f"No hay actividades para {etapa_sel}")
 
 
 def _render_rankings(df: pd.DataFrame):
