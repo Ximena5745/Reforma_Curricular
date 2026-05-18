@@ -38,14 +38,119 @@ from utils.poli_theme import (
     PERIODO_CLR,
     p_bar_html,
     badge_html,
+    phosphor_icon,
+    phosphor_icon_kpi,
+    phosphor_icon_nav,
 )
 
 st.set_page_config(
     page_title="Alertas y Riesgos · Fase 2 · POLI",
-    page_icon="🚨",
+    page_icon="warning",
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+
+def _parse_pct(val) -> float:
+    """Convierte valor de porcentaje string a float."""
+    if pd.isna(val):
+        return 0.0
+    s = str(val).strip().lower()
+    if not s or s in ("none", "nan", "no aplica", "—", ""):
+        return 0.0
+    try:
+        return float(s.replace("%", "").replace(",", "."))
+    except:
+        return 0.0
+
+
+def _is_not_finished(val) -> bool:
+    """Retorna True si el valor no indica estado Finalizado."""
+    if pd.isna(val):
+        return True
+    s = str(val).strip().lower()
+    return s != "finalizado"
+
+
+def _get_r1_produccion_sin_aval(df: pd.DataFrame) -> pd.DataFrame:
+    """R1: Producción virtual sin aval financiero - Virtual/Híbrido sin formato de proyecciones financieras."""
+    return df[
+        (df["MODALIDAD"].isin(["Virtual", "Híbrido"])) &
+        (df["5.Formato de proyecciones académicas y financieras"].apply(_is_not_finished))
+    ]
+
+
+def _get_r2_contenidos_incompletos(df: pd.DataFrame) -> pd.DataFrame:
+    """R2: Lanzamiento 2026-2 con contenidos incompletos."""
+    return df[
+        (df["PERIODO DE IMPLEMENTACIÓN"] == "2026-2") &
+        (df["Producción del Contenido"].apply(_is_not_finished))
+    ]
+
+
+def _get_r3_banner_sin_produccion(df: pd.DataFrame) -> pd.DataFrame:
+    """R3: Parametrización en Banner sin producción de contenidos."""
+    return df[
+        (df["Parametrización en Banner (Convenios y homologaciones)"].apply(lambda x: str(x).lower() == "en proceso")) &
+        (df["Producción del Contenido"].apply(_is_not_finished))
+    ]
+
+
+def _get_r4_syllabus_incompleto(df: pd.DataFrame) -> pd.DataFrame:
+    """R4: Virtual/Híbrido con syllabus incompleto."""
+    return df[
+        (df["MODALIDAD"].isin(["Virtual", "Híbrido"])) &
+        (df["Syllabus aprobado"].apply(_is_not_finished))
+    ]
+
+
+def _get_r5_banner_sin_convenios(df: pd.DataFrame) -> pd.DataFrame:
+    """R5: Banner sin trámites de convenios."""
+    return df[
+        (df["Parametrización en Banner (Convenios y homologaciones)"].apply(lambda x: str(x).lower() == "en proceso")) &
+        (df["Formato maestro de convenios"].apply(_is_not_finished))
+    ]
+
+
+def _get_r6_aprobados_men(df: pd.DataFrame) -> pd.DataFrame:
+    """R6: Programas con trámite aprobado por MEN sin producción virtual completa."""
+    return df[
+        (df["Cronograma de trámites frente al MEN"].apply(lambda x: "aprobado" in str(x).lower())) &
+        (df["Producción del Contenido"].apply(_is_not_finished))
+    ]
+
+
+def _render_riesgo(title: str, desc: str, color: str, risk_df: pd.DataFrame) -> None:
+    """Renderiza una card de riesgo con lista de programas."""
+    items = ""
+    for _, row in risk_df.iterrows():
+        nombre = row.get("NOMBRE DEL PROGRAMA", "—")
+        fac = row.get("FACULTAD_ABREV", "—")
+        mod = row.get("MODALIDAD", "—")
+        sede = row.get("SEDE", "—")
+        pct = int(row.get("avance_general_vact", 0))
+        
+        items += (
+            f'<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 12px;'
+            f'background:rgba({int(color[1:3],16)},{int(color[3:5],16)},{int(color[5:7],16)},0.05);'
+            f'border-left:3px solid {color};border-radius:6px;margin-bottom:6px">'
+            f'{phosphor_icon("warning", size=14, color=color)}'
+            f'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:#0f172a;white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{nombre}</div>'
+            f'<div style="font-size:10px;color:#64748b;margin-top:2px">{fac} · {mod} · {sede}</div></div>'
+            f'<span style="background:{color};color:#fff;padding:2px 8px;border-radius:100px;font-size:10px;font-weight:600">{pct}%</span>'
+            f'</div>'
+        )
+    
+    if not items:
+        items = f'<div style="padding:16px;text-align:center;color:#94a3b8;font-size:12px">Sin programas en este riesgo</div>'
+    
+    st.markdown(
+        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:14px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
+        f'<div style="font-size:13px;font-weight:700;color:#0f172a;margin-bottom:6px">{phosphor_icon("warning", size=16, color=color)} {title}</div>'
+        f'<div style="font-size:10px;color:#94a3b8;margin-bottom:10px">{desc}</div>'
+        f'{items}</div>',
+        unsafe_allow_html=True,
+    )
 
 
 def _registered_page_targets() -> set[str]:
@@ -116,7 +221,7 @@ def _render_filter_bar(key_prefix: str, show_count: bool = True):
     with st.container():
         lb1, in1, sp, lb2, in2, btn = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
         with lb1:
-            st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
+            st.markdown(f'<div {_LBL}>{phosphor_icon("clipboard-text", size=16)} MODALIDAD</div>', unsafe_allow_html=True)
         with in1:
             if _use_pills:
                 st.pills("mod", mods_ops, selection_mode="multi", key="flt_mod", label_visibility="collapsed")
@@ -193,30 +298,23 @@ def _kpi_alert(label, val, sub, color):
 
 
 def _render_kpis_alertas(df: pd.DataFrame):
-    n = len(df)
-    criticos = int((df["avance_general_vact"] < 20).sum()) if n > 0 else 0
-    
-    # Desbalance: etapas desbalanceadas
-    desbalance = df[
-        (abs(df["pct_alistamiento"] - df["pct_diseno"]) > 50) |
-        (abs(df["pct_diseno"] - df["pct_desarrollo"]) > 60)
-    ]
-    desbalance_count = len(desbalance)
-    
-    # Próximos a finalizar
-    proximos = int((df["avance_general_vact"] >= 70).sum()) if n > 0 else 0
-    
-    # Implementación 100%
-    impl_100 = int((df["pct_implementacion"] >= 100).sum()) if "pct_implementacion" in df.columns else 0
+    r1 = _get_r1_produccion_sin_aval(df)
+    r2 = _get_r2_contenidos_incompletos(df)
+    r3 = _get_r3_banner_sin_produccion(df)
+    r4 = _get_r4_syllabus_incompleto(df)
+    r5 = _get_r5_banner_sin_convenios(df)
+    r6 = _get_r6_aprobados_men(df)
     
     kpis = [
-        ("Alertas Críticas", str(criticos), "Avance < 20%", "#dc2626"),
-        ("Requieren Atención", str(desbalance_count), "Etapas desbalanceadas", "#d97706"),
-        ("Próximos a Finalizar", str(proximos), "Avance ≥ 70%", "#059669"),
-        ("Implementación 100%", str(impl_100), "Completamente implementados", "#2563eb"),
+        ("R1: Prod. Virtual sin Aval", str(len(r1)), "Virtual/Híbrido sin formato financiero", "#dc2626"),
+        ("R2: 2026-2 Cont. Incompletos", str(len(r2)), "Período 2026-2 sin contenidos", "#d97706"),
+        ("R3: Banner sin Producción", str(len(r3)), "Param. Banner sin contenidos", "#7c3aed"),
+        ("R4: Syllabus Incompleto", str(len(r4)), "Virtual/Híbrido sin syllabus", "#0d9488"),
+        ("R5: Banner sin Convenios", str(len(r5)), "Banner sin trámites de convenios", "#2563eb"),
+        ("R6: Aprobados MEN sin Prod.", str(len(r6)), "Trámite MEN sin contenidos", "#f59e0b"),
     ]
     
-    cols = st.columns(4)
+    cols = st.columns(6)
     for i, (label, val, sub, color) in enumerate(kpis):
         with cols[i]:
             st.markdown(_kpi_alert(label, val, sub, color), unsafe_allow_html=True)
@@ -236,7 +334,7 @@ def _render_alertas_criticas(df: pd.DataFrame):
         items += (
             f'<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;'
             f'background:rgba(220,38,38,0.05);border-left:3px solid #dc2626;border-radius:6px;margin-bottom:8px">'
-            f'<span style="font-size:16px">🔴</span>'
+            f'{phosphor_icon("circle-fill", size=16, color="#dc2626")}'
             f'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#0f172a">{nombre}</div>'
             f'<div style="font-size:11px;color:#64748b;margin-top:2px">{fac} · {mod} · {sede}</div></div>'
             f'<span style="background:#dc2626;color:#fff;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700">{pct}%</span>'
@@ -248,7 +346,7 @@ def _render_alertas_criticas(df: pd.DataFrame):
     
     st.markdown(
         f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
-        f'<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px">🔴 Alertas Críticas</div>'
+        f'<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px">{phosphor_icon("warning", size=18, color="#dc2626")} Alertas Críticas</div>'
         f'<div style="font-size:11px;color:#94a3b8;margin-bottom:12px">Programas con avance menor al 20%</div>'
         f'{items}</div>',
         unsafe_allow_html=True,
@@ -272,7 +370,7 @@ def _render_alertas_atencion(df: pd.DataFrame):
         items += (
             f'<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;'
             f'background:rgba(217,119,6,0.05);border-left:3px solid #d97706;border-radius:6px;margin-bottom:8px">'
-            f'<span style="font-size:16px">⚠️</span>'
+            f'{phosphor_icon("warning-circle", size=16, color="#d97706")}'
             f'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#0f172a">{nombre}</div>'
             f'<div style="font-size:11px;color:#64748b;margin-top:2px">Desfase entre etapas</div>'
             f'<div style="font-size:10px;color:#94a3b8;margin-top:4px">Alist: {alist}% · Diseño: {diseno}% · Desarrollo: {desarr}%</div></div>'
@@ -284,7 +382,7 @@ def _render_alertas_atencion(df: pd.DataFrame):
     
     st.markdown(
         f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
-        f'<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px">🟡 Alertas de Atención</div>'
+        f'<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px">{phosphor_icon("circle-fill", size=18, color="#d97706")} Alertas de Atención</div>'
         f'<div style="font-size:11px;color:#94a3b8;margin-bottom:12px">Programas con etapas desbalanceadas</div>'
         f'{items}</div>',
         unsafe_allow_html=True,
@@ -304,7 +402,7 @@ def _render_proximos_finalizar(df: pd.DataFrame):
         items += (
             f'<div style="display:flex;align-items:flex-start;gap:10px;padding:12px 14px;'
             f'background:rgba(5,150,105,0.05);border-left:3px solid #059669;border-radius:6px;margin-bottom:8px">'
-            f'<span style="font-size:16px">🏁</span>'
+            f'{phosphor_icon("flag-checkered", size=16, color="#059669")}'
             f'<div style="flex:1"><div style="font-size:13px;font-weight:700;color:#0f172a">{nombre}</div>'
             f'<div style="font-size:11px;color:#64748b;margin-top:2px">{fac} · {mod}</div></div>'
             f'<span style="background:#059669;color:#fff;padding:4px 10px;border-radius:100px;font-size:11px;font-weight:700">{pct}%</span>'
@@ -316,7 +414,7 @@ def _render_proximos_finalizar(df: pd.DataFrame):
     
     st.markdown(
         f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
-        f'<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px">🟢 Programas Próximos a Finalizar</div>'
+        f'<div style="font-size:14px;font-weight:700;color:#0f172a;margin-bottom:12px">{phosphor_icon("circle-fill", size=18, color="#059669")} Programas Próximos a Finalizar</div>'
         f'<div style="font-size:11px;color:#94a3b8;margin-bottom:12px">Programas con avance general superior al 70%</div>'
         f'{items}</div>',
         unsafe_allow_html=True,
@@ -333,11 +431,11 @@ with st.sidebar:
     )
     st.markdown("<hr style='margin:10px 0;border-color:rgba(255,255,255,.2)'>", unsafe_allow_html=True)
     
-    _safe_page_link("app_act.py", label="📊 Resumen Ejecutivo", icon="📊")
-    _safe_page_link("pages/1_Alertas_Riesgos.py", label="🚨 Alertas y Riesgos", icon="🚨")
-    _safe_page_link("pages/2_Vista_Facultad.py", label="🏛️ Vista por Facultad", icon="🏛️")
-    _safe_page_link("pages/3_Detalle_Etapa.py", label="📋 Detalle por Etapa", icon="📋")
-    _safe_page_link("pages/4_Por_Programa.py", label="🏛️ Por Programa", icon="🏛️")
+    _safe_page_link("app_act.py", label=f"{phosphor_icon_nav('chart-bar')} Resumen Ejecutivo", icon="chart-bar")
+    _safe_page_link("pages/1_Alertas_Riesgos.py", label=f"{phosphor_icon_nav('warning')} Alertas y Riesgos", icon="warning")
+    _safe_page_link("pages/2_Vista_Facultad.py", label=f"{phosphor_icon_nav('buildings')} Vista por Facultad", icon="buildings")
+    _safe_page_link("pages/3_Detalle_Etapa.py", label=f"{phosphor_icon_nav('clipboard-text')} Detalle por Etapa", icon="clipboard-text")
+    _safe_page_link("pages/4_Por_Programa.py", label=f"{phosphor_icon_nav('student')} Por Programa", icon="student")
     
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
     st.markdown('<div style="padding:12px;font-size:10px;color:rgba(255,255,255,.4);text-align:center">POLI · VACT · 2025–2026</div>', unsafe_allow_html=True)
@@ -362,18 +460,33 @@ n = len(df)
 if n == 0:
     st.warning("No hay programas que coincidan con los filtros seleccionados.")
 else:
-    st.markdown(f'<div style="font-size:18px;font-weight:700;color:{TEXT_PRIMARY};margin:20px 0 12px">🚨 Alertas y Riesgos</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="font-size:18px;font-weight:700;color:{TEXT_PRIMARY};margin:20px 0 12px">{phosphor_icon("warning", size=22)} Alertas y Riesgos</div>', unsafe_allow_html=True)
     
     _render_kpis_alertas(df)
     
-    st.markdown("<div style='margin-bottom:20px'></div>", unsafe_allow_html=True)
+    st.markdown("<div style='margin-bottom:24px'></div>", unsafe_allow_html=True)
     
-    col1, col2 = st.columns(2)
-    with col1:
-        _render_alertas_criticas(df)
-    with col2:
-        _render_alertas_atencion(df)
+    r1_df = _get_r1_produccion_sin_aval(df)
+    r2_df = _get_r2_contenidos_incompletos(df)
+    r3_df = _get_r3_banner_sin_produccion(df)
+    r4_df = _get_r4_syllabus_incompleto(df)
+    r5_df = _get_r5_banner_sin_convenios(df)
+    r6_df = _get_r6_aprobados_men(df)
     
-    st.markdown("<div style='margin-bottom:20px'></div>", unsafe_allow_html=True)
+    row1_cols = st.columns(3)
+    with row1_cols[0]:
+        _render_riesgo("R1: Prod. Virtual sin Aval", "Virtual/Híbrido sin formato financiero", "#dc2626", r1_df)
+    with row1_cols[1]:
+        _render_riesgo("R2: 2026-2 Cont. Incompletos", "Período 2026-2 sin contenidos", "#d97706", r2_df)
+    with row1_cols[2]:
+        _render_riesgo("R3: Banner sin Producción", "Param. Banner sin contenidos", "#7c3aed", r3_df)
     
-    _render_proximos_finalizar(df)
+    st.markdown("<div style='margin-bottom:16px'></div>", unsafe_allow_html=True)
+    
+    row2_cols = st.columns(3)
+    with row2_cols[0]:
+        _render_riesgo("R4: Syllabus Incompleto", "Virtual/Híbrido sin syllabus", "#0d9488", r4_df)
+    with row2_cols[1]:
+        _render_riesgo("R5: Banner sin Convenios", "Banner sin trámites de convenios", "#2563eb", r5_df)
+    with row2_cols[2]:
+        _render_riesgo("R6: Aprobados MEN sin Prod.", "Trámite MEN sin contenidos", "#f59e0b", r6_df)

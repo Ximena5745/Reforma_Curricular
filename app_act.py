@@ -1,6 +1,6 @@
 """
 app_act.py — Dashboard Fase 2: Reforma Curricular por Etapas (VACT)
-Fuente: hoja Etapas · CONTROL MAESTRO DE REFORMA CURRICULAR_VACT.xlsx
+Fuente: hoja Etapas · CONTROL MAESTRO DE REFORMA CURRICULAR.xlsx
 Página: Resumen Ejecutivo
 """
 
@@ -47,6 +47,10 @@ from utils.poli_theme import (
     FACULTAD_CLR,
     ETAPA_CLR,
     STATUS_CLR,
+    phosphor_icon,
+    phosphor_icon_kpi,
+    phosphor_icon_nav,
+    PHOSPHOR_ICONS,
 )
 
 st.set_page_config(
@@ -218,31 +222,22 @@ def _kpi_card(label, val, sub, color, pct_bar=None, icon="◈"):
 def _render_kpis(df: pd.DataFrame):
     n = len(df)
     avg_general = round(df["avance_general_vact"].mean(), 1) if n > 0 else 0
-    completados = int((df["avance_general_vact"] >= 80).sum()) if n > 0 else 0
-    en_ejecucion = int((df["avance_general_vact"] >= 20).sum()) - completados if n > 0 else 0
-    criticos = int((df["avance_general_vact"] < 20).sum()) if n > 0 else 0
-    facultades = df["FACULTAD_ABREV"].nunique() if n > 0 and "FACULTAD_ABREV" in df.columns else 0
-    modalidades = df["MODALIDAD"].nunique() if n > 0 and "MODALIDAD" in df.columns else 0
-    proximos = int((df["avance_general_vact"] >= 70).sum()) if n > 0 else 0
+    presencial = int((df["MODALIDAD"] == "Presencial").sum()) if n > 0 else 0
+    virtual_hibrido = int(df["MODALIDAD"].isin(["Virtual", "Híbrido"]).sum()) if n > 0 else 0
+    pct_presencial = round(presencial / n * 100, 1) if n > 0 else 0
+    pct_virtual = round(virtual_hibrido / n * 100, 1) if n > 0 else 0
 
     kpis = [
-        ("Total Programas", str(n), f"{facultades} facultades activas", "#0F385A", n / 70 if n > 0 else 0, "📚"),
-        ("Avance Promedio", f"{avg_general}%", "General del proyecto", "#0F385A", avg_general / 100, "📈"),
-        ("Completados", str(completados), "Avance ≥80%", "#059669", completados / max(n, 1), "✅"),
-        ("En Ejecución", str(en_ejecucion), "Avance 20-79%", "#0891b2", en_ejecucion / max(n, 1), "⚙️"),
-        ("Programas Críticos", str(criticos), "Avance <20%", "#dc2626", criticos / max(n, 1), "🚨"),
-        ("Facultades Activas", str(facultades), "Unidades académicas", "#7c3aed", facultades / 5, "🏛️"),
-        ("Modalidades", str(modalidades), "Presencial · Virtual · Híbrido", "#d97706", modalidades / 3, "🌐"),
-        ("Próximos a Finalizar", str(proximos), "Avance >70%", "#059669", proximos / max(n, 1), "🏁"),
+        ("Total Programas", str(n), "Programas activos", "#0F385A", 1, phosphor_icon_kpi("books")),
+        ("Avance Promedio", f"{avg_general}%", "Avance general", "#0F385A", avg_general / 100, phosphor_icon_kpi("trend-up")),
+        ("Presencial", f"{pct_presencial}%", f"{presencial} programas", "#2980B9", pct_presencial / 100, phosphor_icon_kpi("school")),
+        ("Virtual-Híbrido", f"{pct_virtual}%", f"{virtual_hibrido} programas", "#A6CE38", pct_virtual / 100, phosphor_icon_kpi("monitor-play")),
     ]
 
     cols = st.columns(4)
     for i, (label, val, sub, color, pct_bar, icon) in enumerate(kpis):
-        with cols[i % 4]:
+        with cols[i]:
             st.markdown(_kpi_card(label, val, sub, color, pct_bar, icon), unsafe_allow_html=True)
-        if i == 3:
-            st.markdown("<div style='margin-bottom:8px'></div>", unsafe_allow_html=True)
-            cols = st.columns(4)
 
 
 def _render_chart_facultad(df: pd.DataFrame):
@@ -279,50 +274,6 @@ def _render_chart_facultad(df: pd.DataFrame):
         f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:12px">Avance por Facultad</div>'
         f'<svg viewBox="0 0 {svg_w} {svg_h}">{bars}</svg>'
         f'</div>',
-        unsafe_allow_html=True,
-    )
-
-
-def _render_chart_modalidad(df: pd.DataFrame):
-    if "MODALIDAD" not in df.columns:
-        return
-    
-    mods = df["MODALIDAD"].value_counts()
-    colors_map = {"Virtual": "#1FB2DE", "Presencial": "#A6CE38", "Híbrido": "#FBAF17"}
-    total = mods.sum()
-    if total == 0:
-        return
-    
-    legend = ""
-    for mod, count in mods.items():
-        color = colors_map.get(mod, "#6e7681")
-        pct = round(count / total * 100)
-        legend += (
-            f'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
-            f'<div style="width:10px;height:10px;border-radius:3px;background:{color};flex-shrink:0"></div>'
-            f'<span style="font-size:11px;color:#475569;font-weight:600">{mod}</span>'
-            f'<span style="margin-left:auto;font-size:11px;font-weight:700;color:#0f172a">{count} ({pct}%)</span>'
-            f'</div>'
-        )
-    
-    grad = ""
-    current = 0
-    for mod, count in mods.items():
-        color = colors_map.get(mod, "#6e7681")
-        pct = count / total * 100
-        grad += f"{color} {current}% {current + pct}%,"
-        current += pct
-    grad = grad.rstrip(",")
-    
-    st.markdown(
-        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
-        f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:12px">Distribución por Modalidad</div>'
-        f'<div style="display:flex;align-items:center;gap:20px">'
-        f'<div style="width:140px;height:140px;border-radius:50%;background:conic-gradient({grad});display:flex;align-items:center;justify-content:center">'
-        f'<div style="width:80px;height:80px;background:#fff;border-radius:50%;display:flex;align-items:center;justify-content:center">'
-        f'<div style="text-align:center"><div style="font-size:22px;font-weight:800;color:{TEXT_PRIMARY}">{total}</div><div style="font-size:9px;color:#94a3b8">Programas</div></div>'
-        f'</div></div>'
-        f'<div style="flex:1">{legend}</div></div></div>',
         unsafe_allow_html=True,
     )
 
@@ -451,7 +402,7 @@ def _render_rankings(df: pd.DataFrame):
     with col1:
         st.markdown(
             f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
-            f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:12px">🏆 Top Programas Destacados</div>'
+            f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:12px">{phosphor_icon("trophy", size=18)} Top Programas Destacados</div>'
             f'<div style="font-size:11px;color:{TEXT_MUTED};margin-bottom:10px">Mayor avance general</div>'
             f'{top_html}</div>',
             unsafe_allow_html=True,
@@ -460,7 +411,7 @@ def _render_rankings(df: pd.DataFrame):
     with col2:
         st.markdown(
             f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
-            f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:12px">⚠️ Programas Críticos</div>'
+            f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:12px">{phosphor_icon("warning-circle", size=18, color="#d97706")} Programas Críticos</div>'
             f'<div style="font-size:11px;color:{TEXT_MUTED};margin-bottom:10px">Avance general menor al 20%</div>'
             f'{criticos_html}</div>',
             unsafe_allow_html=True,
@@ -479,13 +430,13 @@ with st.sidebar:
     st.markdown("<hr style='margin:10px 0;border-color:rgba(255,255,255,.2)'>", unsafe_allow_html=True)
     
     # Navigation
-    if not _safe_page_link("app.py", label="Fase 1 · Producción", icon="📊"):
+    if not _safe_page_link("app.py", label="Fase 1 · Producción", icon="factory"):
         st.caption("Fase 1 no disponible en este despliegue (entrada: app_act.py).")
-    _safe_page_link("app_act.py", label="📊 Resumen Ejecutivo", icon="📊")
-    _safe_page_link("pages/1_Alertas_Riesgos.py", label="🚨 Alertas y Riesgos", icon="🚨")
-    _safe_page_link("pages/2_Vista_Facultad.py", label="🏛️ Vista por Facultad", icon="🏛️")
-    _safe_page_link("pages/3_Detalle_Etapa.py", label="📋 Detalle por Etapa", icon="📋")
-    _safe_page_link("pages/4_Por_Programa.py", label="🏛️ Por Programa", icon="🏛️")
+    _safe_page_link("app_act.py", label=f"{phosphor_icon_nav('chart-bar')} Resumen Ejecutivo", icon="chart-bar")
+    _safe_page_link("pages/1_Alertas_Riesgos.py", label=f"{phosphor_icon_nav('warning')} Alertas y Riesgos", icon="warning")
+    _safe_page_link("pages/2_Vista_Facultad.py", label=f"{phosphor_icon_nav('buildings')} Vista por Facultad", icon="buildings")
+    _safe_page_link("pages/3_Detalle_Etapa.py", label=f"{phosphor_icon_nav('clipboard-text')} Detalle por Etapa", icon="clipboard-text")
+    _safe_page_link("pages/4_Por_Programa.py", label=f"{phosphor_icon_nav('student')} Por Programa", icon="student")
     
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
     st.markdown(
@@ -527,12 +478,8 @@ else:
     
     st.markdown("<div style='margin-bottom:20px'></div>", unsafe_allow_html=True)
     
-    # Gráficos fila 1
-    col_chart1, col_chart2 = st.columns([3, 2])
-    with col_chart1:
-        _render_chart_facultad(df)
-    with col_chart2:
-        _render_chart_modalidad(df)
+    # Gráfico por Facultad
+    _render_chart_facultad(df)
     
     st.markdown("<div style='margin-bottom:20px'></div>", unsafe_allow_html=True)
     

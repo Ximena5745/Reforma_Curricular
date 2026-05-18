@@ -43,13 +43,16 @@ from utils.poli_theme import (
     p_bar_html,
     badge_html,
     status_icon_html,
+    phosphor_icon,
+    phosphor_icon_kpi,
+    phosphor_icon_nav,
 )
 
 _HDR_ROW1_H = 36
 
 st.set_page_config(
     page_title="Por Programa · Fase 2 · POLI",
-    page_icon="🏛️",
+    page_icon="student",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -107,14 +110,14 @@ def _render_filter_bar(key_prefix: str, show_count: bool = True):
     with st.container():
         lb1, in1, sp, lb2, in2, btn = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
         with lb1:
-            st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
+            st.markdown(f'<div {_LBL}>{phosphor_icon("clipboard-text", size=16)} MODALIDAD</div>', unsafe_allow_html=True)
         with in1:
             if _use_pills:
                 st.pills("mod", mods_ops, selection_mode="multi", key="flt_mod", label_visibility="collapsed")
             else:
                 st.multiselect("mod", mods_ops, key="flt_mod", label_visibility="collapsed", placeholder="Todas")
         with lb2:
-            st.markdown(f'<div {_LBL}>🏛️ FACULTAD</div>', unsafe_allow_html=True)
+            st.markdown(f'<div {_LBL}>{phosphor_icon("buildings", size=16)} FACULTAD</div>', unsafe_allow_html=True)
         with in2:
             if _use_pills:
                 st.pills("fac", fac_ops, selection_mode="multi", key="flt_fac", label_visibility="collapsed")
@@ -525,11 +528,11 @@ with st.sidebar:
     )
     st.markdown("<hr style='margin:10px 0;border-color:rgba(255,255,255,.2)'>", unsafe_allow_html=True)
     
-    _safe_page_link("app_act.py", label="📊 Resumen Ejecutivo", icon="📊")
-    _safe_page_link("pages/1_Alertas_Riesgos.py", label="🚨 Alertas y Riesgos", icon="🚨")
-    _safe_page_link("pages/2_Vista_Facultad.py", label="🏛️ Vista por Facultad", icon="🏛️")
-    _safe_page_link("pages/3_Detalle_Etapa.py", label="📋 Detalle por Etapa", icon="📋")
-    _safe_page_link("pages/4_Por_Programa.py", label="🏛️ Por Programa", icon="🏛️")
+    _safe_page_link("app_act.py", label=f"{phosphor_icon_nav('chart-bar')} Resumen Ejecutivo", icon="chart-bar")
+    _safe_page_link("pages/1_Alertas_Riesgos.py", label=f"{phosphor_icon_nav('warning')} Alertas y Riesgos", icon="warning")
+    _safe_page_link("pages/2_Vista_Facultad.py", label=f"{phosphor_icon_nav('buildings')} Vista por Facultad", icon="buildings")
+    _safe_page_link("pages/3_Detalle_Etapa.py", label=f"{phosphor_icon_nav('clipboard-text')} Detalle por Etapa", icon="clipboard-text")
+    _safe_page_link("pages/4_Por_Programa.py", label=f"{phosphor_icon_nav('student')} Por Programa", icon="student")
     
     st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
     st.markdown('<div style="padding:12px;font-size:10px;color:rgba(255,255,255,.4);text-align:center">POLI · VACT · 2025–2026</div>', unsafe_allow_html=True)
@@ -553,7 +556,7 @@ df, *_ = _apply_current_filters()
 if len(df) == 0:
     st.warning("No hay programas con los filtros actuales.")
 else:
-    st.markdown(f'<div style="font-size:18px;font-weight:700;color:{TEXT_PRIMARY};margin:20px 0 12px">🏛️ Por Programa</div>', unsafe_allow_html=True)
+    st.markdown(f'<div style="font-size:18px;font-weight:700;color:{TEXT_PRIMARY};margin:20px 0 12px">{phosphor_icon("student", size=22)} Por Programa</div>', unsafe_allow_html=True)
     
     _render_filter_summary(df)
     

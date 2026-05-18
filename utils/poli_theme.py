@@ -228,6 +228,7 @@ def status_icon_html(cl: str, size: int = 16, title: str = "") -> str:
 def streamlit_global_css() -> str:
     """Bloque CSS global alineado con app.py."""
     return f"""
+<link rel="stylesheet" href="https://unpkg.com/@phosphor-icons/web@v2.0.3/src/regular/style.css"/>
 <style>
 [data-testid="stAppViewContainer"] {{ background: {BG_APP}; }}
 [data-testid="stHeader"] {{
@@ -301,3 +302,88 @@ button[data-baseweb="tab"][aria-selected="true"] {{
 .f2-prog-badge-lbl {{ font-size: 10px; text-transform: uppercase; letter-spacing: .5px; margin-top: 6px; opacity: .85; }}
 </style>
 """
+
+# Phosphor Icons - Mapeo de iconos regulares
+PHOSPHOR_ICONS = {
+    # Navigation
+    "resumen": "ph-chart-bar",
+    "alertas": "ph-warning",
+    "facultad": "ph-buildings",
+    "detalle": "ph-clipboard-text",
+    "programa": "ph-student",
+    "produccion": "ph-factory",
+    
+    # KPIs
+    "programas": "ph-books",
+    "avance": "ph-trend-up",
+    "completado": "ph-check-circle",
+    "ejecucion": "ph-gear-six",
+    "critico": "ph-warning",
+    "facultades": "ph-buildings",
+    "modalidades": "ph-globe",
+    "proximo": "ph-flag-checkered",
+    
+    # Estados y alertas
+    "success": "ph-check-circle",
+    "warning": "ph-warning-circle",
+    "danger": "ph-warning",
+    "info": "ph-info",
+    "circulo_rojo": "ph-circle-fill",
+    "circulo_amarillo": "ph-circle-fill",
+    "circulo_verde": "ph-circle-fill",
+    
+    # Misceláneos
+    "filtro": "ph-funnel",
+    "descarga": "ph-download-simple",
+    "exportar": "ph-export",
+    "editar": "ph-pencil",
+    "buscar": "ph-magnifying-glass",
+    "calendario": "ph-calendar",
+    "reloj": "ph-clock",
+    "usuario": "ph-user",
+    "casa": "ph-house",
+    "config": "ph-gear",
+}
+
+
+def phosphor_icon(name: str, size: int = 16, color: str = None, weight: str = "regular") -> str:
+    """Retorna HTML de icono Phosphor.
+    
+    Args:
+        name: Nombre del icono (sin el prefijo 'ph-')
+        size: Tamaño en pixels
+        color: Color CSS (opcional)
+        weight: 'regular' o 'fill'
+    
+    Returns:
+        HTML string con el icono
+    """
+    icon_class = f"ph ph-{name}"
+    if weight == "fill":
+        icon_class = f"ph-fill ph-fill-{name}"
+    
+    style = f"font-size:{size}px;"
+    if color:
+        style += f"color:{color};"
+    
+    return f'<i class="{icon_class}" style="{style}"></i>'
+
+
+def phosphor_icon_kpi(name: str, color: str = None) -> str:
+    """Icono para KPIs - tamaño 24px"""
+    return phosphor_icon(name, size=24, color=color)
+
+
+def phosphor_icon_nav(name: str, color: str = None) -> str:
+    """Icono para navegación - tamaño 20px"""
+    return phosphor_icon(name, size=20, color=color)
+
+
+def phosphor_icon_alert(alert_type: str) -> str:
+    """Iconos para alertas según tipo"""
+    icons = {
+        "critico": phosphor_icon("warning", color="#dc2626", size=18),
+        "atencion": phosphor_icon("warning-circle", color="#d97706", size=18),
+        "proximo": phosphor_icon("flag-checkered", color="#059669", size=18),
+    }
+    return icons.get(alert_type, "")

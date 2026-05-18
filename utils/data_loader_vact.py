@@ -1,7 +1,7 @@
 """
 utils/data_loader_vact.py
 Carga y procesa la hoja 'Etapas' del archivo VACT (Fase 2).
-Fuente: data/raw/CONTROL MAESTRO DE REFORMA CURRICULAR_VACT.xlsx
+Fuente: data/raw/CONTROL MAESTRO DE REFORMA CURRICULAR.xlsx
 """
 
 from __future__ import annotations
@@ -13,7 +13,7 @@ import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).parent.parent
-DATA_PATH = ROOT / "data" / "raw" / "CONTROL MAESTRO DE REFORMA CURRICULAR_VACT.xlsx"
+DATA_PATH = ROOT / "data" / "raw" / "CONTROL MAESTRO DE REFORMA CURRICULAR.xlsx"
 
 PHASE_ROW = 7   # fila 8 Excel: fases
 HEADER_ROW = 10  # fila 11 Excel: encabezados actividades
