@@ -365,6 +365,8 @@ def _render_chart_nivel_anillos(df: pd.DataFrame):
     if "NIVEL_HOMOLOGADO" not in df.columns:
         return
     
+    import math
+    
     niveles = df["NIVEL_HOMOLOGADO"].value_counts()
     colors = ["#2563eb", "#7c3aed", "#059669", "#d97706", "#dc2626"]
     
@@ -373,74 +375,45 @@ def _render_chart_nivel_anillos(df: pd.DataFrame):
     
     total = niveles.sum()
     
-    # Crear gradiente para gráfico de anillos
-    gradient_defs = ""
-    for i, (nivel, count) in enumerate(niveles.items()):
-        color = colors[i % len(colors)]
-        gradient_defs += f'<stop offset="0%" stop-color="{color}"/><stop offset="100%" stop-color="{color}"/>'
-    
-    # Calcular segmentos
     segments = ""
+    labels = ""
     current_angle = 0
-    for i, (nivel, count) in enumerate(niveles.items()):
-        if not nivel:
-            continue
-        pct = count / total * 100
-        angle = (count / total) * 360
-        color = colors[i % len(colors)]
-        
-        # Calcular coordenadas del arco
-        start_angle = current_angle
-        end_angle = current_angle + angle
-        
-        start_rad = (start_angle - 90) * 3.14159 / 180
-        end_rad = (end_angle - 90) * 3.14159 / 180
-        
-        x1 = 70 + 50 * (1 if angle <= 180 else -1) * abs(1 - (angle > 180))
-        x1 = 70 + 50 * (1 if angle <= 180 else 0) if angle <= 180 else 70 + 50 * (-1) if angle > 180 else 70
-        
-        # Usar path simple para el arco
-        large_arc = 1 if angle > 180 else 0
-        
-        x_start = 70 + 45 * (1 if start_angle <= 180 else -1) if start_angle <= 180 else 70 - 45 * (1 - (start_angle - 180) / 180)
-        y_start = 70 + 45 * ((start_angle % 180) / 180) if start_angle <= 90 or start_angle > 270 else 70 - 45 * ((start_angle % 180) / 180)
-        
-        # Simplificar con stroke-dasharray
-        radius = 40
-        circumference = 2 * 3.14159 * radius
-        dash_length = (angle / 360) * circumference
-        dash_gap = circumference - dash_length
-        
-        segments += f'<circle cx="70" cy="70" r="{radius}" fill="none" stroke="{color}" stroke-width="12" stroke-dasharray="{dash_length} {dash_gap}" transform="rotate({-90 + current_angle} 70 70)"/>'
-        current_angle += angle
     
-    # Leyenda
-    legend = ""
     for i, (nivel, count) in enumerate(niveles.items()):
         if not nivel:
             continue
         pct = round(count / total * 100, 1)
+        angle = (count / total) * 360
         color = colors[i % len(colors)]
-        legend += (
-            f'<div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">'
-            f'<div style="width:10px;height:10px;border-radius:3px;background:{color};flex-shrink:0"></div>'
-            f'<span style="font-size:11px;color:#475569;font-weight:600">{nivel}</span>'
-            f'<span style="margin-left:auto;font-size:11px;font-weight:700;color:#0f172a">{count} ({pct}%)</span>'
-            f'</div>'
-        )
+        
+        radius = 40
+        circumference = 2 * math.pi * radius
+        dash_length = (angle / 360) * circumference
+        dash_gap = circumference - dash_length
+        
+        segments += f'<circle cx="70" cy="70" r="{radius}" fill="none" stroke="{color}" stroke-width="14" stroke-dasharray="{dash_length} {dash_gap}" transform="rotate({-90 + current_angle} 70 70)"/>'
+        
+        if angle > 15:
+            mid_angle = current_angle + (angle / 2)
+            mid_rad = (mid_angle - 90) * math.pi / 180
+            label_x = 70 + 26 * math.cos(mid_rad)
+            label_y = 70 + 26 * math.sin(mid_rad)
+            text_color = "#ffffff" if angle > 45 else "#1e293b"
+            labels += f'<text x="{label_x}" y="{label_y}" text-anchor="middle" dominant-baseline="middle" fill="{text_color}" font-family="Segoe UI,sans-serif" font-size="9" font-weight="700">{pct}%</text>'
+        
+        current_angle += angle
     
     st.markdown(
-        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
-        f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:12px">Distribución por Nivel Académico</div>'
-        f'<div style="display:flex;align-items:center;gap:20px">'
-        f'<div style="width:140px;height:140px;position:relative">'
+        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07);text-align:center">'
+        f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:16px">Distribución por Nivel Académico</div>'
+        f'<div style="width:140px;height:140px;margin:0 auto;position:relative">'
         f'<svg viewBox="0 0 140 140" style="transform:rotate(-90deg)">{segments}</svg>'
-        f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center">'
-        f'<div style="font-size:20px;font-weight:800;color:{TEXT_PRIMARY}">{total}</div>'
-        f'<div style="font-size:9px;color:#94a3b8">Programas</div>'
+        f'<div style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;transform:rotate(90deg)">{labels}</div>'
+        f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;background:#fff;width:60px;height:60px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.1)">'
+        f'<div style="font-size:18px;font-weight:800;color:{TEXT_PRIMARY}">{total}</div>'
+        f'<div style="font-size:8px;color:#94a3b8">Programas</div>'
         f'</div></div>'
-        f'<div style="flex:1">{legend}</div>'
-        f'</div></div>',
+        f'</div>',
         unsafe_allow_html=True,
     )
 
@@ -451,9 +424,8 @@ def _render_chart_etapas_interactivo(df: pd.DataFrame):
     
     etapas = ["Alistamiento Curricular", "Diseño Curricular", "Desarrollo Curricular", "Implementación Curricular"]
     pct_cols = ["pct_alistamiento", "pct_diseno", "pct_desarrollo", "pct_implementacion"]
-    colors = ["#2980B9", "#1FB2DE", "#EC0677", "#A6CE38"]
+    etapa_colors = {"Alistamiento Curricular": "#2980B9", "Diseño Curricular": "#1FB2DE", "Desarrollo Curricular": "#EC0677", "Implementación Curricular": "#A6CE38"}
     
-    # Calcular promedios por etapa
     promedios = []
     for col in pct_cols:
         if col in df.columns:
@@ -461,70 +433,100 @@ def _render_chart_etapas_interactivo(df: pd.DataFrame):
         else:
             promedios.append(0)
     
-    # Calcular进度 por estado
-    done_counts = []
-    inprog_counts = []
-    nostart_counts = []
+    opciones = ["Resumen"] + etapas
+    etapa_sel = st.radio("Ver detalle por:", opciones, horizontal=True, key="etapa_radio", label_visibility="collapsed")
     
-    for etapa in etapas:
-        slug = etapa.lower().replace(" curricular", "").replace(" ", "_")
-        cl_col = f"cl_act_0"
+    if etapa_sel == "Resumen":
+        bars = ""
+        max_val = 100
         
-        done = 0
-        inprog = 0
-        nostart = 0
+        for i, etapa in enumerate(etapas):
+            y = i * 55
+            avg = promedios[i]
+            color = etapa_colors.get(etapa, "#6e7681")
+            bar_w = avg
+            
+            bars += (
+                f'<g transform="translate(0,{y})">'
+                f'<text x="0" y="18" font-family="Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#0f172a">{etapa}</text>'
+                f'<text x="0" y="36" font-family="Segoe UI,sans-serif" font-size="10" fill="#64748b">Promedio: {avg}%</text>'
+                f'<rect x="130" y="8" width="200" height="14" rx="4" fill="#e2e8f0"/>'
+                f'<rect x="130" y="8" width="{bar_w * 2}" height="14" rx="4" fill="{color}"/>'
+                f'<text x="340" y="18" font-family="Segoe UI,sans-serif" font-size="12" font-weight="700" fill="#0f172a">{avg}%</text>'
+                f'</g>'
+            )
         
-        for i in range(10):
-            cl_col = f"cl_act_{i}"
-            if cl_col in df.columns:
-                fase = df.get(f"act_phase_{i}", pd.Series([""] * len(df)))
-                if fase.str.contains(etapa).any():
-                    done += (df[cl_col] == "done").sum()
-                    inprog += (df[cl_col] == "inprog").sum()
-                    nostart += (df[cl_col] == "nostart").sum()
-        
-        done_counts.append(done)
-        inprog_counts.append(inprog)
-        nostart_counts.append(nostart)
-    
-    # Gráfico de barras agrupadas
-    bars = ""
-    max_val = max(sum(x) for x in zip(done_counts, inprog_counts, nostart_counts)) if done_counts else 1
-    
-    for i, etapa in enumerate(etapas):
-        y = i * 50
-        
-        done_w = (done_counts[i] / max(max_val, 1)) * 100
-        inprog_w = (inprog_counts[i] / max(max_val, 1)) * 100
-        nostart_w = (nostart_counts[i] / max(max_val, 1)) * 100
-        
-        bars += (
-            f'<g transform="translate(0,{y})">'
-            f'<text x="0" y="18" font-family="Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#0f172a">{etapa}</text>'
-            f'<text x="0" y="36" font-family="Segoe UI,sans-serif" font-size="10" fill="#64748b">Avg: {promedios[i]}%</text>'
-            f'<rect x="120" y="8" width="{done_w}%" height="10" rx="2" fill="#22c55e"/>'
-            f'<rect x="120" y="22" width="{inprog_w}%" height="10" rx="2" fill="#f59e0b"/>'
-            f'<rect x="120" y="36" width="{nostart_w}%" height="10" rx="2" fill="#94a3b8"/>'
-            f'</g>'
+        st.markdown(
+            f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
+            f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:16px">Avance por Etapa - Vista General</div>'
+            f'<svg viewBox="0 0 380 240">{bars}</svg>'
+            f'</div>',
+            unsafe_allow_html=True,
         )
-    
-    # Leyenda
-    legend = (
-        f'<div style="display:flex;gap:16px;margin-top:16px;font-size:11px;color:#64748b">'
-        f'<div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;background:#22c55e;border-radius:2px"></div>Finalizado</div>'
-        f'<div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;background:#f59e0b;border-radius:2px"></div>En Proceso</div>'
-        f'<div style="display:flex;align-items:center;gap:6px"><div style="width:10px;height:10px;background:#94a3b8;border-radius:2px"></div>Sin Iniciar</div>'
-        f'</div>'
-    )
-    
-    st.markdown(
-        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
-        f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:16px">Avance Consolidado por Etapa</div>'
-        f'<svg viewBox="0 0 500 220">{bars}</svg>'
-        f'{legend}'
-        f'</div>',
-        unsafe_allow_html=True,
-    )
+    else:
+        idx_etapa = opciones.index(etapa_sel) - 1
+        
+        acts = []
+        for i in range(20):
+            fase_col = f"act_phase_{i}"
+            name_col = f"act_name_{i}"
+            cl_col = f"cl_act_{i}"
+            val_col = f"val_act_{i}"
+            
+            if fase_col in df.columns and name_col in df.columns:
+                fase_vals = df[fase_col].unique()
+                if any(etapa_sel in str(f) for f in fase_vals):
+                    acts.append({"idx": i, "fase": fase_col, "name": name_col, "cl": cl_col, "val": val_col})
+        
+        if not acts:
+            st.markdown(f'<div style="padding:20px;text-align:center;color:#94a3b8">No hay actividades registradas para {etapa_sel}</div>', unsafe_allow_html=True)
+            return
+        
+        items = ""
+        for act in acts:
+            if act["cl"] not in df.columns:
+                continue
+            
+            done_count = (df[act["cl"]] == "done").sum()
+            inprog_count = (df[act["cl"]] == "inprog").sum()
+            nostart_count = (df[act["cl"]] == "nostart").sum()
+            
+            max_count = max(done_count, inprog_count, nostart_count)
+            if max_count == done_count and done_count > 0:
+                estado = "done"
+                estado_label = "Finalizado"
+                estado_color = "#22c55e"
+                estado_icon = "✓"
+            elif max_count == inprog_count and inprog_count > 0:
+                estado = "inprog"
+                estado_label = "En Proceso"
+                estado_color = "#0ea5e9"
+                estado_icon = "⟳"
+            else:
+                estado = "nostart"
+                estado_label = "Sin Iniciar"
+                estado_color = "#94a3b8"
+                estado_icon = "○"
+            
+            nombre_act = df[act["name"]].iloc[0] if len(df) > 0 else "Actividad"
+            
+            items += (
+                f'<div style="display:flex;align-items:center;gap:12px;padding:12px;border-bottom:1px solid #e2e8f0">'
+                f'<div style="width:28px;height:28px;border-radius:50%;background:{estado_color}20;display:flex;align-items:center;justify-content:center;color:{estado_color};font-size:14px">{estado_icon}</div>'
+                f'<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#0f172a">{nombre_act}</div>'
+                f'<div style="font-size:10px;color:#64748b">Finalizado: {done_count} · En Proceso: {inprog_count} · Sin Iniciar: {nostart_count}</div></div>'
+                f'<div style="background:{estado_color};color:#fff;padding:4px 10px;border-radius:12px;font-size:10px;font-weight:600">{estado_label}</div>'
+                f'</div>'
+            )
+        
+        color_etapa = etapa_colors.get(etapa_sel, "#6e7681")
+        st.markdown(
+            f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
+            f'<div style="font-size:14px;font-weight:700;color:{color_etapa};margin-bottom:16px">Detalle: {etapa_sel} (Promedio: {promedios[idx_etapa]}%)</div>'
+            f'{items}'
+            f'</div>',
+            unsafe_allow_html=True,
+        )
 
 
 def _render_rankings(df: pd.DataFrame):
