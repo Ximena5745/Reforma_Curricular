@@ -375,6 +375,7 @@ def _render_chart_nivel_anillos(df: pd.DataFrame):
     
     total = niveles.sum()
     
+    # Aumentar tamaño: 200x200, radio 55, stroke-width 22
     segments = ""
     labels = ""
     current_angle = 0
@@ -386,34 +387,51 @@ def _render_chart_nivel_anillos(df: pd.DataFrame):
         angle = (count / total) * 360
         color = colors[i % len(colors)]
         
-        radius = 40
+        radius = 55
         circumference = 2 * math.pi * radius
         dash_length = (angle / 360) * circumference
         dash_gap = circumference - dash_length
         
-        segments += f'<circle cx="70" cy="70" r="{radius}" fill="none" stroke="{color}" stroke-width="14" stroke-dasharray="{dash_length} {dash_gap}" transform="rotate({-90 + current_angle} 70 70)"/>'
+        segments += f'<circle cx="100" cy="100" r="{radius}" fill="none" stroke="{color}" stroke-width="22" stroke-dasharray="{dash_length} {dash_gap}" transform="rotate({-90 + current_angle} 100 100)"/>'
         
-        if angle > 15:
+        if angle > 12:
             mid_angle = current_angle + (angle / 2)
             mid_rad = (mid_angle - 90) * math.pi / 180
-            label_x = 70 + 26 * math.cos(mid_rad)
-            label_y = 70 + 26 * math.sin(mid_rad)
-            text_color = "#ffffff" if angle > 45 else "#1e293b"
-            labels += f'<text x="{label_x}" y="{label_y}" text-anchor="middle" dominant-baseline="middle" fill="{text_color}" font-family="Segoe UI,sans-serif" font-size="9" font-weight="700">{pct}%</text>'
+            label_x = 100 + 38 * math.cos(mid_rad)
+            label_y = 100 + 38 * math.sin(mid_rad)
+            text_color = "#ffffff" if angle > 40 else "#1e293b"
+            labels += f'<text x="{label_x}" y="{label_y}" text-anchor="middle" dominant-baseline="middle" fill="{text_color}" font-family="Segoe UI,sans-serif" font-size="10" font-weight="700">{pct}%</text>'
         
         current_angle += angle
     
+    # Agregar leyenda
+    legend = ""
+    for i, (nivel, count) in enumerate(niveles.items()):
+        if not nivel:
+            continue
+        pct = round(count / total * 100, 1)
+        color = colors[i % len(colors)]
+        legend += (
+            f'<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'
+            f'<div style="width:12px;height:12px;border-radius:3px;background:{color};flex-shrink:0"></div>'
+            f'<span style="font-size:12px;color:#475569;font-weight:600">{nivel}</span>'
+            f'<span style="margin-left:auto;font-size:12px;font-weight:700;color:#0f172a">{count} ({pct}%)</span>'
+            f'</div>'
+        )
+    
     st.markdown(
-        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07);text-align:center">'
+        f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
         f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:16px">Distribución por Nivel Académico</div>'
-        f'<div style="width:140px;height:140px;margin:0 auto;position:relative">'
-        f'<svg viewBox="0 0 140 140" style="transform:rotate(-90deg)">{segments}</svg>'
+        f'<div style="display:flex;align-items:center;gap:20px">'
+        f'<div style="width:200px;height:200px;position:relative;flex-shrink:0">'
+        f'<svg viewBox="0 0 200 200" style="transform:rotate(-90deg)">{segments}</svg>'
         f'<div style="position:absolute;top:0;left:0;width:100%;height:100%;display:flex;align-items:center;justify-content:center;transform:rotate(90deg)">{labels}</div>'
-        f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;background:#fff;width:60px;height:60px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.1)">'
-        f'<div style="font-size:18px;font-weight:800;color:{TEXT_PRIMARY}">{total}</div>'
-        f'<div style="font-size:8px;color:#94a3b8">Programas</div>'
+        f'<div style="position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;background:#fff;width:70px;height:70px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;box-shadow:0 2px 4px rgba(0,0,0,0.1)">'
+        f'<div style="font-size:22px;font-weight:800;color:{TEXT_PRIMARY}">{total}</div>'
+        f'<div style="font-size:9px;color:#94a3b8">Programas</div>'
         f'</div></div>'
-        f'</div>',
+        f'<div style="flex:1;padding-left:10px">{legend}</div>'
+        f'</div></div>',
         unsafe_allow_html=True,
     )
 
@@ -434,14 +452,14 @@ def _render_chart_etapas_interactivo(df: pd.DataFrame):
             promedios.append(0)
     
     opciones = ["Resumen"] + etapas
-    etapa_sel = st.radio("Ver detalle por:", opciones, horizontal=True, key="etapa_radio", label_visibility="collapsed")
+    etapa_sel = st.selectbox("Seleccionar vista:", opciones, key="etapa_select", label_visibility="collapsed")
     
     if etapa_sel == "Resumen":
         bars = ""
         max_val = 100
         
         for i, etapa in enumerate(etapas):
-            y = i * 55
+            y = i * 50
             avg = promedios[i]
             color = etapa_colors.get(etapa, "#6e7681")
             bar_w = avg
@@ -449,17 +467,16 @@ def _render_chart_etapas_interactivo(df: pd.DataFrame):
             bars += (
                 f'<g transform="translate(0,{y})">'
                 f'<text x="0" y="18" font-family="Segoe UI,sans-serif" font-size="12" font-weight="600" fill="#0f172a">{etapa}</text>'
-                f'<text x="0" y="36" font-family="Segoe UI,sans-serif" font-size="10" fill="#64748b">Promedio: {avg}%</text>'
-                f'<rect x="130" y="8" width="200" height="14" rx="4" fill="#e2e8f0"/>'
-                f'<rect x="130" y="8" width="{bar_w * 2}" height="14" rx="4" fill="{color}"/>'
-                f'<text x="340" y="18" font-family="Segoe UI,sans-serif" font-size="12" font-weight="700" fill="#0f172a">{avg}%</text>'
+                f'<rect x="130" y="6" width="220" height="14" rx="4" fill="#e2e8f0"/>'
+                f'<rect x="130" y="6" width="{bar_w * 2.2}" height="14" rx="4" fill="{color}"/>'
+                f'<text x="360" y="18" font-family="Segoe UI,sans-serif" font-size="12" font-weight="700" fill="#0f172a">{avg}%</text>'
                 f'</g>'
             )
         
         st.markdown(
             f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
             f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:16px">Avance por Etapa - Vista General</div>'
-            f'<svg viewBox="0 0 380 240">{bars}</svg>'
+            f'<svg viewBox="0 0 400 220">{bars}</svg>'
             f'</div>',
             unsafe_allow_html=True,
         )
@@ -650,7 +667,7 @@ else:
     st.markdown("<div style='margin-bottom:24px'></div>", unsafe_allow_html=True)
     
     # Gráficos fila 1: Nivel Académico (anillos) + Facultad
-    col_chart1, col_chart2 = st.columns([1, 2])
+    col_chart1, col_chart2 = st.columns([1, 1])
     with col_chart1:
         _render_chart_nivel_anillos(df)
     with col_chart2:
