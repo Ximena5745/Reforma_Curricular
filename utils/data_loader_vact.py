@@ -7,8 +7,10 @@ Fuente: data/raw/CONTROL MAESTRO DE REFORMA CURRICULAR.xlsx
 from __future__ import annotations
 
 import re
+import zipfile
 from datetime import datetime
 from pathlib import Path
+from xml.etree import ElementTree as ET
 from zoneinfo import ZoneInfo
 
 import numpy as np
@@ -20,12 +22,58 @@ DATA_SOURCE_NAME = "Control Maestro Reforma Curricular"
 TZ_BOGOTA = ZoneInfo("America/Bogota")
 
 
+_CACHED_EXCEL_MODIFIED: datetime | None = None
+
+
+def _parse_office_datetime(value: str) -> datetime | None:
+    """Parsea fecha ISO de metadatos Office (UTC) a datetime con zona."""
+    if not value or not str(value).strip():
+        return None
+    s = str(value).strip()
+    if s.endswith("Z"):
+        s = s[:-1] + "+00:00"
+    try:
+        dt = datetime.fromisoformat(s)
+    except ValueError:
+        return None
+    if dt.tzinfo is None:
+        dt = dt.replace(tzinfo=ZoneInfo("UTC"))
+    return dt
+
+
+def _excel_core_modified(path: Path) -> datetime | None:
+    """Última modificación guardada en Excel (docProps/core.xml), no mtime del SO."""
+    try:
+        with zipfile.ZipFile(path, "r") as zf:
+            if "docProps/core.xml" not in zf.namelist():
+                return None
+            root = ET.fromstring(zf.read("docProps/core.xml"))
+        for el in root.iter():
+            if el.tag.endswith("}modified") and el.text:
+                parsed = _parse_office_datetime(el.text)
+                if parsed is not None:
+                    return parsed
+        return None
+    except (OSError, zipfile.BadZipFile, ET.ParseError):
+        return None
+
+
+def _refresh_excel_modified_cache() -> None:
+    global _CACHED_EXCEL_MODIFIED
+    _CACHED_EXCEL_MODIFIED = _excel_core_modified(DATA_PATH)
+
+
 def get_raw_data_updated_label() -> str:
-    """Fecha/hora de última modificación del Excel fuente en horario Bogotá."""
+    """Fecha/hora de última guardada del Excel (metadatos internos), horario Bogotá."""
     if not DATA_PATH.is_file():
         return "Actualizado: —"
-    mtime = DATA_PATH.stat().st_mtime
-    dt = datetime.fromtimestamp(mtime, tz=TZ_BOGOTA)
+    dt = _CACHED_EXCEL_MODIFIED
+    if dt is None:
+        dt = _excel_core_modified(DATA_PATH)
+    if dt is None:
+        dt = datetime.fromtimestamp(DATA_PATH.stat().st_mtime, tz=TZ_BOGOTA)
+    else:
+        dt = dt.astimezone(TZ_BOGOTA)
     return dt.strftime("Actualizado: %d/%m/%Y %H:%M")
 
 
@@ -236,6 +284,7 @@ def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
 
 
 def _build_etapas_df() -> pd.DataFrame:
+    _refresh_excel_modified_cache()
     raw = pd.read_excel(DATA_PATH, sheet_name="Etapas", header=None, dtype=str)
     raw = raw.fillna("")
 
