@@ -7,6 +7,7 @@ Fuente: data/raw/CONTROL MAESTRO DE REFORMA CURRICULAR.xlsx
 from __future__ import annotations
 
 import re
+from datetime import datetime
 from pathlib import Path
 
 import numpy as np
@@ -14,6 +15,15 @@ import pandas as pd
 
 ROOT = Path(__file__).parent.parent
 DATA_PATH = ROOT / "data" / "raw" / "CONTROL MAESTRO DE REFORMA CURRICULAR.xlsx"
+
+
+def get_raw_data_updated_label() -> str:
+    """Fecha/hora de última modificación del archivo Excel fuente (data/raw)."""
+    if not DATA_PATH.is_file():
+        return "Actualizado: —"
+    mtime = DATA_PATH.stat().st_mtime
+    return datetime.fromtimestamp(mtime).strftime("Actualizado: %d/%m/%Y %H:%M")
+
 
 PHASE_ROW = 7   # fila 8 Excel: fases
 HEADER_ROW = 10  # fila 11 Excel: encabezados actividades

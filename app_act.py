@@ -77,7 +77,7 @@ except ImportError:
     pass
 
 st.set_page_config(
-    page_title="Reforma Curricular · Fase 2 · POLI",
+    page_title="Reforma Curricular · POLI",
     page_icon=":material/school:",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -380,7 +380,7 @@ def _render_rankings(df: pd.DataFrame):
 
 render_f2_sidebar()
 
-render_f2_header("Fase 2 · Panel Ejecutivo")
+render_f2_header("Resumen Ejecutivo")
 
 f2_render_filter_bar(
     df_raw, fac_abrev_inv, mods_ops, fac_ops, pers_ops, niveles_ops, key_prefix="ejecutivo"

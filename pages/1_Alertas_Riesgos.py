@@ -17,7 +17,7 @@ from utils.f2_components import (
 from utils.poli_theme import TEXT_PRIMARY, phosphor_icon, streamlit_global_css
 
 st.set_page_config(
-    page_title="Alertas y Riesgos · Fase 2 · POLI",
+    page_title="Alertas y Riesgos · POLI",
     page_icon=":material/warning:",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -32,8 +32,8 @@ mods_ops = sorted(df_raw["MODALIDAD"].dropna().unique().tolist()) if "MODALIDAD"
 pers_ops = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist()) if "PERIODO DE IMPLEMENTACIÓN" in df_raw.columns else []
 niveles_ops = [n for n in ["Pregrado", "Posgrado"] if n in df_raw.get("NIVEL_HOMOLOGADO", pd.Series(dtype=str)).values]
 
-render_f2_sidebar(show_fase1=False)
-render_f2_header("Fase 2 · Alertas y Riesgos Operativos")
+render_f2_sidebar()
+render_f2_header("Alertas y Riesgos Operativos")
 f2_render_filter_bar(
     df_raw, fac_abrev_inv, mods_ops, fac_ops, pers_ops, niveles_ops, key_prefix="alertas"
 )

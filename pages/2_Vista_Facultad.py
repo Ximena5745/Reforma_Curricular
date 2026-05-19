@@ -44,7 +44,7 @@ from utils.poli_theme import (
 )
 
 st.set_page_config(
-    page_title="Vista por Facultad · Fase 2 · POLI",
+    page_title="Resumen por Facultad · POLI",
     page_icon="buildings",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -298,8 +298,8 @@ def _render_heatmap_facultad(df_fac: pd.DataFrame):
     )
 
 
-render_f2_sidebar(show_fase1=False)
-render_f2_header("Fase 2 · Resumen por Facultad")
+render_f2_sidebar()
+render_f2_header("Resumen por Facultad")
 f2_render_filter_bar(
     df_raw, fac_abrev_inv, mods_ops, fac_ops, pers_ops, niveles_ops, key_prefix="facultad"
 )

@@ -5,9 +5,11 @@ Los filtros NUNCA van en st.sidebar.
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import streamlit as st
 
-from utils.data_loader_vact import apply_filters_vact
+from utils.data_loader_vact import apply_filters_vact, get_raw_data_updated_label
 from utils.poli_theme import (
     BG_MUTED,
     BRAND_ACCENT,
@@ -23,6 +25,8 @@ _LBL = (
     f'style="padding-top:8px;font-size:11px;font-weight:700;color:{TEXT_PRIMARY};'
     f'letter-spacing:.4px;white-space:nowrap;display:flex;align-items:center;gap:4px"'
 )
+
+LOGO_PATH = Path(__file__).parent / "Wallpaper-POLI.jpg.jpg"
 
 F2_NAV = [
     ("app_act.py", "Resumen Ejecutivo", ":material/bar_chart:"),
@@ -41,29 +45,24 @@ def safe_page_link(page: str, **kwargs) -> bool:
         return False
 
 
-def render_f2_sidebar(*, show_fase1: bool = True) -> None:
+def render_f2_sidebar() -> None:
     """Solo navegacion. Sin filtros."""
     with st.sidebar:
-        st.markdown(
-            '<div style="padding:18px 6px;text-align:center">'
-            '<div style="font-size:16px;font-weight:700;color:#FFFFFF">'
-            "Reforma Curricular</div>"
-            '<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px">'
-            "Fase 2 - Etapas</div></div>",
-            unsafe_allow_html=True,
-        )
+        if LOGO_PATH.is_file():
+            st.image(str(LOGO_PATH), use_container_width=True)
         st.markdown("<hr style='margin:10px 0;border-color:rgba(255,255,255,.2)'>", unsafe_allow_html=True)
-        if show_fase1:
-            if not safe_page_link("app.py", label="Fase 1 - Produccion", icon=":material/factory:"):
-                st.caption("Fase 1 no disponible en este despliegue.")
         for page, label, icon in F2_NAV:
             safe_page_link(page, label=label, icon=icon)
         st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
+        updated = get_raw_data_updated_label()
         st.markdown(
-            '<div style="padding:12px;font-size:10px;color:rgba(255,255,255,.4);text-align:center">'
-            "POLI - VACT - 2025-2026</div>",
+            '<div style="padding:12px;font-size:10px;color:rgba(255,255,255,.55);text-align:center;line-height:1.4">'
+            "Fecha de actualización del archivo Data Raw fuente<br>"
+            f'<span style="color:rgba(255,255,255,.85);font-weight:600">{updated}</span>'
+            "</div>",
             unsafe_allow_html=True,
         )
+
 
 
 def _filter_keys(key_prefix: str) -> dict[str, str]:
