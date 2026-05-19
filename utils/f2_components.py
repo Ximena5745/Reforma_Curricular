@@ -9,7 +9,11 @@ from pathlib import Path
 
 import streamlit as st
 
-from utils.data_loader_vact import apply_filters_vact, get_raw_data_updated_label
+from utils.data_loader_vact import (
+    DATA_SOURCE_NAME,
+    apply_filters_vact,
+    get_raw_data_updated_label,
+)
 from utils.poli_theme import (
     BG_MUTED,
     BRAND_ACCENT,
@@ -57,7 +61,7 @@ def render_f2_sidebar() -> None:
         updated = get_raw_data_updated_label()
         st.markdown(
             '<div style="padding:12px;font-size:10px;color:rgba(255,255,255,.55);text-align:center;line-height:1.4">'
-            "Fecha de actualización del archivo Data Raw fuente<br>"
+            f"Fecha de actualización del {DATA_SOURCE_NAME}<br>"
             f'<span style="color:rgba(255,255,255,.85);font-weight:600">{updated}</span>'
             "</div>",
             unsafe_allow_html=True,

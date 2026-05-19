@@ -9,20 +9,24 @@ from __future__ import annotations
 import re
 from datetime import datetime
 from pathlib import Path
+from zoneinfo import ZoneInfo
 
 import numpy as np
 import pandas as pd
 
 ROOT = Path(__file__).parent.parent
 DATA_PATH = ROOT / "data" / "raw" / "CONTROL MAESTRO DE REFORMA CURRICULAR.xlsx"
+DATA_SOURCE_NAME = "Control Maestro Reforma Curricular"
+TZ_BOGOTA = ZoneInfo("America/Bogota")
 
 
 def get_raw_data_updated_label() -> str:
-    """Fecha/hora de última modificación del archivo Excel fuente (data/raw)."""
+    """Fecha/hora de última modificación del Excel fuente en horario Bogotá."""
     if not DATA_PATH.is_file():
         return "Actualizado: —"
     mtime = DATA_PATH.stat().st_mtime
-    return datetime.fromtimestamp(mtime).strftime("Actualizado: %d/%m/%Y %H:%M")
+    dt = datetime.fromtimestamp(mtime, tz=TZ_BOGOTA)
+    return dt.strftime("Actualizado: %d/%m/%Y %H:%M")
 
 
 PHASE_ROW = 7   # fila 8 Excel: fases
