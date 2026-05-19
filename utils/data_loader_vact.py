@@ -7,6 +7,7 @@ Fuente: data/raw/CONTROL MAESTRO DE REFORMA CURRICULAR.xlsx
 from __future__ import annotations
 
 import re
+import warnings
 import zipfile
 from datetime import datetime
 from pathlib import Path
@@ -178,12 +179,12 @@ def _cls_status(v) -> str:
         return "na"
     if "no aplica" in s:
         return "na"
+    if "devuelto" in s or "devuelta" in s:
+        return "devuelto"
     if s in ("finalizado", "si", "sí"):
         return "done"
     if "sin iniciar" in s or s == "no":
         return "nostart"
-    if s == "devuelto":
-        return "devuelto"
     if s == "en proceso":
         return "inprog"
     if "aprobado" in s or "renovación" in s or "renovacion" in s:
@@ -279,6 +280,19 @@ def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
                 "is_pct": False,
                 "is_general": False,
             })
+
+    seen_act: dict[tuple[str, str], int] = {}
+    for act in activities:
+        if act.get("is_pct") or act["phase"] not in ETAPAS_ORDEN:
+            continue
+        key = (act["phase"], act["name"].strip().lower())
+        if key in seen_act:
+            warnings.warn(
+                f"Actividad duplicada en Excel: «{act['name']}» ({act['phase']})",
+                UserWarning,
+                stacklevel=2,
+            )
+        seen_act[key] = seen_act.get(key, 0) + 1
 
     return phase_by_col, activities
 
@@ -632,11 +646,21 @@ def get_estadisticas_etapa(df: pd.DataFrame, etapa_name: str) -> dict:
     """Estadísticas agregadas de una etapa sobre el df filtrado."""
     pct_col = ETAPA_PCT_COL.get(etapa_name)
     if not pct_col or pct_col not in df.columns or len(df) == 0:
-        return {"pct_promedio": 0, "done": 0, "inprog": 0, "nostart": 0, "na": 0, "total_act": 0}
+        return {
+            "pct_promedio": 0,
+            "done": 0,
+            "inprog": 0,
+            "devuelto": 0,
+            "nostart": 0,
+            "info": 0,
+            "na": 0,
+            "total_act": 0,
+            "n_programas": 0,
+        }
 
     meta = _ensure_activities_meta(df)
     acts_meta = [m for m in meta if m["phase"] == etapa_name]
-    done = inprog = nostart = na = 0
+    done = inprog = devuelto = nostart = info = na = 0
     for m in acts_meta:
         col = f"cl_act_{m['idx']}"
         if col not in df.columns:
@@ -646,8 +670,12 @@ def get_estadisticas_etapa(df: pd.DataFrame, etapa_name: str) -> dict:
                 done += 1
             elif cl == "inprog":
                 inprog += 1
+            elif cl == "devuelto":
+                devuelto += 1
             elif cl == "nostart":
                 nostart += 1
+            elif cl == "info":
+                info += 1
             else:
                 na += 1
 
@@ -655,7 +683,9 @@ def get_estadisticas_etapa(df: pd.DataFrame, etapa_name: str) -> dict:
         "pct_promedio": round(float(df[pct_col].mean()), 1),
         "done": done,
         "inprog": inprog,
+        "devuelto": devuelto,
         "nostart": nostart,
+        "info": info,
         "na": na,
         "total_act": len(acts_meta) * len(df) if acts_meta else 0,
         "n_programas": len(df),
@@ -675,20 +705,27 @@ def get_detalle_etapa(df: pd.DataFrame, etapa_name: str) -> dict:
             continue
         done = int((df[col] == "done").sum())
         inprog = int((df[col] == "inprog").sum())
+        devuelto = int((df[col] == "devuelto").sum())
         nostart = int((df[col] == "nostart").sum())
+        info = int((df[col] == "info").sum())
         na = int((df[col] == "na").sum())
+        scores = df[col].apply(_activity_score)
+        pct_avance = round(float(scores.dropna().mean()), 1) if scores.notna().any() else 0.0
         actividades.append({
             "nombre": m["name"],
             "done": done,
             "inprog": inprog,
+            "devuelto": devuelto,
             "nostart": nostart,
+            "info": info,
             "na": na,
             "pct_done": round(done / n_prog * 100, 1) if n_prog else 0,
+            "pct_avance": pct_avance,
         })
     actividades.sort(key=lambda a: (-a["pct_done"], a["nombre"]))
     total_cells = stats.get("total_act") or 0
     pct_por_estado = {}
-    for k in ("done", "inprog", "nostart", "na"):
+    for k in ("done", "inprog", "devuelto", "nostart", "info", "na"):
         pct_por_estado[k] = round(stats[k] / total_cells * 100, 1) if total_cells else 0
     return {
         **stats,

@@ -26,9 +26,13 @@ ETAPA_SHORT = {
 STATUS_STACK = [
     ("done", "Finalizado", STATUS_CLR["done"]),
     ("inprog", "En proceso", STATUS_CLR["inprog"]),
+    ("devuelto", "Devuelto", STATUS_CLR["devuelto"]),
     ("nostart", "Sin iniciar", STATUS_CLR["nostart"]),
+    ("info", "Informativo", STATUS_CLR["info"]),
     ("na", "No aplica", STATUS_CLR["na"]),
 ]
+
+_STATUS_KEYS = [k for k, _, _ in STATUS_STACK]
 
 _PLOTLY_CONFIG = {"displayModeBar": False}
 
@@ -100,10 +104,43 @@ def _fig_etapas_level(df: pd.DataFrame) -> go.Figure:
     return fig
 
 
+def _activity_y_labels(acts: list[dict]) -> tuple[list[str], list[str]]:
+    """Etiquetas Y únicas para evitar apilado doble en Plotly por nombres repetidos."""
+    seen: dict[str, int] = {}
+    shorts: list[str] = []
+    fulls: list[str] = []
+    for m in acts:
+        full = m["name"]
+        base = _short(full, 42)
+        key = base.lower()
+        if key in seen:
+            seen[key] += 1
+            shorts.append(f"{base} ({seen[key]})")
+        else:
+            seen[key] = 1
+            shorts.append(base)
+        fulls.append(full)
+    return shorts, fulls
+
+
+def _validate_activity_totals(df: pd.DataFrame, acts: list[dict], n_prog: int) -> None:
+    """Alerta si la suma de estados por actividad supera el número de programas."""
+    for m in acts:
+        col = f"cl_act_{m['idx']}"
+        if col not in df.columns:
+            continue
+        total = sum(int((df[col] == k).sum()) for k in _STATUS_KEYS)
+        if total > n_prog:
+            st.warning(
+                f"**{m['name']}**: la suma de estados ({total}) supera los programas "
+                f"filtrados ({n_prog}). Revise columnas duplicadas en el Excel."
+            )
+
+
 def _fig_actividades_level(df: pd.DataFrame, etapa: str) -> go.Figure:
     meta = _ensure_activities_meta(df)
     acts = [m for m in meta if m["phase"] == etapa]
-    n_prog = max(len(df), 1)
+    n_prog = len(df)
 
     act_rows = []
     for m in acts:
@@ -111,12 +148,14 @@ def _fig_actividades_level(df: pd.DataFrame, etapa: str) -> go.Figure:
         if col not in df.columns:
             continue
         done = int((df[col] == "done").sum())
-        act_rows.append((m, done / n_prog))
+        act_rows.append((m, done / max(n_prog, 1)))
 
     act_rows.sort(key=lambda x: -x[1])
     acts_sorted = [m for m, _ in act_rows]
-    names_short = [_short(m["name"], 42) for m in acts_sorted]
-    names_full = [m["name"] for m in acts_sorted]
+    names_short, names_full = _activity_y_labels(acts_sorted)
+
+    if n_prog > 0:
+        _validate_activity_totals(df, acts_sorted, n_prog)
 
     fig = go.Figure()
     for cl_key, lbl, clr in STATUS_STACK:
@@ -124,7 +163,7 @@ def _fig_actividades_level(df: pd.DataFrame, etapa: str) -> go.Figure:
         for m in acts_sorted:
             col = f"cl_act_{m['idx']}"
             vals.append(int((df[col] == cl_key).sum()) if col in df.columns else 0)
-        txt_color = "#475569" if cl_key == "na" else "#ffffff"
+        txt_color = "#475569" if cl_key in ("na", "info") else "#ffffff"
         fig.add_trace(
             go.Bar(
                 name=lbl,

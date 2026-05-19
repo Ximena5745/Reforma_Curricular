@@ -93,11 +93,16 @@ else:
                 "Etapa": ETAPA_SHORT[etapa],
                 "Programas": s["n_programas"],
                 "% Promedio": s["pct_promedio"],
-                "Finalizadas": s["done"],
-                "En proceso": s["inprog"],
-                "Sin iniciar": s["nostart"],
+                "Finalizadas (celdas)": s["done"],
+                "En proceso (celdas)": s["inprog"],
+                "Devuelto (celdas)": s["devuelto"],
+                "Sin iniciar (celdas)": s["nostart"],
+                "Informativo (celdas)": s["info"],
             }
         )
+    st.caption(
+        "Las columnas de estado cuentan **celdas** (programa × actividad), no programas únicos."
+    )
     st.dataframe(pd.DataFrame(rows), use_container_width=True, hide_index=True)
 
     st.info(
