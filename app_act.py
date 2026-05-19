@@ -59,6 +59,23 @@ from utils.poli_theme import (
     PHOSPHOR_ICONS,
 )
 
+# Nivel de formación detallado (definido aquí para compatibilidad con despliegues sin poli_theme actualizado)
+NIVEL_ORDEN = ["Especialización", "Maestría", "Profesional", "Tecnológico", "Técnico"]
+NIVEL_CLR = {
+    "Especialización": "#2563eb",
+    "Maestría": "#7c3aed",
+    "Profesional": "#059669",
+    "Tecnológico": "#d97706",
+    "Técnico": "#0891b2",
+}
+try:
+    from utils.poli_theme import NIVEL_CLR as _NIVEL_CLR_THEME, NIVEL_ORDEN as _NIVEL_ORDEN_THEME
+
+    NIVEL_CLR = _NIVEL_CLR_THEME
+    NIVEL_ORDEN = _NIVEL_ORDEN_THEME
+except ImportError:
+    pass
+
 st.set_page_config(
     page_title="Reforma Curricular · Fase 2 · POLI",
     page_icon=":material/school:",
@@ -260,7 +277,6 @@ def _render_chart_nivel_detalle(df: pd.DataFrame) -> None:
     """Barras horizontales por nivel de formación (columna NIVEL)."""
     if "NIVEL" not in df.columns:
         return
-    from utils.poli_theme import NIVEL_CLR, NIVEL_ORDEN
 
     raw = df["NIVEL"].dropna().astype(str).str.strip()
     raw = raw[raw != ""]
