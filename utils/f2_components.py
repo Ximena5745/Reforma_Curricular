@@ -137,7 +137,14 @@ def render_filter_bar(
             else:
                 st.multiselect("fac", fac_ops, key=keys["fac"], label_visibility="collapsed", placeholder="Todas")
         with btn:
-            st.button("LIMPIAR", on_click=lambda: clear_filters(key_prefix), type="primary", key=keys["clear"])
+            st.button(
+                "",
+                on_click=lambda: clear_filters(key_prefix),
+                type="primary",
+                key=keys["clear"],
+                icon=":material/close:",
+                help="Limpiar filtros",
+            )
 
         lb3, in3, sp2, lbn, inn, cnt = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
         with lb3:
