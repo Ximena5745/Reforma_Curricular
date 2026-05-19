@@ -26,10 +26,10 @@ _LBL = (
 
 F2_NAV = [
     ("app_act.py", "Resumen Ejecutivo", ":material/bar_chart:"),
-    ("pages/1_Alertas_Riesgos.py", "Alertas y Riesgos", ":material/warning:"),
+    ("pages/4_Por_Programa.py", "Resumen Por Programa", ":material/school:"),
     ("pages/2_Vista_Facultad.py", "Resumen por Facultad", ":material/apartment:"),
     ("pages/3_Detalle_Etapa.py", "Detalle por Etapa", ":material/assignment:"),
-    ("pages/4_Por_Programa.py", "Por Programa", ":material/school:"),
+    ("pages/1_Alertas_Riesgos.py", "Alertas y Riesgos", ":material/warning:"),
 ]
 
 
@@ -134,7 +134,7 @@ def render_filter_bar(
             else:
                 st.multiselect("fac", fac_ops, key=keys["fac"], label_visibility="collapsed", placeholder="Todas")
         with btn:
-            st.button("LIMPIAR", on_click=lambda: clear_filters(key_prefix), type="primary", key=keys["clear"], icon=":material/close:")
+            st.button("LIMPIAR", on_click=lambda: clear_filters(key_prefix), type="primary", key=keys["clear"])
 
         lb3, in3, sp2, lbn, inn, cnt = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
         with lb3:

@@ -453,6 +453,11 @@ def activity_in_progress(df: pd.DataFrame, key: str) -> pd.Series:
     return cl == "inprog"
 
 
+def activity_status_is(df: pd.DataFrame, key: str, status: str) -> pd.Series:
+    """True si la actividad (por alias) tiene la clasificación indicada."""
+    return activity_cl(df, key) == status
+
+
 def activity_val_contains(df: pd.DataFrame, key: str, substring: str) -> pd.Series:
     vals = activity_val(df, key).astype(str).str.lower()
     return vals.str.contains(substring.lower(), na=False)

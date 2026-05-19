@@ -12,6 +12,7 @@ import streamlit as st
 from utils.data_loader_vact import (
     activity_in_progress,
     activity_not_done,
+    activity_status_is,
     activity_val_contains,
 )
 from utils.poli_theme import TEXT_MUTED, TEXT_PRIMARY, phosphor_icon
@@ -22,11 +23,11 @@ RIESGOS_ALERTA: list[dict] = [
         "tab": "Proyecciones sin aval",
         "titulo": "Proyecciones académicas sin aval financiero",
         "explicacion": (
-            "Programas en modalidad virtual u híbrida que aún no han finalizado "
-            "el formato de proyecciones académicas y financieras."
+            "Programas con el formato «5. Formato de proyecciones académicas y financieras» "
+            "en estado Devuelto."
         ),
-        "accion": "Completar y avalar el formato de proyecciones académicas y financieras.",
-        "pendiente": "Formato de proyecciones pendiente",
+        "accion": "Revisar observaciones, corregir el formato y gestionar el aval financiero.",
+        "pendiente": "Formato de proyecciones devuelto",
         "color": "#dc2626",
     },
     {
@@ -91,7 +92,7 @@ RIESGOS_ALERTA: list[dict] = [
 
 
 def get_r1_produccion_sin_aval(df: pd.DataFrame) -> pd.DataFrame:
-    mask = df["MODALIDAD"].isin(["Virtual", "Híbrido"]) & activity_not_done(df, "proyecciones_fin")
+    mask = activity_status_is(df, "proyecciones_fin", "devuelto")
     return df[mask]
 
 
@@ -167,13 +168,19 @@ def render_alertas_tabs(df: pd.DataFrame) -> None:
     items = []
     for cfg, getter in zip(RIESGOS_ALERTA, _GETTERS):
         risk_df = getter(df)
-        items.append((cfg, getter, risk_df, len(risk_df)))
+        n = len(risk_df)
+        if n > 0:
+            items.append((cfg, risk_df, n))
 
-    items.sort(key=lambda x: -x[3])
+    items.sort(key=lambda x: -x[2])
 
-    tabs = st.tabs([f"{cfg['tab']} ({n})" for cfg, _, _, n in items])
+    if not items:
+        st.success("Ningún programa en alerta con los filtros actuales.")
+        return
 
-    for tab, (cfg, _, risk_df, n) in zip(tabs, items):
+    tabs = st.tabs([f"{cfg['tab']} ({n})" for cfg, _, n in items])
+
+    for tab, (cfg, risk_df, n) in zip(tabs, items):
         with tab:
             st.markdown(
                 f'<div style="border-left:4px solid {cfg["color"]};padding:12px 14px;'
@@ -186,11 +193,8 @@ def render_alertas_tabs(df: pd.DataFrame) -> None:
                 f"</div>".replace("div", "div"),
                 unsafe_allow_html=True,
             )
-            if n == 0:
-                st.success("Ningún programa en esta alerta con los filtros actuales.")
-            else:
-                st.dataframe(
-                    _tabla_riesgo(risk_df, cfg["pendiente"]),
-                    use_container_width=True,
-                    hide_index=True,
-                )
+            st.dataframe(
+                _tabla_riesgo(risk_df, cfg["pendiente"]),
+                use_container_width=True,
+                hide_index=True,
+            )
