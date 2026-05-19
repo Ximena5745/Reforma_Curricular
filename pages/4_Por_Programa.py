@@ -1,11 +1,12 @@
 """
 pages/4_Por_Programa.py — Fase 2: Por Programa
-Ficha por programa, matriz de avance y tabla detallada.
+Detalle y ficha gráfica del programa seleccionado.
 """
 
 import pandas as pd
 import streamlit as st
 
+from utils.charts_vact import render_program_ficha_grafica
 from utils.data_loader_vact import FAC_ABREV_INV, load_etapas_data
 from utils.f2_components import (
     apply_current_filters,
@@ -13,13 +14,8 @@ from utils.f2_components import (
     render_f2_sidebar,
     render_filter_bar,
 )
-from utils.poli_theme import TEXT_MUTED, TEXT_PRIMARY, phosphor_icon, streamlit_global_css
-from utils.vact_master_table import (
-    excel_export_bytes,
-    render_heatmap_programas_etapa,
-    render_master_table,
-    render_program_ficha,
-)
+from utils.poli_theme import TEXT_PRIMARY, phosphor_icon, streamlit_global_css
+from utils.vact_master_table import excel_export_bytes, render_master_table
 
 st.set_page_config(
     page_title="Por Programa · Fase 2 · POLI",
@@ -50,7 +46,7 @@ if len(df) == 0:
 else:
     st.markdown(
         f'<div style="font-size:18px;font-weight:700;color:{TEXT_PRIMARY};margin:20px 0 12px">'
-        f'{phosphor_icon("student", size=22)} Por Programa</div>'.replace("motion.", ""),
+        f'{phosphor_icon("student", size=22)} Por Programa</div>',
         unsafe_allow_html=True,
     )
 
@@ -63,22 +59,20 @@ else:
     )
 
     if sel:
-        render_program_ficha(df, sel)
+        df_prog = df[df["NOMBRE DEL PROGRAMA"].astype(str).str.strip() == str(sel).strip()]
 
-    st.markdown("<div style='margin:16px 0'></div>", unsafe_allow_html=True)
+        st.markdown(
+            f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin:20px 0 8px">'
+            f'{phosphor_icon("table", size=16)} Detalle completo por programa</div>',
+            unsafe_allow_html=True,
+        )
+        st.caption("Pulse + en el encabezado de cada etapa para ver actividades y estados.")
+        render_master_table(df_prog)
 
-    top_n = st.select_slider("Programas en matriz", options=[10, 15, 25, 50], value=15)
-    render_heatmap_programas_etapa(df, top_n=top_n)
+        st.markdown("<div style='margin:20px 0 8px'></div>", unsafe_allow_html=True)
+        render_program_ficha_grafica(df, sel)
 
-    st.markdown(
-        f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin:24px 0 8px">'
-        f'{phosphor_icon("table", size=16)} Detalle completo por programa</div>'.replace("motion.", ""),
-        unsafe_allow_html=True,
-    )
-    st.caption("Pulse + en el encabezado de cada etapa para ver actividades.")
-
-    render_master_table(df)
-
+    st.markdown("<div style='margin:24px 0 8px'></div>", unsafe_allow_html=True)
     st.download_button(
         "Descargar Excel",
         data=excel_export_bytes(df),

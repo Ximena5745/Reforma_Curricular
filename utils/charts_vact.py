@@ -14,7 +14,7 @@ from utils.data_loader_vact import (
     _ensure_activities_meta,
     get_detalle_etapa,
 )
-from utils.poli_theme import ETAPA_CLR, STATUS_CLR, TEXT_MUTED, TEXT_PRIMARY
+from utils.poli_theme import BRAND_PRIMARY, ETAPA_CLR, STATUS_CLR, TEXT_MUTED, TEXT_PRIMARY
 
 ETAPA_SHORT = {
     "Alistamiento Curricular": "Alistamiento",
@@ -227,14 +227,146 @@ def _render_panel_etapa(df: pd.DataFrame, etapa: str | None) -> None:
     )
     st.markdown(html.replace("motion.div", "div"), unsafe_allow_html=True)
 
-    n_acts = len(det.get("actividades", []))
-    if n_acts > 8:
-        with st.expander(f"Ver las {n_acts} actividades"):
-            for act in det["actividades"]:
-                st.caption(
-                    f"{act['nombre']}: {act['pct_done']}% finalizado "
-                    f"({act['done']}/{det.get('n_programas', len(df))})"
-                )
+
+def _fig_programa_donut(pct: float) -> go.Figure:
+    fig = go.Figure(
+        go.Pie(
+            values=[pct, max(0, 100 - pct)],
+            labels=["Avance", ""],
+            hole=0.62,
+            marker_colors=[BRAND_PRIMARY if pct >= 30 else "#dc2626", "#e2e8f0"],
+            textinfo="none",
+            hoverinfo="skip",
+        )
+    )
+    fig.update_layout(
+        height=200,
+        margin=dict(l=10, r=10, t=10, b=10),
+        paper_bgcolor="rgba(0,0,0,0)",
+        showlegend=False,
+        annotations=[
+            dict(
+                text=f"<b>{pct:.0f}%</b>",
+                x=0.5,
+                y=0.55,
+                font_size=22,
+                showarrow=False,
+            ),
+            dict(text="Avance general", x=0.5, y=0.38, font_size=10, showarrow=False, font_color=TEXT_MUTED),
+        ],
+    )
+    return fig
+
+
+def _fig_programa_estados_etapa(etapa: str, actividades: list[dict]) -> go.Figure:
+    labels = [ETAPA_SHORT.get(etapa, etapa)]
+    fig = go.Figure()
+    for cl_key, lbl, clr in STATUS_STACK:
+        n = sum(1 for a in actividades if a.get("estado_key") == cl_key)
+        if n == 0:
+            continue
+        txt_color = "#475569" if cl_key == "na" else "#ffffff"
+        fig.add_trace(
+            go.Bar(
+                name=lbl,
+                y=labels,
+                x=[n],
+                orientation="h",
+                marker_color=clr,
+                text=[str(n)],
+                textposition="inside",
+                textfont=dict(size=10, color=txt_color),
+                hovertemplate=lbl + ": %{x}<extra></extra>",
+            )
+        )
+    fig.update_layout(
+        barmode="stack",
+        height=56,
+        margin=dict(l=0, r=8, t=4, b=4),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        showlegend=False,
+        xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
+        yaxis=dict(showticklabels=False),
+    )
+    return fig
+
+
+def render_program_ficha_grafica(df: pd.DataFrame, programa: str) -> None:
+    """Ficha del programa con donut, barras por etapa y desglose de estados."""
+    from utils.data_loader_vact import get_etapas_by_programa
+    from utils.poli_theme import BRAND_PRIMARY, MODALIDAD_CLR, badge_html
+
+    data = get_etapas_by_programa(df, programa)
+    info = data.get("info", {})
+    gen = float(data.get("avance_general", 0) or 0)
+    fac = info.get("FACULTAD_ABREV", "—")
+    mod = info.get("MODALIDAD", "—")
+    per = info.get("PERIODO DE IMPLEMENTACIÓN", "—")
+    mod_c = MODALIDAD_CLR.get(mod, "#6e7681")
+
+    col_info, col_donut = st.columns([1.4, 1])
+    with col_info:
+        st.markdown(
+            f'<div style="font-size:16px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:8px">{programa}</div>',
+            unsafe_allow_html=True,
+        )
+        st.markdown(
+            f'{badge_html(fac, info.get("FACULTAD_COLOR", "#6e7681"))} '
+            f'{badge_html(mod, mod_c)} {badge_html(per, "#94a3b8")}',
+            unsafe_allow_html=True,
+        )
+    with col_donut:
+        st.plotly_chart(_fig_programa_donut(gen), use_container_width=True, config=_PLOTLY_CONFIG)
+
+    st.markdown(
+        f'<p style="font-size:12px;font-weight:700;color:{TEXT_MUTED};margin:12px 0 8px">'
+        f"Avance y desglose por etapa</p>",
+        unsafe_allow_html=True,
+    )
+
+    fig_bars = go.Figure()
+    etapas_short = [ETAPA_SHORT[e] for e in ETAPAS_ORDEN]
+    pcts = [data["etapas"].get(e, {}).get("pct", 0) for e in ETAPAS_ORDEN]
+    colors = [ETAPA_CLR.get(e, "#6e7681") for e in ETAPAS_ORDEN]
+    fig_bars.add_trace(
+        go.Bar(
+            x=pcts,
+            y=etapas_short,
+            orientation="h",
+            marker_color=colors,
+            text=[f"{p}%" for p in pcts],
+            textposition="outside",
+            hovertemplate="<b>%{y}</b>: %{x}%<extra></extra>",
+        )
+    )
+    fig_bars.update_layout(
+        height=200,
+        margin=dict(l=10, r=40, t=8, b=8),
+        paper_bgcolor="rgba(0,0,0,0)",
+        plot_bgcolor="rgba(0,0,0,0)",
+        xaxis=dict(range=[0, 105], ticksuffix="%"),
+        yaxis=dict(autorange="reversed"),
+        showlegend=False,
+    )
+    st.plotly_chart(fig_bars, use_container_width=True, config=_PLOTLY_CONFIG)
+
+    for etapa in ETAPAS_ORDEN:
+        et_data = data["etapas"].get(etapa, {})
+        acts = et_data.get("actividades", [])
+        pct_e = et_data.get("pct", 0)
+        clr = ETAPA_CLR.get(etapa, "#6e7681")
+        st.markdown(
+            f'<div style="font-size:12px;font-weight:700;color:{clr};margin:14px 0 4px">'
+            f'{ETAPA_SHORT[etapa]} — {pct_e:.0f}%</div>',
+            unsafe_allow_html=True,
+        )
+        if acts:
+            st.plotly_chart(
+                _fig_programa_estados_etapa(etapa, acts),
+                use_container_width=True,
+                config=_PLOTLY_CONFIG,
+            )
 
 
 def render_etapas_drilldown(df: pd.DataFrame, *, key_prefix: str = "etapas") -> None:

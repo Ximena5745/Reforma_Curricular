@@ -1,16 +1,14 @@
 """
 pages/3_Detalle_Etapa.py — Fase 2: Detalle por Etapa
-Vista agregada por etapa y comparativa por período.
+Vista agregada por etapa con drill-down.
 """
 
 import pandas as pd
-import plotly.graph_objects as go
 import streamlit as st
 
 from utils.charts_vact import ETAPA_SHORT, render_etapas_drilldown
 from utils.data_loader_vact import (
     ETAPAS_ORDEN,
-    ETAPA_PCT_COL,
     FAC_ABREV_INV,
     get_estadisticas_etapa,
     load_etapas_data,
@@ -84,41 +82,7 @@ else:
 
     st.markdown(
         f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin:24px 0 8px">'
-        f'{phosphor_icon("chart-bar", size=16)} Comparativa por período</div>'.replace("motion.", ""),
-        unsafe_allow_html=True,
-    )
-
-    if "PERIODO DE IMPLEMENTACIÓN" in df.columns:
-        periodos = sorted(df["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist())[:6]
-        fig = go.Figure()
-        for etapa in ETAPAS_ORDEN:
-            col = ETAPA_PCT_COL[etapa]
-            ys = []
-            for per in periodos:
-                sub = df[df["PERIODO DE IMPLEMENTACIÓN"] == per]
-                ys.append(round(float(sub[col].mean()), 1) if len(sub) and col in sub.columns else 0)
-            fig.add_trace(
-                go.Bar(
-                    name=ETAPA_SHORT[etapa],
-                    x=periodos,
-                    y=ys,
-                    marker_color=ETAPA_CLR.get(etapa, "#6e7681"),
-                )
-            )
-        fig.update_layout(
-            barmode="group",
-            height=360,
-            margin=dict(t=30, b=40),
-            paper_bgcolor="rgba(0,0,0,0)",
-            plot_bgcolor="rgba(0,0,0,0)",
-            legend=dict(orientation="h", yanchor="bottom", y=1.02),
-            yaxis=dict(ticksuffix="%", range=[0, 105]),
-        )
-        st.plotly_chart(fig, use_container_width=True, config={"displayModeBar": False})
-
-    st.markdown(
-        f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin:24px 0 8px">'
-        f'{phosphor_icon("list-bullets", size=16)} Resumen agregado por etapa</div>'.replace("motion.", ""),
+        f'{phosphor_icon("chart-bar", size=16)} Resumen agregado por etapa</div>'.replace("motion.", ""),
         unsafe_allow_html=True,
     )
     rows = []
