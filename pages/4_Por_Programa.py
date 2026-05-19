@@ -1,6 +1,6 @@
 """
 pages/4_Por_Programa.py — Fase 2: Por Programa
-Detalle y ficha gráfica del programa seleccionado.
+Tabla maestra paginada por período, ficha gráfica por programa seleccionado.
 """
 
 import pandas as pd
@@ -15,7 +15,7 @@ from utils.f2_components import (
     render_filter_bar,
 )
 from utils.poli_theme import TEXT_PRIMARY, phosphor_icon, streamlit_global_css
-from utils.vact_master_table import excel_export_bytes, render_master_table
+from utils.vact_master_table import excel_export_bytes, render_master_table_by_periodo
 
 st.set_page_config(
     page_title="Por Programa · Fase 2 · POLI",
@@ -50,26 +50,29 @@ else:
         unsafe_allow_html=True,
     )
 
+    st.markdown(
+        f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin:8px 0 8px">'
+        f'{phosphor_icon("table", size=16)} Detalle completo por programa</div>',
+        unsafe_allow_html=True,
+    )
+    st.caption(
+        "Listado de todos los programas según los filtros superiores. "
+        "Navegue por período en las pestañas. Pulse + en cada etapa para ver actividades."
+    )
+    render_master_table_by_periodo(df, key_prefix="programa_tabla")
+
+    st.markdown("<div style='margin:20px 0 8px'></div>", unsafe_allow_html=True)
+
     programas = sorted(df["NOMBRE DEL PROGRAMA"].dropna().astype(str).unique().tolist())
     sel = st.selectbox(
         "Buscar programa",
         programas,
         index=0,
         placeholder="Seleccione un programa",
+        key="programa_sel",
     )
 
     if sel:
-        df_prog = df[df["NOMBRE DEL PROGRAMA"].astype(str).str.strip() == str(sel).strip()]
-
-        st.markdown(
-            f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin:20px 0 8px">'
-            f'{phosphor_icon("table", size=16)} Detalle completo por programa</div>',
-            unsafe_allow_html=True,
-        )
-        st.caption("Pulse + en el encabezado de cada etapa para ver actividades y estados.")
-        render_master_table(df_prog)
-
-        st.markdown("<div style='margin:20px 0 8px'></div>", unsafe_allow_html=True)
         render_program_ficha_grafica(df, sel)
 
     st.markdown("<div style='margin:24px 0 8px'></div>", unsafe_allow_html=True)

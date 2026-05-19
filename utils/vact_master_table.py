@@ -28,6 +28,7 @@ from utils.poli_theme import (
     BRAND_HIGHLIGHT,
     MODALIDAD_CLR,
     PERIODO_CLR,
+    STATUS_CLR,
     TEXT_LIGHT,
     TEXT_MUTED,
     TEXT_NA,
@@ -38,6 +39,16 @@ from utils.poli_theme import (
     p_bar_html,
     status_icon_html,
 )
+
+_META_EXPORT = [
+    ("NOMBRE DEL PROGRAMA", "Programa"),
+    ("FACULTAD", "Facultad"),
+    ("ESCUELA", "Escuela"),
+    ("MODALIDAD", "Modalidad"),
+    ("NIVEL", "Nivel"),
+    ("SEDE", "Sede"),
+    ("PERIODO DE IMPLEMENTACIÓN", "Período"),
+]
 
 _HDR_ROW1_H = 36
 
@@ -358,41 +369,36 @@ def render_master_table(df: pd.DataFrame) -> None:
     html_comp.html(master_activities_table_html(df), height=h, scrolling=False)
 
 
-def excel_export_bytes(df: pd.DataFrame) -> bytes:
-    export = df[
-        [
-            "NOMBRE DEL PROGRAMA",
-            "FACULTAD",
-            "ESCUELA",
-            "MODALIDAD",
-            "NIVEL",
-            "SEDE",
-            "PERIODO DE IMPLEMENTACIÓN",
-            "pct_alistamiento",
-            "pct_diseno",
-            "pct_desarrollo",
-            "pct_implementacion",
-            "avance_general_vact",
-        ]
-    ].copy()
-    export.columns = [
-        "Programa",
-        "Facultad",
-        "Escuela",
-        "Modalidad",
-        "Nivel",
-        "Sede",
-        "Período",
-        "% Alistamiento",
-        "% Diseño",
-        "% Desarrollo",
-        "% Implementación",
-        "% General",
+def render_master_table_by_periodo(df: pd.DataFrame, *, key_prefix: str = "master") -> None:
+    """Tabla maestra con una pestaña por período de implementación."""
+    if len(df) == 0:
+        st.info("Sin programas para los filtros seleccionados.")
+        return
+
+    per_col = "PERIODO DE IMPLEMENTACIÓN"
+    if per_col not in df.columns:
+        render_master_table(df)
+        return
+
+    periodos = sorted(df[per_col].dropna().astype(str).str.strip().unique().tolist())
+    if not periodos:
+        render_master_table(df)
+        return
+
+    if len(periodos) == 1:
+        mask = df[per_col].astype(str).str.strip() == periodos[0]
+        render_master_table(df.loc[mask])
+        return
+
+    labels = [
+        f"{p} ({int((df[per_col].astype(str).str.strip() == p).sum())})"
+        for p in periodos
     ]
-    buf = io.BytesIO()
-    export.to_excel(buf, index=False, engine="openpyxl")
-    buf.seek(0)
-    return buf.getvalue()
+    tabs = st.tabs(labels)
+    for tab, per in zip(tabs, periodos):
+        with tab:
+            mask = df[per_col].astype(str).str.strip() == per
+            render_master_table(df.loc[mask])
 
 
 def _pct_color(val: float) -> str:
@@ -403,6 +409,210 @@ def _pct_color(val: float) -> str:
     if val >= 30:
         return "#d97706"
     return "#dc2626"
+
+
+def _pct_color_hex6(val: float) -> str:
+    return _pct_color(val).lstrip("#")
+
+
+def _hex6(color: str) -> str:
+    h = str(color).lstrip("#")
+    return h.upper() if len(h) == 6 else "9AABB5"
+
+
+def _hex_fill(hex_color: str):
+    from openpyxl.styles import PatternFill
+
+    h = _hex6(hex_color)
+    return PatternFill(start_color=h, end_color=h, fill_type="solid")
+
+
+def _activity_display(row: pd.Series, act_idx: int) -> tuple[str, str]:
+    cl = str(row.get(f"cl_act_{act_idx}", "na") or "na")
+    val = row.get(f"val_act_{act_idx}", "—")
+    if cl == "info" and str(val).strip() not in ("—", "", "nan", "None"):
+        return str(val).strip(), cl
+    return STATUS_LABEL.get(cl, cl), cl
+
+
+def _status_font_color(cl: str) -> str:
+    return "475569" if cl == "na" else "FFFFFF"
+
+
+def _build_export_specs(df: pd.DataFrame) -> list[dict]:
+    specs: list[dict] = [
+        {"kind": "meta", "field": field, "label": label} for field, label in _META_EXPORT
+    ]
+    meta_all = _ensure_activities_meta(df)
+    for etapa in ETAPAS_ORDEN:
+        acts = [m for m in meta_all if m["phase"] == etapa]
+        short = etapa.replace(" Curricular", "")
+        for m in acts:
+            specs.append({
+                "kind": "act",
+                "idx": m["idx"],
+                "label": m["name"],
+                "etapa": etapa,
+            })
+        specs.append({
+            "kind": "pct",
+            "field": ETAPA_PCT_COL[etapa],
+            "label": f"% Av. {short}",
+            "etapa": etapa,
+        })
+    specs.append({
+        "kind": "gen",
+        "field": "avance_general_vact",
+        "label": "% Av. General Reforma",
+    })
+    return specs
+
+
+def _write_legend_sheet(ws) -> None:
+    from openpyxl.styles import Alignment, Font, PatternFill
+
+    ws.cell(1, 1, "Leyenda de estados").font = Font(bold=True, size=12, color="0F385A")
+    ws.cell(2, 1, "Estado").font = Font(bold=True, color="FFFFFF")
+    ws.cell(2, 2, "Significado").font = Font(bold=True, color="FFFFFF")
+    for c in (1, 2):
+        ws.cell(2, c).fill = _hex_fill("0F385A")
+        ws.cell(2, c).alignment = Alignment(horizontal="center")
+    for ri, cl in enumerate(("done", "inprog", "nostart", "devuelto", "info", "na"), 3):
+        lbl = STATUS_LABEL.get(cl, cl)
+        ws.cell(ri, 1, lbl).fill = _hex_fill(STATUS_CLR.get(cl, "9aabb5"))
+        ws.cell(ri, 1).font = Font(bold=True, color=_status_font_color(cl), size=10)
+        ws.cell(ri, 1).alignment = Alignment(horizontal="center")
+        ws.cell(ri, 2, lbl)
+    ws.column_dimensions["A"].width = 18
+    ws.column_dimensions["B"].width = 28
+
+
+def excel_export_bytes(df: pd.DataFrame) -> bytes:
+    """Genera Excel formateado con actividades, estados y % por etapa."""
+    from openpyxl import Workbook
+    from openpyxl.styles import Alignment, Font
+    from openpyxl.utils import get_column_letter
+
+    if len(df) == 0:
+        wb = Workbook()
+        ws = wb.active
+        ws.title = "Detalle VACT"
+        ws.cell(1, 1, "Sin datos para exportar")
+        buf = io.BytesIO()
+        wb.save(buf)
+        buf.seek(0)
+        return buf.getvalue()
+
+    specs = _build_export_specs(df)
+    sort_cols = [c for c in ("PERIODO DE IMPLEMENTACIÓN", "NOMBRE DEL PROGRAMA") if c in df.columns]
+    df_sorted = df.sort_values(sort_cols) if sort_cols else df
+
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Detalle VACT"
+
+    n_meta = sum(1 for s in specs if s["kind"] == "meta")
+    col = 1
+
+    header_font = Font(bold=True, color="FFFFFF", size=9)
+    header_align = Alignment(horizontal="center", vertical="center", wrap_text=True)
+
+    for spec in specs[:n_meta]:
+        cell = ws.cell(1, col, spec["label"])
+        cell.font = header_font
+        cell.fill = _hex_fill(BRAND_PRIMARY)
+        cell.alignment = header_align
+        ws.merge_cells(start_row=1, start_column=col, end_row=2, end_column=col)
+        col += 1
+
+    etapa_blocks: list[tuple[str, list[dict]]] = []
+    i = n_meta
+    while i < len(specs):
+        spec = specs[i]
+        if spec["kind"] == "gen":
+            break
+        etapa = spec["etapa"]
+        block: list[dict] = []
+        while i < len(specs) and specs[i].get("etapa") == etapa and specs[i]["kind"] != "gen":
+            block.append(specs[i])
+            i += 1
+        etapa_blocks.append((etapa, block))
+
+    gen_spec = specs[-1] if specs and specs[-1]["kind"] == "gen" else None
+
+    for etapa, block in etapa_blocks:
+        start_col = col
+        span = len(block)
+        clr = _hex6(ETAPA_HEADER_CLR.get(etapa, BRAND_PRIMARY))
+        short = etapa.replace(" Curricular", "")
+        top = ws.cell(1, start_col, short)
+        top.font = Font(bold=True, color="FFFFFF", size=10)
+        top.fill = _hex_fill(clr)
+        top.alignment = header_align
+        if span > 1:
+            ws.merge_cells(start_row=1, start_column=start_col, end_row=1, end_column=start_col + span - 1)
+        tints = _etapa_hdr_tints(ETAPA_HEADER_CLR.get(etapa, BRAND_PRIMARY))
+        for j, bspec in enumerate(block):
+            ci = start_col + j
+            sub = ws.cell(2, ci, bspec["label"])
+            sub.font = Font(bold=True, size=8, color=_hex6(tints["act_fg"]))
+            sub.fill = _hex_fill(tints["act_bg"] if bspec["kind"] == "act" else tints["pct_bg"])
+            sub.alignment = Alignment(horizontal="center", vertical="center", wrap_text=True)
+            col += 1
+
+    if gen_spec:
+        gcell = ws.cell(1, col, gen_spec["label"])
+        gcell.font = Font(bold=True, color="FFFFFF", size=9)
+        gcell.fill = _hex_fill(BRAND_PRIMARY)
+        gcell.alignment = header_align
+        ws.merge_cells(start_row=1, start_column=col, end_row=2, end_column=col)
+
+    ws.row_dimensions[1].height = 28
+    ws.row_dimensions[2].height = 52
+    ws.freeze_panes = "A3"
+
+    data_start = 3
+    for ri, (_, row) in enumerate(df_sorted.iterrows(), data_start):
+        for ci, spec in enumerate(specs, 1):
+            cell = ws.cell(ri, ci)
+            cell.alignment = Alignment(
+                horizontal="left" if spec["kind"] == "meta" and ci == 1 else "center",
+                vertical="center",
+                wrap_text=spec["kind"] == "act",
+            )
+            if spec["kind"] == "meta":
+                cell.value = row.get(spec["field"], "—")
+            elif spec["kind"] == "act":
+                text, cl = _activity_display(row, spec["idx"])
+                cell.value = text
+                hex6 = _hex6(STATUS_CLR.get(cl, "9aabb5"))
+                cell.fill = _hex_fill(hex6)
+                cell.font = Font(bold=True, color=_status_font_color(cl), size=9)
+            elif spec["kind"] in ("pct", "gen"):
+                try:
+                    pct = round(float(row.get(spec["field"], 0) or 0), 1)
+                except (TypeError, ValueError):
+                    pct = 0.0
+                cell.value = f"{pct:.0f}%"
+                cell.fill = _hex_fill(_pct_color_hex6(pct))
+                cell.font = Font(bold=True, color="FFFFFF", size=10)
+
+    for ci in range(1, len(specs) + 1):
+        letter = get_column_letter(ci)
+        max_w = 10
+        for r in range(1, ws.max_row + 1):
+            v = ws.cell(r, ci).value
+            if v is not None:
+                max_w = max(max_w, min(len(str(v)), 45))
+        ws.column_dimensions[letter].width = min(max_w + 2, 42)
+
+    ws_leg = wb.create_sheet("Leyenda")
+    _write_legend_sheet(ws_leg)
+
+    buf = io.BytesIO()
+    wb.save(buf)
+    buf.seek(0)
+    return buf.getvalue()
 
 
 def render_heatmap_programas_etapa(df: pd.DataFrame, top_n: int = 15) -> None:
