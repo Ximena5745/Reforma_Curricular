@@ -590,6 +590,42 @@ def get_estadisticas_etapa(df: pd.DataFrame, etapa_name: str) -> dict:
     }
 
 
+def get_detalle_etapa(df: pd.DataFrame, etapa_name: str) -> dict:
+    """Desglose ampliado de una etapa: estados, % y lista de actividades."""
+    stats = get_estadisticas_etapa(df, etapa_name)
+    meta = _ensure_activities_meta(df)
+    acts_meta = [m for m in meta if m["phase"] == etapa_name]
+    n_prog = len(df)
+    actividades = []
+    for m in acts_meta:
+        col = f"cl_act_{m['idx']}"
+        if col not in df.columns:
+            continue
+        done = int((df[col] == "done").sum())
+        inprog = int((df[col] == "inprog").sum())
+        nostart = int((df[col] == "nostart").sum())
+        na = int((df[col] == "na").sum())
+        actividades.append({
+            "nombre": m["name"],
+            "done": done,
+            "inprog": inprog,
+            "nostart": nostart,
+            "na": na,
+            "pct_done": round(done / n_prog * 100, 1) if n_prog else 0,
+        })
+    actividades.sort(key=lambda a: (-a["pct_done"], a["nombre"]))
+    total_cells = stats.get("total_act") or 0
+    pct_por_estado = {}
+    for k in ("done", "inprog", "nostart", "na"):
+        pct_por_estado[k] = round(stats[k] / total_cells * 100, 1) if total_cells else 0
+    return {
+        **stats,
+        "actividades": actividades,
+        "pct_por_estado": pct_por_estado,
+        "n_actividades": len(acts_meta),
+    }
+
+
 def count_actividades_completadas(row, etapa_name: str, df: pd.DataFrame) -> tuple[int, int]:
     """Retorna (completadas, total) para una fila y etapa."""
     meta = _ensure_activities_meta(df)

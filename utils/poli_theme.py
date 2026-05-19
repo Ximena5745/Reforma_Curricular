@@ -73,6 +73,17 @@ STATUS_CLR = {
     "na": "#9aabb5",
 }
 
+# ── Nivel de formación (detalle) ──────────────────────────────────────────────
+NIVEL_ORDEN = ["Especialización", "Maestría", "Profesional", "Tecnológico", "Técnico"]
+
+NIVEL_CLR = {
+    "Especialización": "#2563eb",
+    "Maestría": "#7c3aed",
+    "Profesional": "#059669",
+    "Tecnológico": "#d97706",
+    "Técnico": "#0891b2",
+}
+
 # ── Etapas reforma curricular ─────────────────────────────────────────────────
 ETAPA_CLR = {
     "Alistamiento Curricular": "#2980B9",  # azul medio — distinto del avance general (#0F385A)
