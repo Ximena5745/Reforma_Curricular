@@ -60,7 +60,7 @@ def _actividades_table_html(actividades: list[dict], etapa_clr: str) -> str:
         val = act.get("valor", "—")
         lbl = STATUS_LABEL.get(cl, cl)
         icon = _vact_act_icon(cl, val)
-        pct_num, pct_txt = _pct_display(act)
+        pct_num, _ = _pct_display(act)
         avance_cell = (
             p_bar_html(pct_num) if pct_num is not None else f'<span style="color:{TEXT_MUTED}">—</span>'
         )
@@ -77,8 +77,7 @@ def _actividades_table_html(actividades: list[dict], etapa_clr: str) -> str:
             f'<td style="padding:6px 8px;font-size:10px;color:{TEXT_SUBTLE};vertical-align:middle" '
             f'title="{resp}">{resp_short}</td>'
             f'<td style="padding:6px 8px;text-align:center;vertical-align:middle">'
-            f'<span style="font-size:10px;font-weight:700;color:{TEXT_PRIMARY};display:block;margin-bottom:3px">'
-            f"{pct_txt}</span>{avance_cell}</td>"
+            f"{avance_cell}</td>"
             "</tr>"
         )
 

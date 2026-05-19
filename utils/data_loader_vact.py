@@ -232,13 +232,29 @@ def _activity_score(cl: str) -> float | None:
     return None  # na / info no cuentan
 
 
+def _build_area_by_col(raw: pd.DataFrame) -> dict[int, str]:
+    """Propaga responsables de fila 9 (celdas combinadas en Excel)."""
+    if len(raw) <= AREA_ROW:
+        return {}
+    area_row = raw.iloc[AREA_ROW]
+    area_by_col: dict[int, str] = {}
+    current = ""
+    for j in range(raw.shape[1]):
+        v = area_row.iloc[j] if j < len(area_row) else ""
+        s = " ".join(str(v).strip().split()) if pd.notna(v) and str(v).strip() else ""
+        if s and s.lower() not in ("none", "nan"):
+            current = s
+        area_by_col[j] = _parse_responsable_cell(current) if current else "—"
+    return area_by_col
+
+
 def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
     """
     Retorna (phase_by_col_index, activities_list).
     activities_list: [{phase, name, col_idx, is_pct}, ...]
     """
     phase_row = raw.iloc[PHASE_ROW]
-    area_row = raw.iloc[AREA_ROW] if len(raw) > AREA_ROW else pd.Series(dtype=str)
+    area_by_col = _build_area_by_col(raw)
     header_row = raw.iloc[HEADER_ROW]
 
     phase_by_col: dict[int, str] = {}
@@ -282,11 +298,7 @@ def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
                 "is_general": False,
             })
         elif phase in ETAPAS_ORDEN:
-            resp = (
-                _parse_responsable_cell(area_row.iloc[j])
-                if j < len(area_row)
-                else "—"
-            )
+            resp = area_by_col.get(j, "—")
             activities.append({
                 "phase": phase,
                 "name": hname,
