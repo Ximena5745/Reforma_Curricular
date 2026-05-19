@@ -124,6 +124,7 @@ def _fig_actividades_level(df: pd.DataFrame, etapa: str) -> go.Figure:
         for m in acts_sorted:
             col = f"cl_act_{m['idx']}"
             vals.append(int((df[col] == cl_key).sum()) if col in df.columns else 0)
+        txt_color = "#475569" if cl_key == "na" else "#ffffff"
         fig.add_trace(
             go.Bar(
                 name=lbl,
@@ -132,6 +133,10 @@ def _fig_actividades_level(df: pd.DataFrame, etapa: str) -> go.Figure:
                 orientation="h",
                 marker_color=clr,
                 customdata=names_full,
+                text=[str(v) if v > 0 else "" for v in vals],
+                textposition="inside",
+                insidetextanchor="middle",
+                textfont=dict(size=10, color=txt_color),
                 hovertemplate="<b>%{customdata}</b><br>" + lbl + ": %{x}<extra></extra>",
             )
         )
@@ -140,7 +145,8 @@ def _fig_actividades_level(df: pd.DataFrame, etapa: str) -> go.Figure:
         barmode="stack",
         bargap=0.28,
         height=max(280, len(acts_sorted) * 28 + 72),
-        margin=dict(l=4, r=16, t=40, b=8),
+        margin=dict(l=4, r=24, t=40, b=8),
+        uniformtext=dict(minsize=8, mode="hide"),
         paper_bgcolor="rgba(0,0,0,0)",
         plot_bgcolor="rgba(0,0,0,0)",
         legend=dict(orientation="h", yanchor="bottom", y=1.02, x=0, font=dict(size=10)),
@@ -155,20 +161,6 @@ def _fig_actividades_level(df: pd.DataFrame, etapa: str) -> go.Figure:
 def _short(text: str, n: int) -> str:
     t = str(text).strip()
     return t if len(t) <= n else t[: n - 1] + "…"
-
-
-def _bar_estado_html(label: str, count: int, pct: float, color: str) -> str:
-    w = min(100, max(0, pct))
-    return (
-        '<div style="margin-bottom:8px">'
-        '<motion.div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:3px">'
-        f'<span style="color:#475569">{label}</span>'
-        f'<span style="font-weight:700;color:#0f172a">{count} ({pct}%)</span>'
-        '</motion.div>'
-        '<motion.div style="height:6px;background:#e2e8f0;border-radius:3px">'
-        f'<motion.div style="width:{w}%;height:100%;background:{color};border-radius:3px"></motion.div>'
-        '</motion.div></motion.div>'
-    ).replace("motion.div", "div")
 
 
 def _render_panel_resumen(df: pd.DataFrame) -> None:
@@ -205,12 +197,6 @@ def _render_panel_etapa(df: pd.DataFrame, etapa: str | None) -> None:
 
     det = get_detalle_etapa(df, etapa)
     color = ETAPA_CLR.get(etapa, "#6e7681")
-    pct_st = det.get("pct_por_estado", {})
-
-    barras = "".join(
-        _bar_estado_html(lbl, det.get(key, 0), pct_st.get(key, 0), clr)
-        for key, lbl, clr in STATUS_STACK
-    )
 
     acts_html = ""
     for act in det.get("actividades", [])[:8]:
@@ -234,11 +220,9 @@ def _render_panel_etapa(df: pd.DataFrame, etapa: str | None) -> None:
         f'<motion.div style="font-size:12px;font-weight:700;color:{color}">'
         f'{ETAPA_SHORT.get(etapa, etapa)}</motion.div>'
         f'<motion.div style="font-size:28px;font-weight:800;color:{color}">{det["pct_promedio"]}%</motion.div>'
-        f'<motion.div style="font-size:10px;color:{TEXT_MUTED};margin:6px 0 10px">'
+        f'<motion.div style="font-size:10px;color:{TEXT_MUTED};margin:6px 0 12px">'
         f'{det.get("n_programas", len(df))} programas · {det.get("n_actividades", 0)} actividades</motion.div>'
-        f'<motion.div style="font-size:10px;font-weight:700;color:{TEXT_MUTED};margin-bottom:6px">Por estado</motion.div>'
-        f"{barras}"
-        f'<motion.div style="font-size:10px;font-weight:700;color:{TEXT_MUTED};margin:12px 0 6px">Actividades</motion.div>'
+        f'<motion.div style="font-size:10px;font-weight:700;color:{TEXT_MUTED};margin-bottom:6px">Actividades</motion.div>'
         f"{acts_html}</motion.div>"
     )
     st.markdown(html.replace("motion.div", "div"), unsafe_allow_html=True)

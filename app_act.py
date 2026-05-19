@@ -420,11 +420,3 @@ else:
         unsafe_allow_html=True,
     )
     render_etapas_drilldown(df, key_prefix="resumen")
-
-    st.markdown(
-        f'<div style="font-size:11px;color:{TEXT_MUTED};margin-top:16px;padding:8px 12px;'
-        f'background:#fff;border-radius:8px;border:1px solid rgba(15,56,90,.08)">'
-        f"{phosphor_icon('info', size=12)} "
-        f"Finalizado · En proceso · Sin iniciar · No aplica — datos: Control Maestro VACT</div>",
-        unsafe_allow_html=True,
-    )
