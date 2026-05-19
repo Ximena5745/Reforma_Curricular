@@ -73,6 +73,7 @@ else:
     )
 
     if sel:
+        st.caption("Detalle de actividades del programa seleccionado (estado y responsable por columna).")
         render_program_ficha_grafica(df, sel)
 
     st.markdown("<div style='margin:24px 0 8px'></div>", unsafe_allow_html=True)

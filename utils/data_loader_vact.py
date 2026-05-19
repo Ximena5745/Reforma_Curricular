@@ -79,6 +79,7 @@ def get_raw_data_updated_label() -> str:
 
 
 PHASE_ROW = 7   # fila 8 Excel: fases
+AREA_ROW = 8    # fila 9 Excel: áreas / responsables
 HEADER_ROW = 10  # fila 11 Excel: encabezados actividades
 DATA_START_ROW = 11  # fila 12 Excel: primer programa
 
@@ -146,6 +147,13 @@ ETAPA_HEADER_CLR = ETAPA_CLR
 
 def _norm(s) -> str:
     return re.sub(r"\s+", " ", str(s).strip().lower())
+
+
+def _parse_responsable_cell(v) -> str:
+    s = " ".join(str(v).strip().split())
+    if not s or s.lower() in ("none", "nan", ""):
+        return "—"
+    return s
 
 
 def _norm_phase_name(s: str) -> str:
@@ -230,6 +238,7 @@ def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
     activities_list: [{phase, name, col_idx, is_pct}, ...]
     """
     phase_row = raw.iloc[PHASE_ROW]
+    area_row = raw.iloc[AREA_ROW] if len(raw) > AREA_ROW else pd.Series(dtype=str)
     header_row = raw.iloc[HEADER_ROW]
 
     phase_by_col: dict[int, str] = {}
@@ -273,12 +282,18 @@ def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
                 "is_general": False,
             })
         elif phase in ETAPAS_ORDEN:
+            resp = (
+                _parse_responsable_cell(area_row.iloc[j])
+                if j < len(area_row)
+                else "—"
+            )
             activities.append({
                 "phase": phase,
                 "name": hname,
                 "col_idx": j,
                 "is_pct": False,
                 "is_general": False,
+                "responsable": resp,
             })
 
     seen_act: dict[tuple[str, str], int] = {}
@@ -379,6 +394,7 @@ def _build_etapas_df() -> pd.DataFrame:
         )
         df[f"act_phase_{act_idx}"] = meta["phase"]
         df[f"act_name_{act_idx}"] = meta["name"]
+        df[f"act_owner_{act_idx}"] = meta.get("responsable", "—")
         act_idx += 1
 
     df["_n_activities"] = act_idx
@@ -439,10 +455,13 @@ def _ensure_activities_meta(df: pd.DataFrame) -> list[dict]:
     for i in range(n):
         if f"act_phase_{i}" not in df.columns:
             break
+        owner_col = f"act_owner_{i}"
+        owner = df[owner_col].iloc[0] if owner_col in df.columns else "—"
         meta.append({
             "idx": i,
             "phase": df[f"act_phase_{i}"].iloc[0],
             "name": df[f"act_name_{i}"].iloc[0],
+            "responsable": _parse_responsable_cell(owner),
         })
     _ACTIVITIES_META = meta
     return meta
@@ -621,6 +640,7 @@ def get_etapas_by_programa(df: pd.DataFrame, nombre_programa: str) -> dict:
                 "estado_key": cl,
                 "valor": val,
                 "pct": score if score is not None else "—",
+                "responsable": m.get("responsable", "—"),
             })
         pct_col = ETAPA_PCT_COL[etapa]
         result["etapas"][etapa] = {

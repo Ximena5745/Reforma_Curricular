@@ -299,43 +299,6 @@ def _fig_programa_donut(pct: float) -> go.Figure:
     return fig
 
 
-def _fig_programa_estados_etapa(etapa: str, actividades: list[dict]) -> go.Figure:
-    labels = [ETAPA_SHORT.get(etapa, etapa)]
-    fig = go.Figure()
-    for cl_key, lbl, clr in STATUS_STACK:
-        n = sum(1 for a in actividades if a.get("estado_key") == cl_key)
-        if n == 0:
-            continue
-        txt_color = "#475569" if cl_key == "na" else "#ffffff"
-        fig.add_trace(
-            go.Bar(
-                name=lbl,
-                y=labels,
-                x=[n],
-                orientation="h",
-                marker_color=clr,
-                text=[str(n)],
-                textposition="inside",
-                insidetextanchor="middle",
-                constraintext="none",
-                textangle=0,
-                textfont=dict(size=10, color=txt_color),
-                hovertemplate=lbl + ": %{x}<extra></extra>",
-            )
-        )
-    fig.update_layout(
-        barmode="stack",
-        height=56,
-        margin=dict(l=0, r=8, t=4, b=4),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        showlegend=False,
-        xaxis=dict(showgrid=False, showticklabels=False, zeroline=False),
-        yaxis=dict(showticklabels=False),
-    )
-    return fig
-
-
 def render_program_ficha_grafica(df: pd.DataFrame, programa: str) -> None:
     """Ficha del programa con donut, barras por etapa y desglose de estados."""
     from utils.data_loader_vact import get_etapas_by_programa
@@ -395,22 +358,9 @@ def render_program_ficha_grafica(df: pd.DataFrame, programa: str) -> None:
     )
     st.plotly_chart(fig_bars, use_container_width=True, config=_PLOTLY_CONFIG)
 
-    for etapa in ETAPAS_ORDEN:
-        et_data = data["etapas"].get(etapa, {})
-        acts = et_data.get("actividades", [])
-        pct_e = et_data.get("pct", 0)
-        clr = ETAPA_CLR.get(etapa, "#6e7681")
-        st.markdown(
-            f'<div style="font-size:12px;font-weight:700;color:{clr};margin:14px 0 4px">'
-            f'{ETAPA_SHORT[etapa]} — {pct_e:.0f}%</div>',
-            unsafe_allow_html=True,
-        )
-        if acts:
-            st.plotly_chart(
-                _fig_programa_estados_etapa(etapa, acts),
-                use_container_width=True,
-                config=_PLOTLY_CONFIG,
-            )
+    from utils.program_ficha_detalle import render_program_actividades_detalle
+
+    render_program_actividades_detalle(data)
 
 
 def render_etapas_drilldown(df: pd.DataFrame, *, key_prefix: str = "etapas") -> None:
