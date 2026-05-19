@@ -79,9 +79,26 @@ def get_raw_data_updated_label() -> str:
 
 
 PHASE_ROW = 7   # fila 8 Excel: fases
-AREA_ROW = 8    # fila 9 Excel: áreas / responsables
+AREA_ROW = 8    # fila 9 Excel: áreas / responsables (fallback)
 HEADER_ROW = 10  # fila 11 Excel: encabezados actividades
 DATA_START_ROW = 11  # fila 12 Excel: primer programa
+
+_AREA_HINTS = (
+    "decanatura",
+    "currículo",
+    "curriculo",
+    "secretaría",
+    "secretaria",
+    "docencia",
+    "financiera",
+    "aseguramiento",
+    "gerencia de operaciones",
+    "convenios",
+    "homologacion",
+    "homologación",
+    "banner",
+    "mercado",
+)
 
 INFO_COLS = [
     "FACULTAD",
@@ -232,20 +249,87 @@ def _activity_score(cl: str) -> float | None:
     return None  # na / info no cuentan
 
 
-def _build_area_by_col(raw: pd.DataFrame) -> dict[int, str]:
-    """Propaga responsables de fila 9 (celdas combinadas en Excel)."""
-    if len(raw) <= AREA_ROW:
-        return {}
-    area_row = raw.iloc[AREA_ROW]
+def _detect_area_row(raw: pd.DataFrame) -> int:
+    """Detecta fila de áreas/responsables por palabras clave (filas 7–12 Excel)."""
+    best_row = AREA_ROW
+    best_score = 0
+    for i in range(6, min(12, len(raw))):
+        score = 0
+        for j in range(raw.shape[1]):
+            t = _norm(str(raw.iloc[i, j]))
+            if t and t not in ("none", "nan") and any(h in t for h in _AREA_HINTS):
+                score += 1
+        if score > best_score:
+            best_score = score
+            best_row = i
+    return best_row if best_score > 0 else AREA_ROW
+
+
+def _forward_fill_area_values(raw_vals: list[str]) -> dict[int, str]:
+    """Propaga el último responsable no vacío a columnas siguientes."""
     area_by_col: dict[int, str] = {}
     current = ""
-    for j in range(raw.shape[1]):
-        v = area_row.iloc[j] if j < len(area_row) else ""
-        s = " ".join(str(v).strip().split()) if pd.notna(v) and str(v).strip() else ""
+    for j, s in enumerate(raw_vals):
         if s and s.lower() not in ("none", "nan"):
             current = s
         area_by_col[j] = _parse_responsable_cell(current) if current else "—"
     return area_by_col
+
+
+def _build_area_by_col_openpyxl(area_row_idx: int, n_cols: int) -> dict[int, str]:
+    """Lee fila de áreas resolviendo celdas combinadas con openpyxl."""
+    if not DATA_PATH.is_file() or n_cols <= 0:
+        return {}
+    try:
+        from openpyxl import load_workbook
+
+        wb = load_workbook(DATA_PATH, data_only=True, read_only=False)
+        if "Etapas" not in wb.sheetnames:
+            wb.close()
+            return {}
+        ws = wb["Etapas"]
+        excel_row = area_row_idx + 1
+        ncol = max(n_cols, ws.max_column or 0)
+        raw_vals = [""] * ncol
+
+        for c in range(1, ncol + 1):
+            v = ws.cell(row=excel_row, column=c).value
+            if v is not None and str(v).strip():
+                raw_vals[c - 1] = " ".join(str(v).strip().split())
+
+        for mr in ws.merged_cells.ranges:
+            if mr.min_row <= excel_row <= mr.max_row:
+                tl = ws.cell(row=mr.min_row, column=mr.min_col).value
+                if tl is not None and str(tl).strip():
+                    val = " ".join(str(tl).strip().split())
+                    for c in range(mr.min_col, mr.max_col + 1):
+                        raw_vals[c - 1] = val
+        wb.close()
+        return _forward_fill_area_values(raw_vals)
+    except Exception:
+        return {}
+
+
+def _build_area_by_col(raw: pd.DataFrame) -> dict[int, str]:
+    """Responsables por columna: openpyxl (merges) + fallback pandas + forward-fill."""
+    if len(raw) == 0:
+        return {}
+    area_row_idx = _detect_area_row(raw)
+    n_cols = raw.shape[1]
+
+    area_by_col = _build_area_by_col_openpyxl(area_row_idx, n_cols)
+    if area_by_col and sum(1 for v in area_by_col.values() if v != "—") >= 3:
+        return area_by_col
+
+    if len(raw) <= area_row_idx:
+        return area_by_col
+    area_row = raw.iloc[area_row_idx]
+    raw_vals = []
+    for j in range(n_cols):
+        v = area_row.iloc[j] if j < len(area_row) else ""
+        s = " ".join(str(v).strip().split()) if pd.notna(v) and str(v).strip() else ""
+        raw_vals.append(s)
+    return _forward_fill_area_values(raw_vals)
 
 
 def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
@@ -324,7 +408,28 @@ def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
     return phase_by_col, activities
 
 
+def _build_activities_meta_list(activities_meta: list[dict]) -> list[dict]:
+    """Metadatos de actividades con responsable desde el mapa de columnas."""
+    built: list[dict] = []
+    act_idx = 0
+    for m in activities_meta:
+        if m.get("is_pct") or m.get("is_general"):
+            continue
+        if m.get("phase") not in ETAPAS_ORDEN:
+            continue
+        built.append({
+            "idx": act_idx,
+            "phase": m["phase"],
+            "name": m["name"],
+            "responsable": m.get("responsable", "—"),
+        })
+        act_idx += 1
+    return built
+
+
 def _build_etapas_df() -> pd.DataFrame:
+    global _ACTIVITIES_META
+
     _refresh_excel_modified_cache()
     raw = pd.read_excel(DATA_PATH, sheet_name="Etapas", header=None, dtype=str)
     raw = raw.fillna("")
@@ -451,6 +556,7 @@ def _build_etapas_df() -> pd.DataFrame:
         if df[pk].max() <= 1.0:
             df[pk] = (df[pk] * 100).round(1)
 
+    _ACTIVITIES_META = _build_activities_meta_list(activities_meta)
     return df
 
 
@@ -578,18 +684,22 @@ def activity_val_contains(df: pd.DataFrame, key: str, substring: str) -> pd.Seri
 def load_etapas_data() -> pd.DataFrame:
     """Retorna DataFrame procesado de la hoja Etapas."""
     global _ACTIVITIES_META, _ACTIVITY_IDX_CACHE
-    _ACTIVITIES_META = []
     _ACTIVITY_IDX_CACHE = {}
     try:
         import streamlit as st
 
+        mtime = int(DATA_PATH.stat().st_mtime) if DATA_PATH.is_file() else 0
+
         @st.cache_data
-        def _cached(_v: int = 3):
+        def _cached(_v: int, _mtime: int):
             return _build_etapas_df()
 
-        return _cached()
+        df = _cached(4, mtime)
     except Exception:
-        return _build_etapas_df()
+        df = _build_etapas_df()
+    if not _ACTIVITIES_META:
+        _ensure_activities_meta(df)
+    return df
 
 
 def apply_filters_vact(
