@@ -174,7 +174,6 @@ def _fig_actividades_level(df: pd.DataFrame, etapa: str) -> go.Figure:
                 customdata=names_full,
                 text=[str(v) if v > 0 else "" for v in vals],
                 textposition="inside",
-                textangle=-90,
                 insidetextanchor="middle",
                 textfont=dict(size=10, color=txt_color),
                 hovertemplate="<b>%{customdata}</b><br>" + lbl + ": %{x}<extra></extra>",
@@ -315,7 +314,6 @@ def _fig_programa_estados_etapa(etapa: str, actividades: list[dict]) -> go.Figur
                 marker_color=clr,
                 text=[str(n)],
                 textposition="inside",
-                textangle=-90,
                 textfont=dict(size=10, color=txt_color),
                 hovertemplate=lbl + ": %{x}<extra></extra>",
             )
