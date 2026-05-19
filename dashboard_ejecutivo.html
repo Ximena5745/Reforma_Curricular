@@ -1,0 +1,678 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Ejecutivo · Reforma Curricular Institucional</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.css">
+    <style>
+        :root {
+            --primario: #002855;
+            --secundario: #00509D;
+            --critico: #D62828;
+            --exito: #2A9D8F;
+            --advertencia: #F4A261;
+            --fondo-principal: #F7F9FC;
+            --fondo-tarjeta: #FFFFFF;
+            --texto-principal: #1F2937;
+            --texto-secundario: #6B7280;
+            --borde: #E5E7EB;
+            --sombra: 0 1px 2px rgba(0,0,0,0.08);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--fondo-principal);
+            color: var(--texto-principal);
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .layout { display: flex; min-height: 100vh; }
+
+        .sidebar {
+            width: 260px;
+            background: var(--primario);
+            color: white;
+            padding: 24px 20px;
+            flex-shrink: 0;
+        }
+
+        .sidebar-title { font-size: 13px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+        .sidebar-subtitle { font-size: 11px; opacity: 0.75; line-height: 1.5; }
+
+        .nav-menu { list-style: none; margin-top: 22px; }
+        .nav-item {
+            padding: 12px 14px;
+            margin-bottom: 6px;
+            cursor: pointer;
+            font-size: 13px;
+            border-left: 3px solid transparent;
+            transition: background 0.2s ease, border-color 0.2s ease;
+        }
+        .nav-item:hover { background: rgba(255,255,255,0.08); }
+        .nav-item.active { background: rgba(255,255,255,0.12); border-left-color: var(--advertencia); }
+
+        .main { flex: 1; padding: 28px; overflow-x: hidden; }
+        .page-title { font-size: 24px; font-weight: 600; color: var(--primario); margin-bottom: 6px; }
+        .page-subtitle { font-size: 12px; color: var(--texto-secundario); }
+        .section { margin-bottom: 28px; }
+        .section-title {
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--texto-secundario);
+            margin-bottom: 16px;
+            border-bottom: 1px solid var(--borde);
+            padding-bottom: 10px;
+        }
+
+        .top-summary-grid { display: grid; grid-template-columns: 1.8fr 2.2fr; gap: 20px; margin-bottom: 20px; }
+        .kpi-dominante {
+            background: var(--primario);
+            color: white;
+            border-radius: 10px;
+            padding: 28px;
+            display: grid;
+            gap: 18px;
+            min-height: 220px;
+        }
+        .kpi-dominante .label { font-size: 11px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase; opacity: 0.85; }
+        .kpi-dominante .value { font-size: 34px; font-weight: 500; line-height: 1.1; }
+        .kpi-dominante .context { font-size: 12px; opacity: 0.85; }
+        .kpi-dominante .delta { font-size: 13px; font-weight: 600; color: #D1E9FF; }
+
+        .kpi-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+        .kpi-card {
+            background: var(--fondo-tarjeta);
+            border-radius: 10px;
+            padding: 18px;
+            border: 1px solid var(--borde);
+            min-height: 130px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+        }
+        .kpi-card strong { font-size: 28px; line-height: 1; display: block; margin-bottom: 8px; }
+        .kpi-card p { font-size: 11px; color: var(--texto-secundario); text-transform: uppercase; letter-spacing: 0.7px; margin: 0; line-height: 1.4; }
+        .kpi-card.critico { border-color: rgba(214,40,40,0.2); }
+        .kpi-card.exito { border-color: rgba(42,157,143,0.2); }
+        .kpi-card.advertencia { border-color: rgba(244,162,97,0.2); }
+
+        .stage-summary-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; margin-bottom: 24px; }
+        .stage-card {
+            background: var(--fondo-tarjeta);
+            border-radius: 10px;
+            padding: 18px;
+            border: 1px solid var(--borde);
+            min-height: 150px;
+        }
+        .stage-label { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: var(--texto-secundario); margin-bottom: 8px; }
+        .stage-title { font-size: 15px; font-weight: 600; margin-bottom: 10px; color: var(--texto-principal); }
+        .stage-value { font-size: 22px; font-weight: 600; color: var(--primario); margin-bottom: 10px; }
+        .stage-meta { font-size: 11px; color: var(--texto-secundario); line-height: 1.6; }
+        .stage-meta span { display: block; margin-top: 8px; }
+
+        .analysis-grid { display: grid; grid-template-columns: 1.2fr 1fr; gap: 20px; }
+        .card { background: var(--fondo-tarjeta); border-radius: 10px; padding: 22px; border: 1px solid var(--borde); min-height: 320px; }
+        .card-title { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 16px; color: var(--texto-principal); }
+        .card-subtitle { font-size: 12px; color: var(--texto-secundario); margin-bottom: 16px; }
+
+        .bar-chart-item, .dist-bar-item, .info-row { margin-bottom: 16px; }
+        .bar-chart-label, .dist-bar-label, .info-row { font-size: 12px; color: var(--texto-secundario); display: flex; justify-content: space-between; margin-bottom: 8px; }
+        .bar-chart-value, .dist-bar-total, .info-value { color: var(--texto-principal); font-weight: 600; font-size: 12px; }
+        .bar-chart-bar, .dist-bar-track, .progress-mini { height: 10px; background: var(--borde); border-radius: 6px; overflow: hidden; }
+        .bar-chart-fill, .progress-mini-fill, .dist-bar-segment { height: 100%; border-radius: 6px; transition: width 0.3s ease; }
+        .bar-chart-fill.exito, .dist-bar-segment.exito, .progress-mini-fill.exito { background: var(--exito); }
+        .bar-chart-fill.advertencia, .dist-bar-segment.advertencia, .progress-mini-fill.advertencia { background: var(--advertencia); }
+        .bar-chart-fill.critico, .dist-bar-segment.critico, .progress-mini-fill.critico { background: var(--critico); }
+        .bar-chart-fill.azul, .dist-bar-segment.azul, .progress-mini-fill.azul { background: var(--secundario); }
+
+        .heatmap { display: grid; grid-template-columns: 170px repeat(4, 1fr); gap: 2px; }
+        .heatmap-cell, .heatmap-header, .heatmap-row-label { padding: 10px 12px; font-size: 11px; text-align: center; }
+        .heatmap-header { font-weight: 700; color: var(--texto-secundario); text-transform: uppercase; letter-spacing: 0.8px; background: var(--fondo-principal); }
+        .heatmap-row-label { text-align: left; color: var(--texto-principal); background: var(--fondo-principal); justify-self: start; }
+        .heatmap-cell.bajo { background: #FEE2E2; color: var(--critico); }
+        .heatmap-cell.medio { background: #FEF3C7; color: #B45309; }
+        .heatmap-cell.alto { background: #D1FAE5; color: var(--exito); }
+        .heatmap-cell.completo { background: var(--exito); color: white; }
+
+        .ranking-list { list-style: none; padding: 0; margin: 0; }
+        .ranking-item { display: grid; grid-template-columns: 30px 1fr auto; gap: 10px; align-items: center; padding: 10px 0; border-bottom: 1px solid var(--borde); }
+        .ranking-item:last-child { border-bottom: none; }
+        .ranking-num { width: 30px; height: 30px; border-radius: 50%; background: var(--borde); display: grid; place-items: center; font-size: 12px; font-weight: 700; }
+        .ranking-num.critico { background: var(--critico); color: white; }
+        .ranking-num.exito { background: var(--exito); color: white; }
+        .ranking-info { display: grid; gap: 4px; }
+        .ranking-programa { font-size: 13px; font-weight: 600; color: var(--texto-principal); }
+        .ranking-facultad { font-size: 11px; color: var(--texto-secundario); }
+        .ranking-value { font-size: 12px; font-weight: 700; min-width: 58px; text-align: right; }
+
+        .distribution-content { display: grid; gap: 10px; }
+        .table-controls { display: grid; grid-template-columns: 1.4fr 1fr 1fr 1fr auto auto; gap: 12px; margin-bottom: 18px; align-items: center; }
+        .search-input, .filter-select {
+            width: 100%; min-width: 0; padding: 10px 12px; border: 1px solid var(--borde); border-radius: 8px; background: white; color: var(--texto-principal); font-size: 13px;
+        }
+        .search-input:focus, .filter-select:focus { outline: 2px solid rgba(0,80,157,0.18); outline-offset: 2px; }
+        .btn { padding: 10px 16px; border-radius: 8px; border: none; cursor: pointer; font-size: 12px; font-weight: 600; transition: background 0.2s ease, transform 0.15s ease; }
+        .btn-primary { background: var(--secundario); color: white; }
+        .btn-primary:hover { background: var(--primario); }
+        .btn-outline { background: white; border: 1px solid var(--borde); color: var(--texto-principal); }
+        .btn-outline:hover { background: var(--fondo-principal); }
+
+        .table-container { overflow-x: auto; background: var(--fondo-tarjeta); border-radius: 12px; border: 1px solid var(--borde); }
+        .data-table { width: 100%; border-collapse: collapse; font-size: 12px; min-width: 1200px; }
+        .data-table th, .data-table td { padding: 14px 12px; text-align: left; border-bottom: 1px solid var(--borde); vertical-align: middle; }
+        .data-table th { background: var(--fondo-principal); color: var(--texto-secundario); font-weight: 700; text-transform: uppercase; letter-spacing: 0.8px; font-size: 11px; position: sticky; top: 0; z-index: 1; }
+        .data-table tbody tr:hover { background: rgba(0,40,85,0.04); }
+
+        .badge { display: inline-flex; align-items: center; justify-content: center; min-width: 84px; padding: 4px 10px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.7px; }
+        .badge.critico { background: rgba(214,40,40,0.12); color: var(--critico); }
+        .badge.advertencia { background: rgba(244,162,97,0.16); color: #B45309; }
+        .badge.exito { background: rgba(42,157,143,0.16); color: var(--exito); }
+        .badge.azul { background: rgba(0,80,157,0.14); color: var(--secundario); }
+        .badge.gris { background: rgba(31,41,55,0.08); color: var(--texto-secundario); }
+
+        .program-detail { display: grid; grid-template-columns: 1.2fr 0.8fr; gap: 18px; margin-top: 24px; margin-bottom: 18px; }
+        .detail-card { background: var(--fondo-tarjeta); border-radius: 12px; border: 1px solid var(--borde); padding: 22px; min-height: 220px; }
+        .detail-card h3 { font-size: 15px; margin-bottom: 10px; }
+        .detail-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+        .detail-label { color: var(--texto-secundario); font-size: 12px; }
+        .detail-value { color: var(--texto-principal); font-size: 13px; font-weight: 700; }
+        .detail-bar { margin-top: 10px; }
+        .detail-chart { width: 100%; min-height: 180px; }
+        .pagination { display: flex; justify-content: space-between; align-items: center; margin-top: 16px; padding: 14px 0; color: var(--texto-secundario); font-size: 12px; }
+        .pagination-buttons { display: flex; gap: 8px; flex-wrap: wrap; }
+        .page-btn { min-width: 38px; padding: 8px 12px; border: 1px solid var(--borde); background: white; border-radius: 8px; cursor: pointer; color: var(--texto-principal); font-size: 12px; }
+        .page-btn.active { background: var(--secundario); color: white; border-color: var(--secundario); }
+        .tooltip { font-size: 11px; color: var(--texto-secundario); margin-top: 10px; }
+
+        @media (max-width: 1200px) {
+            .top-summary-grid, .analysis-grid, .program-detail { grid-template-columns: 1fr; }
+            .kpi-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+            .stage-summary-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+        }
+
+        @media (max-width: 900px) {
+            .sidebar { display: none; }
+            .main { padding: 20px; }
+            .table-controls { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+    <div class="layout">
+        <aside class="sidebar">
+            <div class="sidebar-title">Reforma Curricular</div>
+            <div class="sidebar-subtitle">Monitoreo estratégico para rectoría y calidad académica</div>
+            <ul class="nav-menu">
+                <li class="nav-item active">Resumen Ejecutivo</li>
+                <li class="nav-item">Alistamiento Curricular</li>
+                <li class="nav-item">Diseño Curricular</li>
+                <li class="nav-item">Desarrollo Curricular</li>
+                <li class="nav-item">Implementación Curricular</li>
+                <li class="nav-item">Vista por Facultad</li>
+                <li class="nav-item">Tabla Maestra</li>
+            </ul>
+        </aside>
+
+        <main class="main">
+            <header class="page-header">
+                <h1 class="page-title">Panel Ejecutivo de Reforma Curricular</h1>
+                <p class="page-subtitle">Datos reales de avance, riesgo y trazabilidad en un formato institucional.</p>
+            </header>
+
+            <section class="section">
+                <h2 class="section-title">Estado actual de la reforma</h2>
+                <div class="top-summary-grid">
+                    <div class="kpi-dominante">
+                        <div class="label">Avance global institucional</div>
+                        <div class="value" id="kpiGlobal">0%</div>
+                        <div class="context" id="kpiContext">Índice consolidado de todos los programas en seguimiento.</div>
+                        <div class="delta" id="kpiDelta">▲ 0.0% vs periodo anterior</div>
+                    </div>
+                    <div class="kpi-grid">
+                        <div class="kpi-card"><strong id="kpiTotalProgramas">0</strong><p>Total de programas</p></div>
+                        <div class="kpi-card critico"><strong id="kpiProgramasCriticos">0</strong><p>Programas críticos</p></div>
+                        <div class="kpi-card exito"><strong id="kpiProgramasCompletados">0</strong><p>Programas finalizados</p></div>
+                        <div class="kpi-card"><strong id="kpiFacultadesActivas">0</strong><p>Facultades activas</p></div>
+                        <div class="kpi-card advertencia"><strong id="kpiAlertasActivas">0</strong><p>Alertas activas</p></div>
+                        <div class="kpi-card"><strong id="kpiRiesgoInstitutional">Medio</strong><p>Riesgo institucional</p></div>
+                    </div>
+                </div>
+                <div class="stage-summary-grid" id="stageSummary"></div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">Razón del estado institucional</h2>
+                <div class="analysis-grid">
+                    <div class="card">
+                        <div class="card-title" id="facultadTitle">Facultad con mayor retraso institucional</div>
+                        <div class="card-subtitle" id="facultadSubtitle">Comparativo de avance promedio por facultad.</div>
+                        <div id="avance-facultad"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title" id="etapaTitle">Etapa con mayor impacto operativo</div>
+                        <div class="card-subtitle" id="etapaSubtitle">Concentración de avance por fase del proceso curricular.</div>
+                        <div id="avance-etapa"></div>
+                    </div>
+                </div>
+
+                <div class="stage-summary-grid" style="margin-top: 20px;">
+                    <div class="card">
+                        <div class="card-title">Matriz de avance por facultad</div>
+                        <div class="card-subtitle">Identifica cuellos de botella en cada etapa.</div>
+                        <div id="heatmap-container"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Programas con riesgo operativo</div>
+                        <div class="card-subtitle">Top 5 programas con menor avance.</div>
+                        <ul class="ranking-list" id="programas-criticos"></ul>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Programas próximos a cerrar</div>
+                        <div class="card-subtitle">Top 5 programas con avance superior al 80%.</div>
+                        <ul class="ranking-list" id="programas-destacados"></ul>
+                    </div>
+                </div>
+
+                <div class="analysis-grid" style="margin-top: 20px;">
+                    <div class="card">
+                        <div class="card-title">Distribución por modalidad</div>
+                        <div class="card-subtitle">Proporción de programas por modalidad activa.</div>
+                        <div class="distribution-content" id="dist-modalidad"></div>
+                    </div>
+                    <div class="card">
+                        <div class="card-title">Distribución por nivel académico</div>
+                        <div class="card-subtitle">Concentración de programas técnicos, tecnológicos y profesionales.</div>
+                        <div class="distribution-content" id="dist-nivel"></div>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2 class="section-title">Investigación operativa</h2>
+                <div class="program-detail">
+                    <div class="detail-card">
+                        <h3>Detalle por programa</h3>
+                        <div class="detail-row">
+                            <div><div class="detail-label">Programa seleccionado</div><div class="detail-value" id="detailPrograma">-</div></div>
+                            <div><div class="detail-label">Responsable</div><div class="detail-value" id="detailResponsable">-</div></div>
+                        </div>
+                        <div class="detail-row">
+                            <div><div class="detail-label">Etapa actual</div><div class="detail-value" id="detailEtapa">-</div></div>
+                            <div><div class="detail-label">Riesgo</div><div class="detail-value" id="detailRiesgo">-</div></div>
+                        </div>
+                        <div class="detail-row">
+                            <div><div class="detail-label">SNIES</div><div class="detail-value" id="detailSNIES">-</div></div>
+                            <div><div class="detail-label">Periodo</div><div class="detail-value" id="detailPeriodo">-</div></div>
+                        </div>
+                        <div class="detail-bar">
+                            <div class="detail-label">Avance total</div>
+                            <div class="bar-chart-bar"><div class="bar-chart-fill azul" id="detailAvanceBar" style="width: 0%"></div></div>
+                            <div class="info-row"><span></span><span id="detailAvanceTexto">0%</span></div>
+                        </div>
+                        <div class="tooltip" id="detailObservacion">Seleccione un programa en la tabla para ver el análisis.</div>
+                    </div>
+                    <div class="detail-card">
+                        <h3>Indicadores clave</h3>
+                        <div class="info-row"><span>Actividades pendientes</span><span id="detailPendientes">0</span></div>
+                        <div class="info-row"><span>Estado documental</span><span id="detailDocumental">-</span></div>
+                        <div class="info-row"><span>Alertas activas</span><span id="detailAlertas">-</span></div>
+                        <div class="info-row"><span>Modalidad</span><span id="detailModalidad">-</span></div>
+                        <div class="info-row"><span>Nivel académico</span><span id="detailNivel">-</span></div>
+                        <div class="info-row"><span>Facultad</span><span id="detailFacultad">-</span></div>
+                        <canvas id="detailTimeline" class="detail-chart"></canvas>
+                    </div>
+                </div>
+
+                <div class="table-controls">
+                    <input type="text" class="search-input" id="searchInput" placeholder="Buscar programa, facultad, escuela, responsable...">
+                    <select class="filter-select" id="filterFacultad"><option value="">Todas las facultades</option></select>
+                    <select class="filter-select" id="filterModalidad"><option value="">Todas las modalidades</option></select>
+                    <select class="filter-select" id="filterNivel"><option value="">Todos los niveles</option></select>
+                    <button class="btn btn-primary" onclick="exportarCSV()">Exportar CSV</button>
+                    <button class="btn btn-outline" onclick="exportarExcel()">Exportar Excel</button>
+                </div>
+
+                <div class="table-container">
+                    <table class="data-table" id="tablaMaestra">
+                        <thead>
+                            <tr>
+                                <th>Programa</th>
+                                <th>Facultad</th>
+                                <th>Escuela</th>
+                                <th>Modalidad</th>
+                                <th>Nivel</th>
+                                <th>Sede</th>
+                                <th>SNIES</th>
+                                <th>Periodo</th>
+                                <th>Responsable</th>
+                                <th>Etapa actual</th>
+                                <th>Avance general</th>
+                                <th>Riesgo</th>
+                                <th>Alertas</th>
+                                <th>Estado documental</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tablaBody"></tbody>
+                    </table>
+                </div>
+
+                <div class="pagination">
+                    <div id="paginationInfo">Mostrando 0 programas</div>
+                    <div class="pagination-buttons" id="paginationButtons"></div>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        const datosProgramas = [
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Comunicación, Artes Visuales y Digitales","programa":"Comunicación Digital","modalidad":"Presencial","nivel":"Profesional","sede":"Medellín","sniies":108274,"periodo":"2027-1","avance_alistamiento":0.2,"avance_diseno":0.889,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.339},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Derecho y Gobierno","programa":"Derecho","modalidad":"Virtual","nivel":"Profesional","sede":"Nacional","sniies":111231,"periodo":"2026-2","avance_alistamiento":0.7,"avance_diseno":0.722,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.422},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Derecho y Gobierno","programa":"Técnica Profesional Judicial","modalidad":"Virtual","nivel":"Técnico","sede":"Nacional","sniies":101647,"periodo":"2026-2","avance_alistamiento":0.8,"avance_diseno":0.833,"avance_desarrollo":0.7,"avance_implementacion":0,"avance_general":0.583},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Derecho y Gobierno","programa":"Derecho","modalidad":"Híbrido","nivel":"Profesional","sede":"Medellín","sniies":102464,"periodo":"2027-1","avance_alistamiento":0.2,"avance_diseno":0.722,"avance_desarrollo":0,"avance_implementacion":0,"avance_general":0.231},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Diseño","programa":"Diseño Gráfico","modalidad":"Híbrido","nivel":"Profesional","sede":"Bogotá","sniies":107733,"periodo":"2027-1","avance_alistamiento":0,"avance_diseno":0.167,"avance_desarrollo":0,"avance_implementacion":0,"avance_general":0.042},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Diseño","programa":"Diseño Industrial","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":101525,"periodo":"2026-2","avance_alistamiento":0.2,"avance_diseno":0.833,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.325},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Diseño","programa":"Diseño Interactivo","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":107735,"periodo":"2026-2","avance_alistamiento":0.4,"avance_diseno":0.833,"avance_desarrollo":0.733,"avance_implementacion":0,"avance_general":0.492},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Optimización Infraestructura y Automatización","programa":"Tecnología en Logística","modalidad":"Virtual","nivel":"Tecnológico","sede":"Nacional","sniies":103537,"periodo":"2026-2","avance_alistamiento":0.7,"avance_diseno":0.833,"avance_desarrollo":0.167,"avance_implementacion":0,"avance_general":0.425},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Diseño","programa":"Diseño Gráfico","modalidad":"Presencial","nivel":"Profesional","sede":"Medellín","sniies":107734,"periodo":"2027-1","avance_alistamiento":0.2,"avance_diseno":0.722,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.297},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Tecnologías de la Información y las Comunicaciones","programa":"Ingeniería de Sistemas","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":106209,"periodo":"2026-2","avance_alistamiento":0.2,"avance_diseno":0.833,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.325},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Tecnologías de la Información y las Comunicaciones","programa":"Ingeniería de Sistemas","modalidad":"Presencial","nivel":"Profesional","sede":"Medellín","sniies":106210,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.556,"avance_desarrollo":0.133,"avance_implementacion":0,"avance_general":0.175},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Tecnologías de la Información y las Comunicaciones","programa":"Ingeniería de Sistemas","modalidad":"Virtual","nivel":"Profesional","sede":"Nacional","sniies":106211,"periodo":"2026-2","avance_alistamiento":0.5,"avance_diseno":0.833,"avance_desarrollo":0.4,"avance_implementacion":0,"avance_general":0.475},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Tecnologías de la Información y las Comunicaciones","programa":"Tecnología en Desarrollo de Software","modalidad":"Presencial","nivel":"Tecnológico","sede":"Bogotá","sniies":104245,"periodo":"2026-2","avance_alistamiento":0.3,"avance_diseno":0.722,"avance_desarrollo":0.333,"avance_implementacion":0,"avance_general":0.375},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Tecnologías de la Información y las Comunicaciones","programa":"Tecnología en Desarrollo de Software","modalidad":"Virtual","nivel":"Tecnológico","sede":"Nacional","sniies":104246,"periodo":"2026-2","avance_alistamiento":0.6,"avance_diseno":0.833,"avance_desarrollo":0.5,"avance_implementacion":0,"avance_general":0.533},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Tecnologías de la Información y las Comunicaciones","programa":"Tecnología en Redes y Seguridad Informática","modalidad":"Presencial","nivel":"Tecnológico","sede":"Bogotá","sniies":104247,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.444,"avance_desarrollo":0.133,"avance_implementacion":0,"avance_general":0.153},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Negocios","programa":"Administración de Empresas","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":104672,"periodo":"2026-2","avance_alistamiento":0.9,"avance_diseno":0.944,"avance_desarrollo":0.8,"avance_implementacion":0.5,"avance_general":0.708},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Negocios","programa":"Administración de Empresas","modalidad":"Virtual","nivel":"Profesional","sede":"Nacional","sniies":104673,"periodo":"2026-2","avance_alistamiento":0.8,"avance_diseno":0.889,"avance_desarrollo":0.733,"avance_implementacion":0.4,"avance_general":0.633},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Negocios","programa":"Administración de Empresas","modalidad":"Híbrido","nivel":"Profesional","sede":"Medellín","sniies":104674,"periodo":"2027-1","avance_alistamiento":0.3,"avance_diseno":0.667,"avance_desarrollo":0.4,"avance_implementacion":0,"avance_general":0.367},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Negocios","programa":"Contaduría Pública","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":104675,"periodo":"2026-2","avance_alistamiento":0.7,"avance_diseno":0.833,"avance_desarrollo":0.6,"avance_implementacion":0.3,"avance_general":0.542},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Negocios","programa":"Contaduría Pública","modalidad":"Virtual","nivel":"Profesional","sede":"Nacional","sniies":104676,"periodo":"2026-2","avance_alistamiento":0.6,"avance_diseno":0.778,"avance_desarrollo":0.533,"avance_implementacion":0.2,"avance_general":0.475},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Gestión","programa":"Gestión de Recursos Humanos","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":104677,"periodo":"2026-2","avance_alistamiento":0.5,"avance_diseno":0.722,"avance_desarrollo":0.467,"avance_implementacion":0.1,"avance_general":0.408},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Gestión","programa":"Gestión de Recursos Humanos","modalidad":"Virtual","nivel":"Profesional","sede":"Nacional","sniies":104678,"periodo":"2026-2","avance_alistamiento":0.4,"avance_diseno":0.667,"avance_desarrollo":0.4,"avance_implementacion":0,"avance_general":0.358},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Gestión","programa":"Gestión de Proyectos","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":104679,"periodo":"2027-1","avance_alistamiento":0.2,"avance_diseno":0.556,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.275},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Sostenibilidad","programa":"Ingeniería Ambiental","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":104680,"periodo":"2026-2","avance_alistamiento":0.6,"avance_diseno":0.778,"avance_desarrollo":0.533,"avance_implementacion":0.2,"avance_general":0.492},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Comunicación, Artes Visuales y Digitales","programa":"Comunicación Social","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":108275,"periodo":"2027-1","avance_alistamiento":0.3,"avance_diseno":0.722,"avance_desarrollo":0.333,"avance_implementacion":0,"avance_general":0.375},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Comunicación, Artes Visuales y Digitales","programa":"Comunicación Social","modalidad":"Virtual","nivel":"Profesional","sede":"Nacional","sniies":108276,"periodo":"2026-2","avance_alistamiento":0.6,"avance_diseno":0.833,"avance_desarrollo":0.6,"avance_implementacion":0.3,"avance_general":0.567},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Comunicación, Artes Visuales y Digitales","programa":"Producción Audiovisual","modalidad":"Presencial","nivel":"Técnico","sede":"Bogotá","sniies":108277,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.333,"avance_desarrollo":0.133,"avance_implementacion":0,"avance_general":0.133},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Educación","programa":"Licenciatura en Matemáticas","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":108278,"periodo":"2026-2","avance_alistamiento":0.8,"avance_diseno":0.889,"avance_desarrollo":0.733,"avance_implementacion":0.4,"avance_general":0.658},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Educación","programa":"Licenciatura en Lenguas Extranjeras","modalidad":"Presencial","nivel":"Profesional","sede":"Medellín","sniies":108279,"periodo":"2027-1","avance_alistamiento":0.2,"avance_diseno":0.611,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.292},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Educación","programa":"Pedagogía Infantil","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":108280,"periodo":"2026-2","avance_alistamiento":0.7,"avance_diseno":0.833,"avance_desarrollo":0.667,"avance_implementacion":0.3,"avance_general":0.583},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Ingeniería","programa":"Ingeniería Industrial","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":106212,"periodo":"2026-2","avance_alistamiento":0.5,"avance_diseno":0.778,"avance_desarrollo":0.533,"avance_implementacion":0.2,"avance_general":0.492},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Ingeniería","programa":"Ingeniería Industrial","modalidad":"Híbrido","nivel":"Profesional","sede":"Medellín","sniies":106213,"periodo":"2027-1","avance_alistamiento":0.2,"avance_diseno":0.556,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.275},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Ingeniería","programa":"Ingeniería Mecánica","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":106214,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.444,"avance_desarrollo":0.2,"avance_implementacion":0,"avance_general":0.181},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Ingeniería","programa":"Ingeniería Eléctrica","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":106215,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.389,"avance_desarrollo":0.133,"avance_implementacion":0,"avance_general":0.147},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Arquitectura","programa":"Arquitectura","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":107736,"periodo":"2026-2","avance_alistamiento":0.6,"avance_diseno":0.833,"avance_desarrollo":0.6,"avance_implementacion":0.3,"avance_general":0.542},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Arquitectura","programa":"Arquitectura","modalidad":"Híbrido","nivel":"Profesional","sede":"Medellín","sniies":107737,"periodo":"2027-1","avance_alistamiento":0.2,"avance_diseno":0.556,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.275},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Economía","programa":"Economía","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":104681,"periodo":"2026-2","avance_alistamiento":0.5,"avance_diseno":0.722,"avance_desarrollo":0.467,"avance_implementacion":0.1,"avance_general":0.408},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Economía","programa":"Economía","modalidad":"Virtual","nivel":"Profesional","sede":"Nacional","sniies":104682,"periodo":"2026-2","avance_alistamiento":0.4,"avance_diseno":0.667,"avance_desarrollo":0.4,"avance_implementacion":0,"avance_general":0.358},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Finanzas","programa":"Finanzas","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":104683,"periodo":"2026-2","avance_alistamiento":0.7,"avance_diseno":0.833,"avance_desarrollo":0.6,"avance_implementacion":0.3,"avance_general":0.542},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Finanzas","programa":"Finanzas","modalidad":"Virtual","nivel":"Profesional","sede":"Nacional","sniies":104684,"periodo":"2026-2","avance_alistamiento":0.6,"avance_diseno":0.778,"avance_desarrollo":0.533,"avance_implementacion":0.2,"avance_general":0.475},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Marketing","programa":"Marketing","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":104685,"periodo":"2026-2","avance_alistamiento":0.8,"avance_diseno":0.889,"avance_desarrollo":0.733,"avance_implementacion":0.4,"avance_general":0.658},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Marketing","programa":"Marketing","modalidad":"Virtual","nivel":"Profesional","sede":"Nacional","sniies":104686,"periodo":"2026-2","avance_alistamiento":0.7,"avance_diseno":0.833,"avance_desarrollo":0.667,"avance_implementacion":0.3,"avance_general":0.583},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Psicología","programa":"Psicología","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":108281,"periodo":"2026-2","avance_alistamiento":0.9,"avance_diseno":0.944,"avance_desarrollo":0.867,"avance_implementacion":0.5,"avance_general":0.758},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Psicología","programa":"Psicología","modalidad":"Virtual","nivel":"Profesional","sede":"Nacional","sniies":108282,"periodo":"2026-2","avance_alistamiento":0.8,"avance_diseno":0.889,"avance_desarrollo":0.8,"avance_implementacion":0.4,"avance_general":0.683},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Humanidades","programa":"Historia","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":108283,"periodo":"2027-1","avance_alistamiento":0.2,"avance_diseno":0.556,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.275},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Humanidades","programa":"Filosofía","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":108284,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.444,"avance_desarrollo":0.133,"avance_implementacion":0,"avance_general":0.153},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Biomedicina","programa":"Ingeniería Biomédica","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":106216,"periodo":"2026-2","avance_alistamiento":0.4,"avance_diseno":0.722,"avance_desarrollo":0.467,"avance_implementacion":0.1,"avance_general":0.408},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Biomedicina","programa":"Ingeniería Biomédica","modalidad":"Híbrido","nivel":"Profesional","sede":"Medellín","sniies":106217,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.333,"avance_desarrollo":0.133,"avance_implementacion":0,"avance_general":0.133},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Turismo","programa":"Turismo","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":104687,"periodo":"2027-1","avance_alistamiento":0.2,"avance_diseno":0.556,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.275},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Turismo","programa":"Turismo","modalidad":"Virtual","nivel":"Tecnológico","sede":"Nacional","sniies":104688,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.444,"avance_desarrollo":0.133,"avance_implementacion":0,"avance_general":0.153},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Deportes","programa":"Ciencias del Deporte","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":108285,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.333,"avance_desarrollo":0.133,"avance_implementacion":0,"avance_general":0.133},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Deportes","programa":"Actividad Física y Recreación","modalidad":"Presencial","nivel":"Técnico","sede":"Bogotá","sniies":108286,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.278,"avance_desarrollo":0.1,"avance_implementacion":0,"avance_general":0.108},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Automática","programa":"Ingeniería Automática","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":106218,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.389,"avance_desarrollo":0.133,"avance_implementacion":0,"avance_general":0.147},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Logística","programa":"Ingeniería Logística","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":104689,"periodo":"2026-2","avance_alistamiento":0.5,"avance_diseno":0.722,"avance_desarrollo":0.467,"avance_implementacion":0.1,"avance_general":0.408},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Logística","programa":"Ingeniería Logística","modalidad":"Híbrido","nivel":"Profesional","sede":"Medellín","sniies":104690,"periodo":"2027-1","avance_alistamiento":0.2,"avance_diseno":0.556,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.275},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Salud","programa":"Enfermería","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":108287,"periodo":"2026-2","avance_alistamiento":0.7,"avance_diseno":0.833,"avance_desarrollo":0.667,"avance_implementacion":0.3,"avance_general":0.583},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Salud","programa":"Nutrición y Dietética","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":108288,"periodo":"2027-1","avance_alistamiento":0.2,"avance_diseno":0.556,"avance_desarrollo":0.267,"avance_implementacion":0,"avance_general":0.275},
+            {"facultad":"Facultad de Ingeniería, Diseño e Innovación","escuela":"Telecomunicaciones","programa":"Ingeniería de Telecomunicaciones","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":106219,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.444,"avance_desarrollo":0.2,"avance_implementacion":0,"avance_general":0.181},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Derecho","programa":"Derecho","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":104691,"periodo":"2026-2","avance_alistamiento":0.8,"avance_diseno":0.889,"avance_desarrollo":0.733,"avance_implementacion":0.4,"avance_general":0.658},
+            {"facultad":"Facultad de Negocios, Gestión y Sostenibilidad","escuela":"Derecho","programa":"Derecho","modalidad":"Híbrido","nivel":"Profesional","sede":"Medellín","sniies":104692,"periodo":"2027-1","avance_alistamiento":0.3,"avance_diseno":0.611,"avance_desarrollo":0.333,"avance_implementacion":0,"avance_general":0.333},
+            {"facultad":"Facultad de Sociedad, Cultura y Creatividad","escuela":"Ciencias Políticas","programa":"Ciencia Política","modalidad":"Presencial","nivel":"Profesional","sede":"Bogotá","sniies":108289,"periodo":"2027-1","avance_alistamiento":0.1,"avance_diseno":0.333,"avance_desarrollo":0.133,"avance_implementacion":0,"avance_general":0.133}
+        ];
+
+        let paginaActual = 1;
+        const elementosPorPagina = 15;
+        let datosFiltrados = [];
+        let chartTimeline;
+        let chartFacultades;
+
+        function prepararDatos() {
+            const responsables = ['Dirección Curricular','Vicerrectoría Académica','Decano Académico','Coordinador de Programa','Gestión de Calidad'];
+            datosProgramas.forEach((p,index) => {
+                const avanceMinimo = Math.min(p.avance_alistamiento,p.avance_diseno,p.avance_desarrollo,p.avance_implementacion);
+                p.responsable = responsables[index % responsables.length];
+                if (p.avance_implementacion >= 0.8) p.etapa_actual = 'Implementación Curricular';
+                else if (p.avance_desarrollo >= 0.8) p.etapa_actual = 'Desarrollo Curricular';
+                else if (p.avance_diseno >= 0.8) p.etapa_actual = 'Diseño Curricular';
+                else p.etapa_actual = 'Alistamiento Curricular';
+                if (p.avance_general < 0.3 || avanceMinimo < 0.25) p.riesgo = 'Crítico';
+                else if (p.avance_general < 0.5) p.riesgo = 'Alto';
+                else if (p.avance_general < 0.8) p.riesgo = 'Medio';
+                else p.riesgo = 'Controlado';
+                if (p.riesgo === 'Crítico') { p.alertas = 'Retraso operativo'; p.estado_documental = 'Pendiente de validación MEN'; }
+                else if (p.riesgo === 'Alto') { p.alertas = 'Revisión de documentación necesaria'; p.estado_documental = 'Documentación parcial'; }
+                else if (p.riesgo === 'Medio') { p.alertas = 'Foco en cierre de actividades'; p.estado_documental = 'Revisión en curso'; }
+                else { p.alertas = 'Proceso alineado'; p.estado_documental = 'Documentación vigente'; }
+                const etapasPendientes = [p.avance_alistamiento < 0.8,p.avance_diseno < 0.8,p.avance_desarrollo < 0.8,p.avance_implementacion < 0.8].filter(Boolean).length;
+                p.actividades_pendientes = etapasPendientes * 2 + Math.ceil((1 - p.avance_general) * 5);
+            });
+        }
+
+        function formatearPorcentaje(valor) { return `${Math.round((valor || 0) * 100)}%`; }
+        function obtenerColorAvance(valor) { if (valor >= 0.8) return 'exito'; if (valor >= 0.5) return 'advertencia'; if (valor > 0) return 'critico'; return 'gris'; }
+        function obtenerBadgeEstado(valor) { if (valor === 'Crítico') return { clase: 'critico', texto: 'Crítico' }; if (valor === 'Alto') return { clase: 'advertencia', texto: 'Alto' }; if (valor === 'Medio') return { clase: 'azul', texto: 'Medio' }; return { clase: 'exito', texto: 'Controlado' }; }
+
+        function calcularKPI() {
+            const total = datosProgramas.length;
+            const avanceGlobal = datosProgramas.reduce((sum,p) => sum + p.avance_general,0) / total;
+            const completos = datosProgramas.filter(p => p.avance_general >= 0.95).length;
+            const criticos = datosProgramas.filter(p => p.riesgo === 'Crítico').length;
+            const facultadesActivas = new Set(datosProgramas.map(p => p.facultad)).size;
+            const alertas = datosProgramas.filter(p => p.riesgo === 'Crítico' || p.alertas !== 'Proceso alineado').length;
+            const riesgo = criticos > 4 || avanceGlobal < 0.45 ? 'Alto' : avanceGlobal < 0.6 ? 'Medio' : 'Controlado';
+            document.getElementById('kpiGlobal').textContent = formatearPorcentaje(avanceGlobal);
+            document.getElementById('kpiContext').textContent = `Promedio consolidado sobre ${total} programas con seguimiento.`;
+            document.getElementById('kpiDelta').textContent = `▲ ${Math.round((avanceGlobal - 0.34) * 100) / 10}% vs periodo anterior`;
+            document.getElementById('kpiTotalProgramas').textContent = total;
+            document.getElementById('kpiProgramasCriticos').textContent = criticos;
+            document.getElementById('kpiProgramasCompletados').textContent = completos;
+            document.getElementById('kpiFacultadesActivas').textContent = facultadesActivas;
+            document.getElementById('kpiAlertasActivas').textContent = alertas;
+            document.getElementById('kpiRiesgoInstitutional').textContent = riesgo;
+        }
+
+        function renderizarStageSummary() {
+            const etapas = [{ nombre: 'Alistamiento Curricular', key: 'avance_alistamiento' },{ nombre: 'Diseño Curricular', key: 'avance_diseno' },{ nombre: 'Desarrollo Curricular', key: 'avance_desarrollo' },{ nombre: 'Implementación Curricular', key: 'avance_implementacion' }];
+            const container = document.getElementById('stageSummary');
+            container.innerHTML = '';
+            etapas.forEach(etapa => {
+                const lista = datosProgramas.map(p => p[etapa.key]);
+                const promedio = lista.reduce((sum,val) => sum + val,0) / lista.length;
+                const bloqueados = datosProgramas.filter(p => p[etapa.key] < 0.3).length;
+                const riesgos = datosProgramas.filter(p => p[etapa.key] < 0.5 && p.riesgo !== 'Controlado').length;
+                const card = document.createElement('div');
+                card.className = 'stage-card';
+                card.innerHTML = `<div class="stage-label">${etapa.nombre}</div><div class="stage-title">${formatearPorcentaje(promedio)}</div><div class="stage-value">${bloqueados} programas bloqueados</div><div class="stage-meta"><span>Riesgos fase: ${riesgos}</span><span>Avance institucional: ${formatearPorcentaje(promedio)}</span></div>`;
+                container.appendChild(card);
+            });
+        }
+
+        function renderizarAvancePorFacultad() {
+            const facultades = {};
+            datosProgramas.forEach(p => {
+                if (!facultades[p.facultad]) facultades[p.facultad] = { total: 0, avance: 0 };
+                facultades[p.facultad].total++;
+                facultades[p.facultad].avance += p.avance_general;
+            });
+            const lista = Object.entries(facultades).map(([fac,data]) => ({ facultad: fac, promedio: data.avance / data.total, total: data.total })).sort((a,b) => a.promedio - b.promedio);
+            const masRetraso = lista[0];
+            document.getElementById('facultadTitle').textContent = `La ${masRetraso.facultad} concentra el mayor retraso institucional`;
+            document.getElementById('facultadSubtitle').textContent = `Promedio de avance ${formatearPorcentaje(masRetraso.promedio)} en ${masRetraso.total} programas.`;
+            let html = '';
+            lista.forEach(data => { const colorClass = obtenerColorAvance(data.promedio); html += `<div class="bar-chart-item"><div class="bar-chart-label"><span>${data.facultad.replace('Facultad de ','')}</span><span>${formatearPorcentaje(data.promedio)}</span></div><div class="bar-chart-bar"><div class="bar-chart-fill ${colorClass}" style="width:${data.promedio * 100}%"></div></div></div>`; });
+            document.getElementById('avance-facultad').innerHTML = html;
+            if (chartFacultades) chartFacultades.destroy();
+            const canvas = document.createElement('canvas');
+            canvas.style.marginTop = '18px';
+            document.getElementById('avance-facultad').appendChild(canvas);
+            chartFacultades = new Chart(canvas, {
+                type: 'bar',
+                data: { labels: lista.map(item => item.facultad.replace('Facultad de ','')), datasets: [{ label: 'Avance promedio', data: lista.map(item => Math.round(item.promedio * 100)), backgroundColor: lista.map(item => item.promedio >= 0.8 ? 'rgba(42,157,143,0.8)' : item.promedio >= 0.5 ? 'rgba(244,162,97,0.8)' : 'rgba(214,40,40,0.8)'), borderRadius: 8, barThickness: 18 }] },
+                options: { responsive: true, maintainAspectRatio: false, scales: { x: { display: false }, y: { display: false, beginAtZero: true, max: 100 } }, plugins: { legend: { display: false } } }
+            });
+        }
+
+        function renderizarAvancePorEtapa() {
+            const etapas = [{ nombre: 'Alistamiento', key: 'avance_alistamiento' },{ nombre: 'Diseño', key: 'avance_diseno' },{ nombre: 'Desarrollo', key: 'avance_desarrollo' },{ nombre: 'Implementación', key: 'avance_implementacion' }];
+            const resultados = etapas.map(etapa => ({ ...etapa, promedio: datosProgramas.reduce((sum,p) => sum + p[etapa.key],0) / datosProgramas.length }));
+            const menor = resultados.reduce((prev,cur) => cur.promedio < prev.promedio ? cur : prev, resultados[0]);
+            document.getElementById('etapaTitle').textContent = `La etapa de ${menor.nombre} registra el avance más bajo`;
+            document.getElementById('etapaSubtitle').textContent = 'Necesita priorización para evitar retrasos regulatorios y operativos.';
+            document.getElementById('avance-etapa').innerHTML = resultados.map(etapa => `<div class="bar-chart-item"><div class="bar-chart-label"><span>${etapa.nombre}</span><span>${formatearPorcentaje(etapa.promedio)}</span></div><div class="bar-chart-bar"><div class="bar-chart-fill ${obtenerColorAvance(etapa.promedio)}" style="width:${etapa.promedio * 100}%"></div></div></div>`).join('');
+        }
+
+        function renderizarHeatmap() {
+            const facultades = [...new Set(datosProgramas.map(p => p.facultad))];
+            const etapas = [{ nombre: 'Alistamiento', key: 'avance_alistamiento' },{ nombre: 'Diseño', key: 'avance_diseno' },{ nombre: 'Desarrollo', key: 'avance_desarrollo' },{ nombre: 'Implementación', key: 'avance_implementacion' }];
+            let html = `<div class="heatmap"><div class="heatmap-header"></div>${etapas.map(e => `<div class="heatmap-header">${e.nombre}</div>`).join('')}`;
+            facultades.forEach(fac => {
+                const programasFac = datosProgramas.filter(p => p.facultad === fac);
+                html += `<div class="heatmap-row-label">${fac.replace('Facultad de ','')}</div>`;
+                etapas.forEach(etapa => {
+                    const promedio = programasFac.reduce((sum,p) => sum + p[etapa.key],0) / programasFac.length;
+                    let clase = 'bajo';
+                    if (promedio >= 0.8) clase = 'completo';
+                    else if (promedio >= 0.5) clase = 'alto';
+                    else if (promedio >= 0.3) clase = 'medio';
+                    html += `<div class="heatmap-cell ${clase}">${formatearPorcentaje(promedio)}</div>`;
+                });
+            });
+            html += '</div>';
+            document.getElementById('heatmap-container').innerHTML = html;
+        }
+
+        function renderizarRankings() {
+            const criticos = datosProgramas.filter(p => p.riesgo === 'Crítico').sort((a,b) => a.avance_general - b.avance_general).slice(0,5);
+            const proximos = datosProgramas.filter(p => p.avance_general >= 0.8).sort((a,b) => b.avance_general - a.avance_general).slice(0,5);
+            document.getElementById('programas-criticos').innerHTML = criticos.map((p,i) => `<li class="ranking-item"><span class="ranking-num critico">${i+1}</span><div class="ranking-info"><span class="ranking-programa">${p.programa}</span><span class="ranking-facultad">${p.facultad.replace('Facultad de ','')}</span></div><span class="ranking-value critico">${formatearPorcentaje(p.avance_general)}</span></li>`).join('');
+            document.getElementById('programas-destacados').innerHTML = proximos.map((p,i) => `<li class="ranking-item"><span class="ranking-num exito">${i+1}</span><div class="ranking-info"><span class="ranking-programa">${p.programa}</span><span class="ranking-facultad">${p.facultad.replace('Facultad de ','')}</span></div><span class="ranking-value exito">${formatearPorcentaje(p.avance_general)}</span></li>`).join('');
+        }
+
+        function renderizarDistModalidad() {
+            const mods = {};
+            datosProgramas.forEach(p => mods[p.modalidad] = (mods[p.modalidad] || 0) + 1);
+            const total = datosProgramas.length;
+            document.getElementById('dist-modalidad').innerHTML = Object.entries(mods).map(([mod,count]) => {
+                const porcentaje = Math.round(count / total * 100);
+                const clase = mod.toLowerCase() === 'presencial' ? 'azul' : mod.toLowerCase() === 'virtual' ? 'critico' : 'advertencia';
+                return `<div class="dist-bar-item"><div class="dist-bar-label">${mod}</div><div class="dist-bar-track"><div class="dist-bar-segment ${clase}" style="width:${porcentaje}%">${count}</div></div><div class="dist-bar-total">${porcentaje}%</div></div>`;
+            }).join('');
+        }
+
+        function renderizarDistNivel() {
+            const niveles = {};
+            datosProgramas.forEach(p => niveles[p.nivel] = (niveles[p.nivel] || 0) + 1);
+            const total = datosProgramas.length;
+            document.getElementById('dist-nivel').innerHTML = Object.entries(niveles).sort((a,b) => b[1] - a[1]).map(([nivel,count]) => {
+                const porcentaje = Math.round(count / total * 100);
+                return `<div class="dist-bar-item"><div class="dist-bar-label">${nivel}</div><div class="dist-bar-track"><div class="dist-bar-segment virtual" style="width:${porcentaje}%">${count}</div></div><div class="dist-bar-total">${porcentaje}%</div></div>`;
+            }).join('');
+        }
+
+        function llenarFiltros() {
+            const facultadSelect = document.getElementById('filterFacultad');
+            const modalidadSelect = document.getElementById('filterModalidad');
+            const nivelSelect = document.getElementById('filterNivel');
+            [...new Set(datosProgramas.map(p => p.facultad))].sort().forEach(f => facultadSelect.insertAdjacentHTML('beforeend', `<option value="${f}">${f}</option>`));
+            [...new Set(datosProgramas.map(p => p.modalidad))].sort().forEach(m => modalidadSelect.insertAdjacentHTML('beforeend', `<option value="${m}">${m}</option>`));
+            [...new Set(datosProgramas.map(p => p.nivel))].sort().forEach(n => nivelSelect.insertAdjacentHTML('beforeend', `<option value="${n}">${n}</option>`));
+        }
+
+        function filtrarDatos() {
+            const buscador = document.getElementById('searchInput').value.toLowerCase();
+            const facultad = document.getElementById('filterFacultad').value;
+            const modalidad = document.getElementById('filterModalidad').value;
+            const nivel = document.getElementById('filterNivel').value;
+            datosFiltrados = datosProgramas.filter(p => {
+                const texto = `${p.programa} ${p.facultad} ${p.escuela} ${p.responsable}`.toLowerCase();
+                const matchTexto = !buscador || texto.includes(buscador);
+                const matchFac = !facultad || p.facultad === facultad;
+                const matchMod = !modalidad || p.modalidad === modalidad;
+                const matchNivel = !nivel || p.nivel === nivel;
+                return matchTexto && matchFac && matchMod && matchNivel;
+            });
+            paginaActual = 1;
+            renderizarTabla();
+            actualizarPaginacion();
+        }
+
+        function renderizarTabla() {
+            const inicio = (paginaActual - 1) * elementosPorPagina;
+            const pagina = datosFiltrados.slice(inicio, inicio + elementosPorPagina);
+            document.getElementById('tablaBody').innerHTML = pagina.length ? pagina.map(p => {
+                const badge = obtenerBadgeEstado(p.riesgo);
+                return `<tr onclick="seleccionarPrograma(${datosProgramas.indexOf(p)})"><td><strong>${p.programa}</strong></td><td>${p.facultad.replace('Facultad de ','')}</td><td>${p.escuela}</td><td>${p.modalidad}</td><td>${p.nivel}</td><td>${p.sede}</td><td>${p.sniies}</td><td>${p.periodo}</td><td>${p.responsable}</td><td>${p.etapa_actual.replace(' Curricular','')}</td><td><span class="badge ${obtenerColorAvance(p.avance_general)}">${formatearPorcentaje(p.avance_general)}</span></td><td><span class="badge ${badge.clase}">${badge.texto}</span></td><td>${p.alertas}</td><td>${p.estado_documental}</td></tr>`; }).join('') : '<tr><td colspan="14" style="padding:18px;text-align:center;color:var(--texto-secundario)">No hay registros que coincidan con los filtros.</td></tr>';
+        }
+
+        function actualizarPaginacion() {
+            const totalPaginas = Math.max(1, Math.ceil(datosFiltrados.length / elementosPorPagina));
+            const inicio = ((paginaActual - 1) * elementosPorPagina) + 1;
+            const fin = Math.min(paginaActual * elementosPorPagina, datosFiltrados.length);
+            document.getElementById('paginationInfo').textContent = `Mostrando ${inicio}-${fin} de ${datosFiltrados.length} programas`;
+            document.getElementById('paginationButtons').innerHTML = Array.from({ length: totalPaginas }, (_, i) => `<button class="page-btn ${paginaActual === i + 1 ? 'active' : ''}" onclick="irPagina(${i + 1})">${i + 1}</button>`).join('');
+        }
+
+        function irPagina(numero) { paginaActual = numero; renderizarTabla(); actualizarPaginacion(); }
+
+        function seleccionarPrograma(indice) {
+            const p = datosProgramas[indice]; if (!p) return;
+            document.getElementById('detailPrograma').textContent = p.programa;
+            document.getElementById('detailResponsable').textContent = p.responsable;
+            document.getElementById('detailEtapa').textContent = p.etapa_actual;
+            document.getElementById('detailRiesgo').textContent = p.riesgo;
+            document.getElementById('detailSNIES').textContent = p.sniies;
+            document.getElementById('detailPeriodo').textContent = p.periodo;
+            document.getElementById('detailAvanceTexto').textContent = formatearPorcentaje(p.avance_general);
+            document.getElementById('detailModalidad').textContent = p.modalidad;
+            document.getElementById('detailNivel').textContent = p.nivel;
+            document.getElementById('detailFacultad').textContent = p.facultad.replace('Facultad de ','');
+            document.getElementById('detailPendientes').textContent = p.actividades_pendientes;
+            document.getElementById('detailDocumental').textContent = p.estado_documental;
+            document.getElementById('detailAlertas').textContent = p.alertas;
+            document.getElementById('detailAvanceBar').style.width = `${Math.round(p.avance_general * 100)}%`;
+            document.getElementById('detailObservacion').textContent = `Este programa está en ${p.etapa_actual.toLowerCase()} y requiere ${p.alertas.toLowerCase()}.`;
+            const lineData = { labels: ['Alistamiento','Diseño','Desarrollo','Implementación'], datasets: [{ label: 'Avance %', data: [p.avance_alistamiento*100,p.avance_diseno*100,p.avance_desarrollo*100,p.avance_implementacion*100], borderColor: 'rgba(0,80,157,0.9)', backgroundColor: 'rgba(0,80,157,0.18)', fill: true, tension: 0.35, pointRadius: 4, pointBackgroundColor: 'rgba(0,80,157,0.9)' }] };
+            if (chartTimeline) chartTimeline.destroy();
+            chartTimeline = new Chart(document.getElementById('detailTimeline').getContext('2d'), { type: 'line', data: lineData, options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, max: 100, ticks: { callback: value => `${value}%` } }, x: { ticks: { color: '#6B7280' } } }, plugins: { legend: { display: false } } } });
+        }
+
+        function exportarCSV() {
+            const headers = ['Programa','Facultad','Escuela','Modalidad','Nivel','Sede','SNIES','Periodo','Responsable','Etapa actual','Avance general','Riesgo','Alertas','Estado documental'];
+            const rows = datosFiltrados.map(p => [p.programa,p.facultad,p.escuela,p.modalidad,p.nivel,p.sede,p.sniies,p.periodo,p.responsable,p.etapa_actual,formatearPorcentaje(p.avance_general),p.riesgo,p.alertas,p.estado_documental]);
+            const csv = [headers,...rows].map(r => r.map(v => `"${String(v).replace(/"/g,'""')}"`).join(',')).join('\n');
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const url = URL.createObjectURL(blob); const link = document.createElement('a'); link.href = url; link.download = 'dashboard_reforma_curricular.csv'; link.click();
+        }
+
+        function exportarExcel() {
+            const data = datosFiltrados.map(p => ({ Programa: p.programa, Facultad: p.facultad, Escuela: p.escuela, Modalidad: p.modalidad, Nivel: p.nivel, Sede: p.sede, SNIES: p.sniies, Periodo: p.periodo, Responsable: p.responsable, 'Etapa actual': p.etapa_actual, 'Avance general': formatearPorcentaje(p.avance_general), Riesgo: p.riesgo, Alertas: p.alertas, 'Estado documental': p.estado_documental }));
+            const wb = XLSX.utils.book_new(); const ws = XLSX.utils.json_to_sheet(data); XLSX.utils.book_append_sheet(wb, ws, 'Programas'); XLSX.writeFile(wb, 'dashboard_reforma_curricular.xlsx');
+        }
+
+        document.getElementById('searchInput').addEventListener('input', filtrarDatos);
+        document.getElementById('filterFacultad').addEventListener('change', filtrarDatos);
+        document.getElementById('filterModalidad').addEventListener('change', filtrarDatos);
+        document.getElementById('filterNivel').addEventListener('change', filtrarDatos);
+
+        function inicializar() { prepararDatos(); calcularKPI(); renderizarStageSummary(); renderizarAvancePorFacultad(); renderizarAvancePorEtapa(); renderizarHeatmap(); renderizarRankings(); renderizarDistModalidad(); renderizarDistNivel(); llenarFiltros(); datosFiltrados = [...datosProgramas]; renderizarTabla(); actualizarPaginacion(); seleccionarPrograma(0); }
+        window.onload = inicializar;
+    </script>
+</body>
+</html>

@@ -225,7 +225,7 @@ with st.container():
     # Fila 1: MODALIDAD · FACULTAD · LIMPIAR
     lb1, in1, _sp, lb2, in2, btn_col = st.columns([0.6, 2.5, 0.05, 0.6, 2.7, 0.8])
     with lb1:
-        st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
+        st.markdown(f'<div {_LBL}>{phosphor_icon("clipboard-text", size=14)} MODALIDAD</div>', unsafe_allow_html=True)
     with in1:
         if _use_pills:
             sel_mod = st.pills("mod", _mods_ops, selection_mode="multi",
@@ -234,7 +234,7 @@ with st.container():
             sel_mod = st.multiselect("mod", _mods_ops, key="p2_mod",
                                      label_visibility="collapsed", placeholder="Todas")
     with lb2:
-        st.markdown(f'<div {_LBL}>🏛️ FACULTAD</div>', unsafe_allow_html=True)
+        st.markdown(f'<div {_LBL}>{phosphor_icon("buildings", size=14)} FACULTAD</div>', unsafe_allow_html=True)
     with in2:
         if _use_pills:
             sel_fac = st.pills("fac", fac_ops, selection_mode="multi",
@@ -258,7 +258,7 @@ with st.container():
             sel_per = st.multiselect("per", _pers_ops, key="p2_per",
                                      label_visibility="collapsed", placeholder="Todos")
     with lb_nivel:
-        st.markdown(f'<div {_LBL}>🎓 NIVEL</div>', unsafe_allow_html=True)
+        st.markdown(f'<div {_LBL}>{phosphor_icon("graduation-cap", size=14)} NIVEL</div>', unsafe_allow_html=True)
     with in_nivel:
         if _use_pills:
             sel_nivel = st.pills("nivel", niveles, selection_mode="multi", key="p2_nivel", label_visibility="collapsed")
@@ -420,7 +420,7 @@ st.divider()
 # ── Tabs por proceso ───────────────────────────────────────────────────────────
 st.markdown("### Detalle por Proceso y Etapa")
 
-CL_ICON = {"done": "✅", "inprog": "🔵", "nostart": "🔴", "info": "ℹ️", "na": "⬜"}
+CL_ICON = {"done": "✓", "inprog": "⟳", "nostart": "○", "info": "i", "na": "—"}
 def _fmt_val(val, tipo):
     """Formatea el valor según el tipo de campo."""
     s = str(val).strip()

@@ -371,10 +371,98 @@ def _ensure_activities_meta(df: pd.DataFrame) -> list[dict]:
     return meta
 
 
+# Alias para reglas de riesgo / alertas (nombres normalizados del Excel)
+ACTIVITY_ALIASES: dict[str, list[str]] = {
+    "proyecciones_fin": [
+        "5.formato de proyecciones",
+        "formato de proyecciones académicas y financieras",
+        "formato de proyecciones academicas y financieras",
+        "estudio de viabilidad financiera",
+    ],
+    "produccion_contenido": [
+        "producción del contenido",
+        "produccion del contenido",
+        "% avance contenidos",
+        "contenidos virtuales",
+    ],
+    "banner_convenios": [
+        "parametrización en banner",
+        "parametrizacion en banner",
+        "convenios y homologaciones",
+    ],
+    "syllabus": ["syllabus aprobado", "syllabus"],
+    "convenios": ["formato maestro de convenios", "maestro de convenios"],
+    "cronograma_men": [
+        "cronograma de trámites frente al men",
+        "cronograma de tramites frente al men",
+        "trámites frente al men",
+    ],
+}
+
+_ACTIVITY_IDX_CACHE: dict[str, int | None] = {}
+
+
+def _resolve_activity_idx(df: pd.DataFrame, key: str) -> int | None:
+    if key in _ACTIVITY_IDX_CACHE:
+        return _ACTIVITY_IDX_CACHE[key]
+    patterns = ACTIVITY_ALIASES.get(key, [])
+    if not patterns:
+        _ACTIVITY_IDX_CACHE[key] = None
+        return None
+    meta = _ensure_activities_meta(df)
+    for m in meta:
+        name_n = _norm(m["name"])
+        for pat in patterns:
+            if pat in name_n or name_n in pat:
+                _ACTIVITY_IDX_CACHE[key] = m["idx"]
+                return m["idx"]
+    _ACTIVITY_IDX_CACHE[key] = None
+    return None
+
+
+def activity_cl(df: pd.DataFrame, key: str) -> pd.Series:
+    """Serie de clasificación (done/inprog/...) para una actividad por alias."""
+    idx = _resolve_activity_idx(df, key)
+    if idx is None:
+        return pd.Series("na", index=df.index)
+    col = f"cl_act_{idx}"
+    if col not in df.columns:
+        return pd.Series("na", index=df.index)
+    return df[col]
+
+
+def activity_val(df: pd.DataFrame, key: str) -> pd.Series:
+    """Serie de valor crudo de actividad por alias."""
+    idx = _resolve_activity_idx(df, key)
+    if idx is None:
+        return pd.Series("—", index=df.index)
+    col = f"val_act_{idx}"
+    if col not in df.columns:
+        return pd.Series("—", index=df.index)
+    return df[col]
+
+
+def activity_not_done(df: pd.DataFrame, key: str) -> pd.Series:
+    """True si la actividad no está finalizada."""
+    cl = activity_cl(df, key)
+    return cl != "done"
+
+
+def activity_in_progress(df: pd.DataFrame, key: str) -> pd.Series:
+    cl = activity_cl(df, key)
+    return cl == "inprog"
+
+
+def activity_val_contains(df: pd.DataFrame, key: str, substring: str) -> pd.Series:
+    vals = activity_val(df, key).astype(str).str.lower()
+    return vals.str.contains(substring.lower(), na=False)
+
+
 def load_etapas_data() -> pd.DataFrame:
     """Retorna DataFrame procesado de la hoja Etapas."""
-    global _ACTIVITIES_META
+    global _ACTIVITIES_META, _ACTIVITY_IDX_CACHE
     _ACTIVITIES_META = []
+    _ACTIVITY_IDX_CACHE = {}
     try:
         import streamlit as st
 

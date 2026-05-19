@@ -20,8 +20,14 @@ from utils.data_loader_vact import (
     FAC_ABREV_INV,
     STATUS_LABEL,
     _ensure_activities_meta,
-    apply_filters_vact,
     load_etapas_data,
+)
+from utils.charts_vact import render_etapas_drilldown
+from utils.f2_components import (
+    apply_current_filters as f2_apply_filters,
+    render_f2_header,
+    render_f2_sidebar,
+    render_filter_bar as f2_render_filter_bar,
 )
 from utils.poli_theme import (
     BG_ROW,
@@ -55,7 +61,7 @@ from utils.poli_theme import (
 
 st.set_page_config(
     page_title="Reforma Curricular · Fase 2 · POLI",
-    page_icon="🎓",
+    page_icon=":material/school:",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -99,82 +105,12 @@ mods_ops = sorted(df_raw["MODALIDAD"].dropna().unique().tolist()) if "MODALIDAD"
 pers_ops = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist()) if "PERIODO DE IMPLEMENTACIÓN" in df_raw.columns else []
 niveles_ops = [n for n in ["Pregrado", "Posgrado"] if n in df_raw.get("NIVEL_HOMOLOGADO", pd.Series(dtype=str)).values]
 
-_use_pills = hasattr(st, "pills")
-_LBL = (
-    f'style="padding-top:8px;font-size:11px;font-weight:700;color:{TEXT_PRIMARY};'
-    f'letter-spacing:.4px;white-space:nowrap"'
-)
-
-
 def _esc(s):
     return html_lib.escape(str(s) if s is not None else "—")
 
 
 def _p_esc(s):
     return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-
-
-def _clear_filters():
-    st.session_state["flt_mod"] = []
-    st.session_state["flt_fac"] = []
-    st.session_state["flt_per"] = []
-    st.session_state["flt_nivel"] = []
-
-
-def _apply_current_filters():
-    sel_mod = list(st.session_state.get("flt_mod") or [])
-    sel_fac = list(st.session_state.get("flt_fac") or [])
-    sel_per = list(st.session_state.get("flt_per") or [])
-    sel_nivel = list(st.session_state.get("flt_nivel") or [])
-    facultad_f = [fac_abrev_inv.get(f, f) for f in sel_fac]
-    df = apply_filters_vact(df_raw.copy(), sel_mod, facultad_f, sel_per, sel_nivel)
-    return df, sel_mod, sel_fac, sel_per, sel_nivel
-
-
-def _render_filter_bar(key_prefix: str, show_count: bool = True):
-    with st.container():
-        lb1, in1, sp, lb2, in2, btn = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
-        with lb1:
-            st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
-        with in1:
-            if _use_pills:
-                st.pills("mod", mods_ops, selection_mode="multi", key="flt_mod", label_visibility="collapsed")
-            else:
-                st.multiselect("mod", mods_ops, key="flt_mod", label_visibility="collapsed", placeholder="Todas")
-        with lb2:
-            st.markdown(f'<div {_LBL}>🏛️ FACULTAD</div>', unsafe_allow_html=True)
-        with in2:
-            if _use_pills:
-                st.pills("fac", fac_ops, selection_mode="multi", key="flt_fac", label_visibility="collapsed")
-            else:
-                st.multiselect("fac", fac_ops, key="flt_fac", label_visibility="collapsed", placeholder="Todas")
-        with btn:
-            st.button("✕ LIMPIAR", on_click=_clear_filters, type="primary", key=f"{key_prefix}_clear")
-
-        lb3, in3, sp2, lbn, inn, cnt = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
-        with lb3:
-            st.markdown(f'<div {_LBL}>📅 PERÍODO</div>', unsafe_allow_html=True)
-        with in3:
-            if _use_pills:
-                st.pills("per", pers_ops, selection_mode="multi", key="flt_per", label_visibility="collapsed")
-            else:
-                st.multiselect("per", pers_ops, key="flt_per", label_visibility="collapsed", placeholder="Todos")
-        with lbn:
-            st.markdown(f'<div {_LBL}>🎓 NIVEL</div>', unsafe_allow_html=True)
-        with inn:
-            if _use_pills:
-                st.pills("nivel", niveles_ops, selection_mode="multi", key="flt_nivel", label_visibility="collapsed")
-            else:
-                st.multiselect("nivel", niveles_ops, key="flt_nivel", label_visibility="collapsed", placeholder="Todos")
-        if show_count:
-            df_tmp, *_ = _apply_current_filters()
-            with cnt:
-                st.markdown(
-                    f'<div style="padding-top:9px;font-size:12px;color:{TEXT_MUTED};text-align:right">'
-                    f'Mostrando <b style="color:{TEXT_PRIMARY}">{len(df_tmp)}</b> de '
-                    f'<b style="color:{TEXT_PRIMARY}">{len(df_raw)}</b></div>',
-                    unsafe_allow_html=True,
-                )
 
 
 def _etapa_repr_color(etapa: str | None = None, *, general: bool = False) -> str:
@@ -374,12 +310,13 @@ def _render_chart_nivel_anillos(df: pd.DataFrame):
     
     total = niveles.sum()
     
-    # Agrupar en Pregrado y Posgrado
-    pregrado_keys = ["Técnico", "Tecnológico", "Profesional"]
-    posgrado_keys = ["Especialización", "Maestría", "Doctorado"]
-    
-    pregrado_count = sum(niveles.get(k, 0) for k in pregrado_keys)
-    posgrado_count = sum(niveles.get(k, 0) for k in posgrado_keys)
+    pregrado_count = int(niveles.get("Pregrado", 0))
+    posgrado_count = int(niveles.get("Posgrado", 0))
+    if pregrado_count + posgrado_count == 0:
+        pregrado_keys = ["Técnico", "Tecnológico", "Profesional"]
+        posgrado_keys = ["Especialización", "Maestría", "Doctorado"]
+        pregrado_count = sum(int(niveles.get(k, 0)) for k in pregrado_keys)
+        posgrado_count = sum(int(niveles.get(k, 0)) for k in posgrado_keys)
     
     pregrado_pct = round(pregrado_count / total * 100, 1) if total > 0 else 0
     posgrado_pct = round(posgrado_count / total * 100, 1) if total > 0 else 0
@@ -415,16 +352,6 @@ def _render_chart_nivel_anillos(df: pd.DataFrame):
             labels += f'<text x="{label_x}" y="{label_y}" text-anchor="middle" dominant-baseline="middle" fill="{text_color}" font-family="Segoe UI,sans-serif" font-size="10" font-weight="700">{pct}%</text>'
         
         current_angle += angle
-    
-    # Agregar leyenda solo con Pregrado y Posgrado
-    pregrado_keys = ["Técnico", "Tecnológico", "Profesional"]
-    posgrado_keys = ["Especialización", "Maestría", "Doctorado"]
-    
-    pregrado_count = sum(niveles.get(k, 0) for k in pregrado_keys)
-    posgrado_count = sum(niveles.get(k, 0) for k in posgrado_keys)
-    
-    pregrado_pct = round(pregrado_count / total * 100, 1) if total > 0 else 0
-    posgrado_pct = round(posgrado_count / total * 100, 1) if total > 0 else 0
     
     legend = ""
     legend += (
@@ -566,9 +493,9 @@ def _render_bar_drill_down(df, etapas, promedios, etapa_colors):
             f'<div style="height:100%;width:{pct_actual}%;background:{color_etapa};border-radius:4px"></div>'
             f'</div>'
             f'<div style="font-size:11px;margin-bottom:8px">'
-            f'<span style="color:#22c55e;font-weight:600">✓ {done}</span> · '
-            f'<span style="color:#0ea5e9;font-weight:600">⟳ {inprog}</span> · '
-            f'<span style="color:#94a3b8;font-weight:600">○ {nostart}</span>'
+            f'{phosphor_icon("check-circle", color="#22c55e", size=14)} {done} · '
+            f'{phosphor_icon("arrows-clockwise", color="#0ea5e9", size=14)} {inprog} · '
+            f'{phosphor_icon("circle", color="#94a3b8", size=14)} {nostart}'
             f'</div>'
             f'</div>',
             unsafe_allow_html=True,
@@ -598,11 +525,11 @@ def _render_bar_drill_down(df, etapas, promedios, etapa_colors):
                     
                     max_c = max(done_c, inprog_c, nostart_c)
                     if max_c == done_c and done_c > 0:
-                        icon, color = "✓", "#22c55e"
+                        icon, color = phosphor_icon("check-circle", color="#22c55e", size=12), "#22c55e"
                     elif max_c == inprog_c and inprog_c > 0:
-                        icon, color = "⟳", "#0ea5e9"
+                        icon, color = phosphor_icon("arrows-clockwise", color="#0ea5e9", size=12), "#0ea5e9"
                     else:
-                        icon, color = "○", "#94a3b8"
+                        icon, color = phosphor_icon("circle", color="#94a3b8", size=12), "#94a3b8"
                     
                     nombre = df[act["name"]].iloc[0] if len(df) > 0 else "Actividad"
                     nombre_corto = nombre[:25] + "..." if len(nombre) > 25 else nombre
@@ -685,11 +612,11 @@ def _render_bar_stacked(df, etapas, promedios, etapa_colors):
                 
                 max_c = max(done_c, inprog_c, nostart_c)
                 if max_c == done_c and done_c > 0:
-                    estado_label, estado_color, estado_icon = "Finalizado", "#22c55e", "✓"
+                    estado_label, estado_color, estado_icon = "Finalizado", "#22c55e", phosphor_icon("check-circle", color="#22c55e", size=14)
                 elif max_c == inprog_c and inprog_c > 0:
-                    estado_label, estado_color, estado_icon = "En Proceso", "#0ea5e9", "⟳"
+                    estado_label, estado_color, estado_icon = "En Proceso", "#0ea5e9", phosphor_icon("arrows-clockwise", color="#0ea5e9", size=14)
                 else:
-                    estado_label, estado_color, estado_icon = "Sin Iniciar", "#94a3b8", "○"
+                    estado_label, estado_color, estado_icon = "Sin Iniciar", "#94a3b8", phosphor_icon("circle", color="#94a3b8", size=14)
                 
                 nombre = df[act["name"]].iloc[0] if len(df) > 0 else "Actividad"
                 
@@ -774,49 +701,15 @@ def _render_rankings(df: pd.DataFrame):
         )
 
 
-# ── Sidebar ───────────────────────────────────────────────────────────────────
-with st.sidebar:
-    st.markdown(
-        '<div style="padding:18px 6px;text-align:center">'
-        '<div style="font-size:16px;font-weight:700;color:#FFFFFF">'
-        "Reforma Curricular</div>"
-        '<div style="font-size:11px;color:rgba(255,255,255,.6);margin-top:4px">Fase 2 · Etapas</div></div>',
-        unsafe_allow_html=True,
-    )
-    st.markdown("<hr style='margin:10px 0;border-color:rgba(255,255,255,.2)'>", unsafe_allow_html=True)
-    
-    # Navigation
-    if not _safe_page_link("app.py", label="Fase 1 · Producción", icon="🏭"):
-        st.caption("Fase 1 no disponible en este despliegue (entrada: app_act.py).")
-    _safe_page_link("app_act.py", label="Resumen Ejecutivo", icon="📊")
-    _safe_page_link("pages/1_Alertas_Riesgos.py", label="Alertas y Riesgos", icon="🚨")
-    _safe_page_link("pages/2_Vista_Facultad.py", label="Vista por Facultad", icon="🏛️")
-    _safe_page_link("pages/3_Detalle_Etapa.py", label="Detalle por Etapa", icon="📋")
-    _safe_page_link("pages/4_Por_Programa.py", label="Por Programa", icon="🎓")
-    
-    st.markdown("<hr style='margin:10px 0'>", unsafe_allow_html=True)
-    st.markdown(
-        '<div style="padding:12px;font-size:10px;color:rgba(255,255,255,.4);text-align:center">POLI - VACT - 2025-2026</div>',
-        unsafe_allow_html=True,
-    )
+render_f2_sidebar()
 
-# ── Header ────────────────────────────────────────────────────────────────────
-st.markdown(
-    '<div style="'
-    f"background:linear-gradient(135deg,{BRAND_PRIMARY} 0%,{BRAND_SECONDARY} 50%,{BRAND_ACCENT} 100%);"
-    f'padding:18px 24px 14px;border-radius:0 0 12px 12px;border-bottom:3px solid {BRAND_HIGHLIGHT};">'
-    '<div style="font-size:21px;font-weight:700;color:#FFFFFF">'
-    "Reforma Curricular de Programas Académicos Poli</div>"
-    '<div style="font-size:12px;color:rgba(255,255,255,0.70);margin-top:5px">'
-    "Fase 2 · Panel Ejecutivo</div></div>",
-    unsafe_allow_html=True,
+render_f2_header("Fase 2 · Panel Ejecutivo")
+
+f2_render_filter_bar(
+    df_raw, fac_abrev_inv, mods_ops, fac_ops, pers_ops, niveles_ops, key_prefix="ejecutivo"
 )
 
-# Filtros
-_render_filter_bar("global", show_count=True)
-
-# ── Contenido Principal ─────────────────────────────────────────────────────
-df, *_ = _apply_current_filters()
+df, *_ = f2_apply_filters(df_raw, fac_abrev_inv, key_prefix="ejecutivo")
 n = len(df)
 
 if n == 0:
@@ -824,8 +717,7 @@ if n == 0:
 else:
     # Título sección
     st.markdown(
-        f'<div style="font-size:18px;font-weight:700;color:{TEXT_PRIMARY};margin:20px 0 12px">'
-        "📊 Resumen Ejecutivo</div>",
+        f'<div style="font-size:18px;font-weight:700;color:{TEXT_PRIMARY};margin:20px 0 12px">{phosphor_icon("chart-bar", size=18)} Resumen Ejecutivo</div>',
         unsafe_allow_html=True,
     )
     
@@ -843,5 +735,21 @@ else:
     
     st.markdown("<div style='margin-bottom:24px'></div>", unsafe_allow_html=True)
     
-    # Gráficos fila 2: Avance Consolidado por Etapa (gráfico interactivo)
-    _render_chart_etapas_interactivo(df)
+    st.markdown(
+        f'<div style="font-size:14px;font-weight:700;color:{TEXT_PRIMARY};margin:8px 0 4px">'
+        f'{phosphor_icon("chart-bar-horizontal", size=16)} Avance por Etapa</div>'
+        f'<div style="font-size:11px;color:{TEXT_MUTED};margin-bottom:8px">'
+        "Seleccione una barra o un botón para ver el detalle de actividades.</div>",
+        unsafe_allow_html=True,
+    )
+    render_etapas_drilldown(df, key_prefix="resumen")
+
+    st.markdown(
+        f'<div style="font-size:11px;color:{TEXT_MUTED};margin-top:16px;padding:8px 12px;'
+        f'background:#fff;border-radius:8px;border:1px solid rgba(15,56,90,.08)">'
+        f"{phosphor_icon('info', size=12)} "
+        f"Finalizado · En proceso · Sin iniciar · No aplica — datos: Control Maestro VACT</div>".replace(
+            "motion.", ""
+        ),
+        unsafe_allow_html=True,
+    )

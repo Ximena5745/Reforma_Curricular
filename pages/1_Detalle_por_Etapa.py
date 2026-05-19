@@ -218,7 +218,7 @@ with st.container():
     # Fila 1: MODALIDAD · FACULTAD · LIMPIAR
     lb1, in1, _sp, lb2, in2, btn_col = st.columns([0.6, 2.5, 0.05, 0.6, 2.7, 0.5])
     with lb1:
-        st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
+        st.markdown(f'<div {_LBL}>{phosphor_icon("clipboard-text", size=14)} MODALIDAD</div>', unsafe_allow_html=True)
     with in1:
         if _use_pills:
             sel_mod = st.pills("mod", _mods_ops, selection_mode="multi",
@@ -227,7 +227,7 @@ with st.container():
             sel_mod = st.multiselect("mod", _mods_ops, key="p1_mod",
                                      label_visibility="collapsed", placeholder="Todas")
     with lb2:
-        st.markdown(f'<div {_LBL}>🏛️ FACULTAD</div>', unsafe_allow_html=True)
+        st.markdown(f'<div {_LBL}>{phosphor_icon("buildings", size=14)} FACULTAD</div>', unsafe_allow_html=True)
     with in2:
         if _use_pills:
             sel_fac = st.pills("fac", fac_ops, selection_mode="multi",
@@ -250,7 +250,7 @@ with st.container():
             sel_per = st.multiselect("per", _pers_ops, key="p1_per",
                                      label_visibility="collapsed", placeholder="Todos")
     with lb_nivel:
-        st.markdown(f'<div {_LBL}>🎓 NIVEL</div>', unsafe_allow_html=True)
+        st.markdown(f'<div {_LBL}>{phosphor_icon("graduation-cap", size=14)} NIVEL</div>', unsafe_allow_html=True)
     with in_nivel:
         if _use_pills:
             sel_nivel = st.pills("nivel", niveles, selection_mode="multi", key="p1_nivel", label_visibility="collapsed")
@@ -302,8 +302,8 @@ st.markdown(
     '<div style="width:54px;font-size:12px;font-weight:700;color:#4a6a7e;text-align:center">Avance</div>'
     '<div style="flex:1;font-size:12px;font-weight:700;color:#4a6a7e">Distribución</div>'
     '<div style="width:48px;font-size:12px;font-weight:700;color:#A6CE38;text-align:center">✓ Final</div>'
-    '<div style="width:48px;font-size:12px;font-weight:700;color:#1FB2DE;text-align:center">◎ Proc.</div>'
-    '<div style="width:48px;font-size:12px;font-weight:700;color:#EC0677;text-align:center">✗ Sin ini.</div>'
+    '<div style="width:48px;font-size:12px;font-weight:700;color:#1FB2DE;text-align:center">⟳ Proc.</div>'
+    '<div style="width:48px;font-size:12px;font-weight:700;color:#EC0677;text-align:center">○ Sin ini.</div>'
     '<div style="width:48px;font-size:12px;font-weight:700;color:#9aabb5;text-align:center">N/A</div>'
     '</div>',
     unsafe_allow_html=True,
@@ -567,7 +567,7 @@ df_cl = df.reset_index(drop=True)
 import math as _m
 
 def _p_icon(val):
-    """Icono según avance: ✅ (100%), ⚠️ (>0%), 🔴 (0%)"""
+    """Icono según avance: ✓ (100%), ⚠️ (>0%), ● (0%)"""
     try:
         v = float(val) if val is not None else None
     except:
@@ -577,18 +577,18 @@ def _p_icon(val):
     if _m.isnan(v):
         return '<span style="color:#b0bec5;font-size:16px">—</span>'
     if v >= 100:
-        return '<span style="font-size:16px">✅</span>'
+        return '<span style="color:#22c55e;font-size:16px">✓</span>'
     if v > 0:
-        return '<span style="font-size:16px">⚠️</span>'
-    return '<span style="font-size:16px">🔴</span>'
+        return '<span style="color:#f59e0b;font-size:16px">⚠️</span>'
+    return '<span style="color:#ef4444;font-size:16px">●</span>'
 
 def _p_syl(s):
-    """Icono para Syllabus: ✅ (Si), 🔴 (NO), — (otros)"""
+    """Icono para Syllabus: ✓ (Si), ● (NO), — (otros)"""
     s = str(s).strip()
     if s == "Si":
-        return '<span style="font-size:16px">✅</span>'
+        return '<span style="color:#22c55e;font-size:16px">✓</span>'
     if s == "NO":
-        return '<span style="font-size:16px">🔴</span>'
+        return '<span style="color:#ef4444;font-size:16px">●</span>'
     return '<span style="color:#b0bec5;font-size:16px">—</span>'
 
 def _p_bar(pct):
@@ -634,8 +634,8 @@ _CL_STYLE = {
 
 _CL_ICON = {
     "done":    "✓",
-    "inprog":  "◉",
-    "nostart": "✗",
+    "inprog":  "⟳",
+    "nostart": "○",
     "na":      "—",
     "info":    "i",
 }
@@ -775,11 +775,11 @@ with st.container():
     # Fila 1: MODALIDAD · FACULTAD · PERIODO
     c1, c2, c3, c4, c5, c6 = st.columns([0.6, 1.8, 0.5, 1.8, 0.5, 2.0])
     with c1:
-        st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">📋 MODALIDAD</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">{phosphor_icon("clipboard-text", size=12)} MODALIDAD</div>', unsafe_allow_html=True)
     with c2:
         sel_mod_filt = st.pills("mod_filt", _mods_ops, selection_mode="multi", key="p1_mod_filt", label_visibility="collapsed") if _use_pills else st.multiselect("mod_filt", _mods_ops, key="p1_mod_filt", label_visibility="collapsed", placeholder="Todas")
     with c3:
-        st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">🏛️ FACULTAD</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">{phosphor_icon("buildings", size=12)} FACULTAD</div>', unsafe_allow_html=True)
     with c4:
         sel_fac_filt = st.pills("fac_filt", fac_ops, selection_mode="multi", key="p1_fac_filt", label_visibility="collapsed") if _use_pills else st.multiselect("fac_filt", fac_ops, key="p1_fac_filt", label_visibility="collapsed", placeholder="Todas")
     with c5:
@@ -790,7 +790,7 @@ with st.container():
     # Fila 2: NIVEL · BUSCAR · LIMPIAR
     c7, c8, c9, c10 = st.columns([0.5, 1.8, 3.5, 0.4])
     with c7:
-        st.markdown('<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">🎓 NIVEL</div>', unsafe_allow_html=True)
+        st.markdown(f'<div style="padding-top:8px;font-size:11px;font-weight:700;color:#0F385A;letter-spacing:.4px">{phosphor_icon("graduation-cap", size=12)} NIVEL</div>', unsafe_allow_html=True)
     with c8:
         sel_nivel_filt = st.pills("nivel_filt", niveles, selection_mode="multi", key="p1_nivel_filt", label_visibility="collapsed") if _use_pills else st.multiselect("nivel_filt", niveles, key="p1_nivel_filt", label_visibility="collapsed", placeholder="Todos")
     with c9:

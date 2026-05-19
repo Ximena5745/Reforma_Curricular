@@ -609,13 +609,13 @@ def _p_icon(val):
     except Exception: return '<span style="color:#b0bec5;font-size:16px">—</span>'
     import math as _m
     if _m.isnan(v): return '<span style="color:#b0bec5;font-size:13px;font-weight:600">N/A</span>'
-    if v >= 100: return '<span style="font-size:16px">✅</span>'
-    if v > 0:    return '<span style="font-size:16px">⚠️</span>'
-    return              '<span style="font-size:16px">🔴</span>'
+    if v >= 100: return '<span style="color:#22c55e;font-size:16px">✓</span>'
+    if v > 0:    return '<span style="color:#f59e0b;font-size:16px">⚠️</span>'
+    return              '<span style="color:#ef4444;font-size:16px">●</span>'
 
 def _p_syl(s):
-    if s == "Si":  return '<span style="font-size:16px">✅</span>'
-    if s == "NO":  return '<span style="font-size:16px">🔴</span>'
+    if s == "Si":  return '<span style="color:#22c55e;font-size:16px">✓</span>'
+    if s == "NO":  return '<span style="color:#ef4444;font-size:16px">●</span>'
     return '<span style="color:#b0bec5;font-size:13px;font-weight:600">N/A</span>'
 
 def _p_bar(pct):
@@ -656,11 +656,11 @@ with tab0:
     # ── Filtro dentro del tab ──────────────────────────────────────────────────
     with st.container():
         _lb1, _in1, _sp0, _lb2, _in2, _btn0 = st.columns([0.55, 2.2, 0.05, 0.65, 1.9, 0.65])
-        with _lb1: st.markdown(f'<div {_LBL}>📋 MODALIDAD</div>', unsafe_allow_html=True)
+        with _lb1: st.markdown(f'<div {_LBL}>{phosphor_icon("clipboard-text", size=14)} MODALIDAD</div>', unsafe_allow_html=True)
         with _in1:
             if _use_pills: st.pills("mod", _mods_ops, selection_mode="multi", key="flt_mod", label_visibility="collapsed")
             else: st.multiselect("mod", _mods_ops, key="flt_mod", label_visibility="collapsed", placeholder="Todas")
-        with _lb2: st.markdown(f'<div {_LBL}>🏛️ FACULTAD</div>', unsafe_allow_html=True)
+        with _lb2: st.markdown(f'<div {_LBL}>{phosphor_icon("buildings", size=14)} FACULTAD</div>', unsafe_allow_html=True)
         with _in2:
             if _use_pills: st.pills("fac", fac_ops, selection_mode="multi", key="flt_fac", label_visibility="collapsed")
             else: st.multiselect("fac", fac_ops, key="flt_fac", label_visibility="collapsed", placeholder="Todas")
@@ -670,7 +670,7 @@ with tab0:
         with _in3:
             if _use_pills: st.pills("per", _pers_ops, selection_mode="multi", key="flt_per", label_visibility="collapsed")
             else: st.multiselect("per", _pers_ops, key="flt_per", label_visibility="collapsed", placeholder="Todos")
-        with _lb_nivel: st.markdown(f'<div {_LBL}>🎓 NIVEL</div>', unsafe_allow_html=True)
+        with _lb_nivel: st.markdown(f'<div {_LBL}>{phosphor_icon("graduation-cap", size=14)} NIVEL</div>', unsafe_allow_html=True)
         with _in_nivel:
             if _use_pills: st.pills("nivel", _niveles_ops, selection_mode="multi", key="flt_nivel", label_visibility="collapsed")
             else: st.multiselect("nivel", _niveles_ops, key="flt_nivel", label_visibility="collapsed", placeholder="Todos")
