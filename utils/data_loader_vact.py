@@ -173,7 +173,7 @@ def homologar_nivel(val) -> str:
 
 
 def _cls_status(v) -> str:
-    s = str(v).strip().lower()
+    s = " ".join(str(v).strip().lower().split())
     if not s or s in ("none", "nan", ""):
         return "na"
     if "no aplica" in s:
@@ -436,6 +436,10 @@ def _ensure_activities_meta(df: pd.DataFrame) -> list[dict]:
 
 # Alias para reglas de riesgo / alertas (nombres normalizados del Excel)
 ACTIVITY_ALIASES: dict[str, list[str]] = {
+    "proyecciones_formato_5": [
+        "5.formato de proyecciones",
+        "5. formato de proyecciones",
+    ],
     "proyecciones_fin": [
         "5.formato de proyecciones",
         "formato de proyecciones académicas y financieras",

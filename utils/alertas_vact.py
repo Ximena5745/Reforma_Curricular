@@ -20,13 +20,17 @@ from utils.poli_theme import TEXT_MUTED, TEXT_PRIMARY, phosphor_icon
 RIESGOS_ALERTA: list[dict] = [
     {
         "id": "proyecciones",
-        "tab": "Proyecciones sin aval",
-        "titulo": "Proyecciones académicas sin aval financiero",
+        "tab": "Proyecciones devueltas",
+        "titulo": "Formato de proyecciones devuelto — aval financiero",
         "explicacion": (
-            "Programas con el formato «5. Formato de proyecciones académicas y financieras» "
-            "en estado Devuelto."
+            "El formato «5. Formato de proyecciones académicas y financieras» está en estado "
+            "Devuelto. Esto bloquea o retrasa la emisión del Concepto Financiero (gate de aval "
+            "financiero)."
         ),
-        "accion": "Revisar observaciones, corregir el formato y gestionar el aval financiero.",
+        "accion": (
+            "Revisar observaciones, corregir el formato de proyecciones y gestionar el aval "
+            "hacia Concepto Financiero."
+        ),
         "pendiente": "Formato de proyecciones devuelto",
         "color": "#dc2626",
     },
@@ -92,7 +96,7 @@ RIESGOS_ALERTA: list[dict] = [
 
 
 def get_r1_produccion_sin_aval(df: pd.DataFrame) -> pd.DataFrame:
-    mask = activity_status_is(df, "proyecciones_fin", "devuelto")
+    mask = activity_status_is(df, "proyecciones_formato_5", "devuelto")
     return df[mask]
 
 
