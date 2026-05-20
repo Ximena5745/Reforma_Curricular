@@ -92,12 +92,16 @@ def _actividades_table_html(actividades: list[dict], etapa_clr: str) -> str:
 def render_program_actividades_detalle(data: dict) -> None:
     """Expanders por etapa con tabla actividad × estado × responsable × avance."""
     st.markdown(
-        f'<p style="font-size:12px;font-weight:700;color:{TEXT_MUTED};margin:16px 0 8px">'
-        "Detalle de actividades por etapa</p>",
+        '<div class="f2-ficha-section">'
+        '<p class="f2-ficha-section-title">Detalle de actividades por etapa</p></div>',
         unsafe_allow_html=True,
     )
 
     etapas_data = data.get("etapas", {})
+    etapa_menor = min(
+        ETAPAS_ORDEN,
+        key=lambda e: float(etapas_data.get(e, {}).get("pct", 0) or 0),
+    )
     for etapa in ETAPAS_ORDEN:
         et_data = etapas_data.get(etapa, {})
         acts = list(et_data.get("actividades", []))
@@ -106,7 +110,7 @@ def render_program_actividades_detalle(data: dict) -> None:
         short = ETAPA_SHORT.get(etapa, etapa)
         clr = ETAPA_CLR.get(etapa, "#6e7681")
 
-        with st.expander(f"{short} — {pct_e:.0f}%", expanded=True):
+        with st.expander(f"{short} — {pct_e:.0f}%", expanded=(etapa == etapa_menor)):
             st.markdown(
                 _actividades_table_html(acts, clr),
                 unsafe_allow_html=True,

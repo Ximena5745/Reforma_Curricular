@@ -291,7 +291,10 @@ button[data-baseweb="tab"][aria-selected="true"] {{
 .f2-bar-fill {{ height: 100%; border-radius: 4px; transition: width .3s; }}
 .f2-gantt {{ font-family: 'Segoe UI', sans-serif; }}
 .f2-gantt-row {{ display: flex; align-items: center; gap: 12px; margin-bottom: 14px; }}
+.f2-gantt-row-compact {{ margin-bottom: 8px; }}
 .f2-gantt-label {{ width: 200px; flex-shrink: 0; font-size: 12px; font-weight: 600; color: {TEXT_PRIMARY}; }}
+.f2-ficha-gantt .f2-gantt-label {{ width: 118px; font-size: 11px; }}
+.f2-ficha-gantt .f2-gantt-track {{ height: 22px; }}
 .f2-gantt-track {{ flex: 1; height: 28px; background: {BG_GANTT_TRACK}; border-radius: 6px; overflow: hidden; }}
 .f2-gantt-fill {{ height: 100%; border-radius: 6px; display: flex; align-items: center; justify-content: flex-end; padding-right: 8px; min-width: 36px; }}
 .f2-gantt-pct {{ font-size: 12px; font-weight: 700; color: {TEXT_ON_DARK}; text-shadow: 0 1px 2px rgba(0,0,0,.25); }}
@@ -300,11 +303,19 @@ button[data-baseweb="tab"][aria-selected="true"] {{
 .f2-gantt-general .f2-gantt-track {{ height: 34px; }}
 .f2-prog-card {{
     background: {BG_CARD}; border-radius: 12px; padding: 18px 22px;
-    box-shadow: 0 2px 10px rgba(15,56,90,0.09); margin-bottom: 16px;
+    box-shadow: 0 2px 10px rgba(15,56,90,0.09); margin-bottom: 20px;
     display: flex; gap: 24px; align-items: stretch; flex-wrap: wrap;
 }}
+.f2-prog-card-inline {{ margin-bottom: 0; box-shadow: none; padding: 4px 0; background: transparent; }}
 .f2-prog-info {{ flex: 1; min-width: 280px; }}
-.f2-prog-info h3 {{ margin: 0 0 12px; font-size: 18px; color: {TEXT_PRIMARY}; }}
+.f2-prog-info h3 {{ margin: 0 0 10px; font-size: 17px; line-height: 1.3; color: {TEXT_PRIMARY}; }}
+.f2-prog-badges {{ display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }}
+.f2-ficha-section {{ margin: 16px 0 10px; }}
+.f2-ficha-section-title {{
+    font-size: 13px; font-weight: 700; color: {TEXT_MUTED};
+    margin: 0 0 10px; letter-spacing: .02em;
+}}
+.f2-ficha-expanders {{ margin-top: 4px; }}
 .f2-prog-badge {{
     min-width: 120px; text-align: center; padding: 16px; border-radius: 12px;
     display: flex; flex-direction: column; justify-content: center; align-items: center;

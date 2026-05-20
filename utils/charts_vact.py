@@ -281,8 +281,8 @@ def _fig_programa_donut(pct: float) -> go.Figure:
         )
     )
     fig.update_layout(
-        height=200,
-        margin=dict(l=10, r=10, t=10, b=10),
+        height=150,
+        margin=dict(l=4, r=4, t=4, b=4),
         paper_bgcolor="rgba(0,0,0,0)",
         showlegend=False,
         annotations=[
@@ -290,7 +290,7 @@ def _fig_programa_donut(pct: float) -> go.Figure:
                 text=f"<b>{pct:.0f}%</b>",
                 x=0.5,
                 y=0.55,
-                font_size=22,
+                font_size=20,
                 showarrow=False,
             ),
             dict(text="Avance general", x=0.5, y=0.38, font_size=10, showarrow=False, font_color=TEXT_MUTED),
@@ -299,67 +299,95 @@ def _fig_programa_donut(pct: float) -> go.Figure:
     return fig
 
 
-def render_program_ficha_grafica(df: pd.DataFrame, programa: str) -> None:
-    """Ficha del programa con donut, barras por etapa y desglose de estados."""
-    from utils.data_loader_vact import get_etapas_by_programa
-    from utils.poli_theme import BRAND_PRIMARY, MODALIDAD_CLR, badge_html
+def _html_esc(text: str) -> str:
+    return (
+        str(text)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
 
-    data = get_etapas_by_programa(df, programa)
-    info = data.get("info", {})
-    gen = float(data.get("avance_general", 0) or 0)
+
+def _render_ficha_resumen_block(programa: str, info: dict, gen_pct: float) -> None:
+    """Tarjeta resumen: título, badges y donut compacto alineados."""
+    from utils.poli_theme import MODALIDAD_CLR, badge_html
+
     fac = info.get("FACULTAD_ABREV", "—")
     mod = info.get("MODALIDAD", "—")
     per = info.get("PERIODO DE IMPLEMENTACIÓN", "—")
     mod_c = MODALIDAD_CLR.get(mod, "#6e7681")
-
-    col_info, col_donut = st.columns([1.4, 1])
-    with col_info:
-        st.markdown(
-            f'<div style="font-size:16px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:8px">{programa}</div>',
-            unsafe_allow_html=True,
-        )
-        st.markdown(
-            f'{badge_html(fac, info.get("FACULTAD_COLOR", "#6e7681"))} '
-            f'{badge_html(mod, mod_c)} {badge_html(per, "#94a3b8")}',
-            unsafe_allow_html=True,
-        )
-    with col_donut:
-        st.plotly_chart(_fig_programa_donut(gen), use_container_width=True, config=_PLOTLY_CONFIG)
-
-    st.markdown(
-        f'<p style="font-size:12px;font-weight:700;color:{TEXT_MUTED};margin:12px 0 8px">'
-        f"Avance y desglose por etapa</p>",
-        unsafe_allow_html=True,
+    badges = (
+        f'{badge_html(fac, info.get("FACULTAD_COLOR", "#6e7681"))}'
+        f'{badge_html(mod, mod_c)}'
+        f'{badge_html(per, "#94a3b8")}'
     )
 
-    fig_bars = go.Figure()
-    etapas_short = [ETAPA_SHORT[e] for e in ETAPAS_ORDEN]
-    pcts = [data["etapas"].get(e, {}).get("pct", 0) for e in ETAPAS_ORDEN]
-    colors = [ETAPA_CLR.get(e, "#6e7681") for e in ETAPAS_ORDEN]
-    fig_bars.add_trace(
-        go.Bar(
-            x=pcts,
-            y=etapas_short,
-            orientation="h",
-            marker_color=colors,
-            text=[f"{p}%" for p in pcts],
-            textposition="outside",
-            hovertemplate="<b>%{y}</b>: %{x}%<extra></extra>",
-        )
-    )
-    fig_bars.update_layout(
-        height=200,
-        margin=dict(l=10, r=40, t=8, b=8),
-        paper_bgcolor="rgba(0,0,0,0)",
-        plot_bgcolor="rgba(0,0,0,0)",
-        xaxis=dict(range=[0, 105], ticksuffix="%"),
-        yaxis=dict(autorange="reversed"),
-        showlegend=False,
-    )
-    st.plotly_chart(fig_bars, use_container_width=True, config=_PLOTLY_CONFIG)
+    with st.container(border=True):
+        col_info, col_donut = st.columns([2, 1], gap="small", vertical_alignment="center")
+        with col_info:
+            st.markdown(
+                f'<div class="f2-prog-card f2-prog-card-inline">'
+                f'<div class="f2-prog-info" style="min-width:0">'
+                f"<h3>{_html_esc(programa)}</h3>"
+                f'<div class="f2-prog-badges">{badges}</div>'
+                f"</div></div>",
+                unsafe_allow_html=True,
+            )
+        with col_donut:
+            st.plotly_chart(
+                _fig_programa_donut(gen_pct),
+                use_container_width=True,
+                config=_PLOTLY_CONFIG,
+            )
 
+
+def _render_ficha_etapas_gantt(data: dict) -> None:
+    """Barras HTML compactas por etapa (sin Plotly)."""
+    rows: list[str] = [
+        '<div class="f2-ficha-section">',
+        '<p class="f2-ficha-section-title">Avance por etapa</p>',
+        '<div class="f2-gantt f2-ficha-gantt">',
+    ]
+    for etapa in ETAPAS_ORDEN:
+        pct = float(data["etapas"].get(etapa, {}).get("pct", 0) or 0)
+        short = ETAPA_SHORT.get(etapa, etapa)
+        clr = ETAPA_CLR.get(etapa, "#6e7681")
+        w = min(max(pct, 0), 100)
+        pct_lbl = f"{pct:.0f}%"
+        if w >= 18:
+            fill = (
+                f'<div class="f2-gantt-fill" style="width:{w:.0f}%;background:{clr}">'
+                f'<span class="f2-gantt-pct">{pct_lbl}</span></div>'
+            )
+            pct_out = '<span class="f2-gantt-pct-out"></span>'
+        else:
+            fill = (
+                f'<div class="f2-gantt-fill" style="width:{max(w, 2):.0f}%;background:{clr}"></div>'
+            )
+            pct_out = f'<span class="f2-gantt-pct-out">{pct_lbl}</span>'
+        rows.append(
+            f'<div class="f2-gantt-row f2-gantt-row-compact">'
+            f'<span class="f2-gantt-label">{_html_esc(short)}</span>'
+            f'<div class="f2-gantt-track">{fill}</div>'
+            f"{pct_out}"
+            f"</div>"
+        )
+    rows.append("</div></div>")
+    st.markdown("".join(rows), unsafe_allow_html=True)
+
+
+def render_program_ficha_grafica(df: pd.DataFrame, programa: str) -> None:
+    """Ficha del programa con donut, barras por etapa y desglose de actividades."""
+    from utils.data_loader_vact import get_etapas_by_programa
     from utils.program_ficha_detalle import render_program_actividades_detalle
 
+    data = get_etapas_by_programa(df, programa)
+    info = data.get("info", {})
+    gen = float(data.get("avance_general", 0) or 0)
+
+    _render_ficha_resumen_block(programa, info, gen)
+    _render_ficha_etapas_gantt(data)
     render_program_actividades_detalle(data)
 
 
