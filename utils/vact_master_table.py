@@ -37,8 +37,13 @@ from utils.poli_theme import (
     ETAPA_CLR,
     badge_html,
     p_bar_html,
+    pct_bar_colors,
     status_icon_html,
 )
+
+# Tinte suave en celdas de datos del Excel (variante B)
+_EXCEL_STATUS_TINT = 0.10
+_EXCEL_PCT_TINT = 0.08
 
 _META_EXPORT = [
     ("NOMBRE DEL PROGRAMA", "Programa"),
@@ -411,10 +416,6 @@ def _pct_color(val: float) -> str:
     return "#dc2626"
 
 
-def _pct_color_hex6(val: float) -> str:
-    return _pct_color(val).lstrip("#")
-
-
 def _hex6(color: str) -> str:
     h = str(color).lstrip("#")
     return h.upper() if len(h) == 6 else "9AABB5"
@@ -436,7 +437,26 @@ def _activity_display(row: pd.Series, act_idx: int) -> tuple[str, str]:
 
 
 def _status_font_color(cl: str) -> str:
+    """Texto sobre fondo sólido — solo hoja Leyenda del Excel."""
     return "475569" if cl == "na" else "FFFFFF"
+
+
+def _status_excel_style(cl: str) -> tuple[str, str]:
+    """Fondo tintado + texto en color institucional (exportación detalle)."""
+    if cl == "na":
+        return _hex6(BG_ROW), _hex6(TEXT_NA)
+    solid = STATUS_CLR.get(cl, "9aabb5")
+    return _hex6(_blend_with_white(solid, _EXCEL_STATUS_TINT)), _hex6(solid)
+
+
+def _pct_excel_style(pct: float) -> tuple[str, str]:
+    """Fondo tintado suave + texto según escala pct_bar_colors."""
+    fg, bar = pct_bar_colors(pct)
+    return _hex6(_blend_with_white(bar, _EXCEL_PCT_TINT)), _hex6(fg)
+
+
+def _excel_row_bg(ri: int, data_start: int) -> str:
+    return _hex6(BG_ROW if (ri - data_start) % 2 == 0 else BG_ROW_ALT)
 
 
 def _build_export_specs(df: pd.DataFrame) -> list[dict]:
@@ -479,12 +499,21 @@ def _write_legend_sheet(ws) -> None:
         ws.cell(2, c).alignment = Alignment(horizontal="center")
     for ri, cl in enumerate(("done", "inprog", "nostart", "devuelto", "info", "na"), 3):
         lbl = STATUS_LABEL.get(cl, cl)
-        ws.cell(ri, 1, lbl).fill = _hex_fill(STATUS_CLR.get(cl, "9aabb5"))
+        solid = STATUS_CLR.get(cl, "9aabb5")
+        ws.cell(ri, 1, lbl).fill = _hex_fill(solid)
         ws.cell(ri, 1).font = Font(bold=True, color=_status_font_color(cl), size=10)
         ws.cell(ri, 1).alignment = Alignment(horizontal="center")
         ws.cell(ri, 2, lbl)
+        fill6, font6 = _status_excel_style(cl)
+        ws.cell(ri, 3, "Vista en tabla").fill = _hex_fill(fill6)
+        ws.cell(ri, 3).font = Font(bold=True, color=font6, size=10)
+        ws.cell(ri, 3).alignment = Alignment(horizontal="center")
+    ws.cell(2, 3, "Vista en tabla").font = Font(bold=True, color="FFFFFF")
+    ws.cell(2, 3).fill = _hex_fill("0F385A")
+    ws.cell(2, 3).alignment = Alignment(horizontal="center")
     ws.column_dimensions["A"].width = 18
     ws.column_dimensions["B"].width = 28
+    ws.column_dimensions["C"].width = 16
 
 
 def excel_export_bytes(df: pd.DataFrame) -> bytes:
@@ -582,20 +611,23 @@ def excel_export_bytes(df: pd.DataFrame) -> bytes:
             )
             if spec["kind"] == "meta":
                 cell.value = row.get(spec["field"], "—")
+                cell.fill = _hex_fill(_excel_row_bg(ri, data_start))
+                cell.font = Font(size=9, color="0F385A" if ci == 1 else "475569")
             elif spec["kind"] == "act":
                 text, cl = _activity_display(row, spec["idx"])
                 cell.value = text
-                hex6 = _hex6(STATUS_CLR.get(cl, "9aabb5"))
-                cell.fill = _hex_fill(hex6)
-                cell.font = Font(bold=True, color=_status_font_color(cl), size=9)
+                fill6, font6 = _status_excel_style(cl)
+                cell.fill = _hex_fill(fill6)
+                cell.font = Font(bold=True, color=font6, size=9)
             elif spec["kind"] in ("pct", "gen"):
                 try:
                     pct = round(float(row.get(spec["field"], 0) or 0), 1)
                 except (TypeError, ValueError):
                     pct = 0.0
                 cell.value = f"{pct:.0f}%"
-                cell.fill = _hex_fill(_pct_color_hex6(pct))
-                cell.font = Font(bold=True, color="FFFFFF", size=10)
+                fill6, font6 = _pct_excel_style(pct)
+                cell.fill = _hex_fill(fill6)
+                cell.font = Font(bold=True, color=font6, size=10)
 
     for ci in range(1, len(specs) + 1):
         letter = get_column_letter(ci)
