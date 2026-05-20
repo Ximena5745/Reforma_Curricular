@@ -53,6 +53,11 @@ from utils.poli_theme import (
     FACULTAD_CLR,
     ETAPA_CLR,
     STATUS_CLR,
+    PCT_HIGH,
+    PCT_CRITICAL,
+    PCT_LOW,
+    BRAND_ACCENT,
+    color_for_pct,
     phosphor_icon,
     phosphor_icon_kpi,
     phosphor_icon_nav,
@@ -65,7 +70,7 @@ NIVEL_CLR = {
     "Especialización": "#2563eb",
     "Maestría": "#7c3aed",
     "Profesional": "#059669",
-    "Tecnológico": "#d97706",
+    "Tecnológico": BRAND_ACCENT,
     "Técnico": "#0891b2",
 }
 try:
@@ -184,7 +189,7 @@ def _render_kpis(df: pd.DataFrame):
 
     kpis = [
         ("Total Programas", str(n), "Programas activos", "#0F385A", 1, phosphor_icon_kpi("books")),
-        ("Avance Promedio", f"{avg_general}%", "Avance general", "#059669", avg_general / 100, phosphor_icon_kpi("trend-up")),
+        ("Avance Promedio", f"{avg_general}%", "Avance general", color_for_pct(avg_general), avg_general / 100, phosphor_icon_kpi("trend-up")),
         ("Presencial", f"{pct_presencial}%", f"{presencial} programas", "#2980B9", pct_presencial / 100, phosphor_icon_kpi("school")),
         ("Virtual", f"{pct_virtual}%", f"{virtual} programas", "#1FB2DE", pct_virtual / 100, phosphor_icon_kpi("monitor-play")),
         ("Híbrido", f"{pct_hibrido}%", f"{hibrido} programas", "#FBAF17", pct_hibrido / 100, phosphor_icon_kpi("presentation-chart")),
@@ -321,7 +326,7 @@ def _render_chart_nivel_detalle(df: pd.DataFrame) -> None:
 def _render_rankings(df: pd.DataFrame):
     # Top programas
     top = df.nlargest(8, "avance_general_vact")
-    rank_colors = ["#f59e0b", "#94a3b8", "#d97706"]
+    rank_colors = [PCT_HIGH, BRAND_ACCENT, PCT_LOW]
     
     top_html = ""
     for i, (_, row) in enumerate(top.iterrows()):
@@ -350,10 +355,10 @@ def _render_rankings(df: pd.DataFrame):
         
         criticos_html += (
             f'<div style="display:flex;align-items:center;gap:10px;padding:8px 12px;background:#fef2f2;border-radius:6px;margin-bottom:4px">'
-            f'<span style="font-family:Segoe UI,sans-serif;font-size:12px;font-weight:800;width:20px;text-align:center;color:#dc2626">{i+1}</span>'
+            f'<span style="font-family:Segoe UI,sans-serif;font-size:12px;font-weight:800;width:20px;text-align:center;color:{PCT_CRITICAL}">{i+1}</span>'
             f'<div style="flex:1;min-width:0"><div style="font-size:12px;font-weight:600;color:{TEXT_PRIMARY};white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{nombre}</div>'
             f'<div style="font-size:10px;color:{TEXT_MUTED}">{fac} · {mod}</div></div>'
-            f'<span style="font-family:Segoe UI,sans-serif;font-size:13px;font-weight:800;color:#dc2626">{pct}%</span></div>'
+            f'<span style="font-family:Segoe UI,sans-serif;font-size:13px;font-weight:800;color:{PCT_CRITICAL}">{pct}%</span></div>'
         )
     
     # Render rankings
@@ -371,7 +376,7 @@ def _render_rankings(df: pd.DataFrame):
     with col2:
         st.markdown(
             f'<div style="background:#FFFFFF;border:1px solid rgba(15,56,90,0.10);border-radius:12px;padding:16px;box-shadow:0 2px 8px rgba(15,56,90,0.07)">'
-            f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:12px">{phosphor_icon("warning-circle", size=18, color="#d97706")} Programas Críticos</div>'
+            f'<div style="font-size:13px;font-weight:700;color:{TEXT_PRIMARY};margin-bottom:12px">{phosphor_icon("warning-circle", size=18, color=PCT_CRITICAL)} Programas Críticos</div>'
             f'<div style="font-size:11px;color:{TEXT_MUTED};margin-bottom:10px">Avance general menor al 20%</div>'
             f'{criticos_html}</div>',
             unsafe_allow_html=True,

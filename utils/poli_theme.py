@@ -80,7 +80,7 @@ NIVEL_CLR = {
     "Especialización": "#2563eb",
     "Maestría": "#7c3aed",
     "Profesional": "#059669",
-    "Tecnológico": "#d97706",
+    "Tecnológico": BRAND_ACCENT,
     "Técnico": "#0891b2",
 }
 
@@ -405,7 +405,7 @@ def phosphor_icon_alert(alert_type: str) -> str:
     """Iconos para alertas según tipo"""
     icons = {
         "critico": phosphor_icon("warning", color="#dc2626", size=18),
-        "atencion": phosphor_icon("warning-circle", color="#d97706", size=18),
+        "atencion": phosphor_icon("warning-circle", color=PCT_LOW, size=18),
         "proximo": phosphor_icon("flag-checkered", color="#059669", size=18),
     }
     return icons.get(alert_type, "")

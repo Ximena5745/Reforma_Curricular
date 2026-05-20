@@ -38,6 +38,9 @@ from utils.poli_theme import (
     FACULTAD_CLR,
     ETAPA_CLR,
     MODALIDAD_CLR,
+    PCT_HIGH,
+    PCT_CRITICAL,
+    color_for_pct,
     phosphor_icon,
     phosphor_icon_kpi,
     phosphor_icon_nav,
@@ -97,8 +100,8 @@ def _render_kpis_facultad(df_fac: pd.DataFrame, fac_name: str):
     kpis = [
         ("Programas", str(n), color),
         ("Avance Promedio", f"{avg}%", color),
-        ("Avanzados (≥80%)", str(avanzados), "#059669"),
-        ("Críticos (<20%)", str(criticos), "#dc2626"),
+        ("Avanzados (≥80%)", str(avanzados), PCT_HIGH),
+        ("Críticos (<20%)", str(criticos), PCT_CRITICAL),
     ]
     
     cols = st.columns(4)
@@ -116,11 +119,7 @@ def _render_kpis_facultad(df_fac: pd.DataFrame, fac_name: str):
 
 
 def _bar_color_pct(pct: float) -> str:
-    if pct >= 80:
-        return "#059669"
-    if pct >= 20:
-        return "#d97706"
-    return "#dc2626"
+    return color_for_pct(pct)
 
 
 def _render_chart_programas_facultad(df_fac: pd.DataFrame, fac_name: str):
@@ -139,11 +138,13 @@ def _render_chart_programas_facultad(df_fac: pd.DataFrame, fac_name: str):
         nombre = row.get("NOMBRE DEL PROGRAMA", "—")[:40]
         y = i * (bar_h + gap)
         
+        fill_lbl = "#fff" if pct > 15 else "#1e293b"
         bars += (
             f'<g transform="translate(0,{y})">'
             f'<rect x="0" y="0" width="440" height="{bar_h}" rx="4" fill="rgba(0,0,0,0.03)"/>'
             f'<rect x="0" y="0" width="{max(3, width)}" height="{bar_h}" rx="4" fill="{color}" opacity="0.82"/>'
-            f'<text x="4" y="{bar_h/2+1}" dominant-baseline="middle" fill="{("#fff" if pct > 15 else "#1e293b")}" font-family="Segoe UI,sans-serif" font-size="9.5" font-weight="500">{nombre}</text>'
+            f'<text x="4" y="{bar_h/2+1}" dominant-baseline="middle" fill="{fill_lbl}" font-family="Segoe UI,sans-serif" font-size="9.5" font-weight="500">{nombre}</text>'
+            f'<text x="436" y="{bar_h/2+1}" dominant-baseline="middle" text-anchor="end" fill="#475569" font-family="Segoe UI,sans-serif" font-size="10" font-weight="700">{pct:.0f}%</text>'
             f'</g>'
         )
     
@@ -200,7 +201,7 @@ def _render_chart_modalidad_facultad(df_fac: pd.DataFrame):
         return
     
     mods = df_fac["MODALIDAD"].value_counts()
-    colors_map = {"Virtual": "#1FB2DE", "Presencial": "#A6CE38", "Híbrido": "#FBAF17"}
+    colors_map = MODALIDAD_CLR
     total = mods.sum()
     
     if total == 0:
@@ -252,13 +253,7 @@ def _render_heatmap_facultad(df_fac: pd.DataFrame):
     }
     
     def get_color(val):
-        if val >= 80:
-            return "#059669"
-        if val >= 50:
-            return "#2563eb"
-        if val >= 30:
-            return "#d97706"
-        return "#dc2626"
+        return color_for_pct(val)
     
     header = (
         f'<div style="display:grid;grid-template-columns:180px repeat(4,1fr);gap:4px;margin-bottom:6px">'
