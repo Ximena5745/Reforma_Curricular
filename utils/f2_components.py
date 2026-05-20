@@ -37,7 +37,7 @@ F2_NAV = [
     ("pages/4_Por_Programa.py", "Resumen Por Programa", ":material/school:"),
     ("pages/2_Vista_Facultad.py", "Resumen por Facultad", ":material/apartment:"),
     ("pages/3_Detalle_Etapa.py", "Detalle por Etapa", ":material/assignment:"),
-    ("pages/1_Alertas_Riesgos.py", "Alertas y Riesgos", ":material/warning:"),
+    ("pages/1_Alertas_Riesgos.py", "Alertas", ":material/warning:"),
 ]
 
 

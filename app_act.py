@@ -65,7 +65,7 @@ from utils.poli_theme import (
 )
 
 # Nivel de formación detallado (definido aquí para compatibilidad con despliegues sin poli_theme actualizado)
-NIVEL_ORDEN = ["Especialización", "Maestría", "Profesional", "Tecnológico", "Técnico"]
+NIVEL_ORDEN = ["Maestría", "Especialización", "Profesional", "Tecnológico", "Técnico"]
 NIVEL_CLR = {
     "Especialización": "#2563eb",
     "Maestría": "#7c3aed",

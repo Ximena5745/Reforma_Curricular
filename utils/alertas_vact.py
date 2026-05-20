@@ -15,7 +15,21 @@ from utils.data_loader_vact import (
     activity_status_is,
     activity_val_contains,
 )
-from utils.poli_theme import TEXT_MUTED, TEXT_PRIMARY, phosphor_icon
+from utils.poli_theme import (
+    BG_ROW,
+    BG_ROW_ALT,
+    BORDER_ROW,
+    BORDER_TABLE,
+    BRAND_PRIMARY,
+    FACULTAD_CLR,
+    MODALIDAD_CLR,
+    PERIODO_CLR,
+    TEXT_MUTED,
+    TEXT_PRIMARY,
+    TEXT_SUBTLE,
+    badge_html,
+    phosphor_icon,
+)
 
 RIESGOS_ALERTA: list[dict] = [
     {
@@ -145,18 +159,125 @@ def _programas_con_alertas(df: pd.DataFrame) -> int:
     return len(seen)
 
 
-def _tabla_riesgo(risk_df: pd.DataFrame, pendiente: str) -> pd.DataFrame:
+def _p_esc(s) -> str:
+    return (
+        str(s)
+        .replace("&", "&amp;")
+        .replace("<", "&lt;")
+        .replace(">", "&gt;")
+        .replace('"', "&quot;")
+    )
+
+
+_ALERTAS_TABLE_CSS = f"""
+<style>
+.alertas-tabla-wrap {{
+  border-radius: 12px;
+  border: 1.5px solid {BORDER_TABLE};
+  box-shadow: 0 2px 10px rgba(15,56,90,0.08);
+  overflow: auto;
+  background: #fff;
+  margin-bottom: 8px;
+}}
+.alertas-tabla {{
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-family: 'Segoe UI', sans-serif;
+  font-size: 12px;
+}}
+.alertas-tabla thead th {{
+  background: {BRAND_PRIMARY};
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+  padding: 10px 12px;
+  text-align: center;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}}
+.alertas-tabla thead th.th-prog {{
+  text-align: left;
+  min-width: 200px;
+}}
+.alertas-tabla tbody td {{
+  padding: 9px 12px;
+  border-bottom: 1px solid {BORDER_ROW};
+  vertical-align: middle;
+  text-align: center;
+}}
+.alertas-tabla tbody td.td-prog {{
+  text-align: left;
+  font-weight: 600;
+  color: {TEXT_PRIMARY};
+  min-width: 200px;
+  max-width: 320px;
+}}
+.alertas-tabla tbody td.td-sede {{
+  color: {TEXT_SUBTLE};
+  font-size: 11px;
+}}
+.alertas-tabla tbody tr:hover td {{
+  background: #E3F4FB !important;
+}}
+</style>
+"""
+
+
+def _fac_color(row: pd.Series, fac: str) -> str:
+    if "FACULTAD_COLOR" in row.index and pd.notna(row.get("FACULTAD_COLOR")):
+        return str(row["FACULTAD_COLOR"])
+    return FACULTAD_CLR.get(fac, "#6e7681")
+
+
+def _render_tabla_alerta_html(
+    risk_df: pd.DataFrame,
+    pendiente: str,
+    accent_color: str,
+) -> None:
     if risk_df.empty:
-        return pd.DataFrame(columns=["Programa", "Facultad", "Modalidad", "Período", "Sede", "Pendiente"])
-    out = pd.DataFrame({
-        "Programa": risk_df["NOMBRE DEL PROGRAMA"],
-        "Facultad": risk_df["FACULTAD_ABREV"] if "FACULTAD_ABREV" in risk_df.columns else "—",
-        "Modalidad": risk_df["MODALIDAD"] if "MODALIDAD" in risk_df.columns else "—",
-        "Período": risk_df["PERIODO DE IMPLEMENTACIÓN"] if "PERIODO DE IMPLEMENTACIÓN" in risk_df.columns else "—",
-        "Sede": risk_df["SEDE"] if "SEDE" in risk_df.columns else "—",
-        "Pendiente": pendiente,
-    })
-    return out.sort_values("Programa").reset_index(drop=True)
+        st.caption("Sin programas en esta alerta.")
+        return
+
+    sorted_df = risk_df.sort_values("NOMBRE DEL PROGRAMA")
+    rows_html = ""
+    for i, (_, row) in enumerate(sorted_df.iterrows()):
+        rbg = BG_ROW if i % 2 == 0 else BG_ROW_ALT
+        prog = _p_esc(row.get("NOMBRE DEL PROGRAMA", "—"))
+        fac = str(row.get("FACULTAD_ABREV", "—") or "—")
+        mod = str(row.get("MODALIDAD", "—") or "—")
+        per = str(row.get("PERIODO DE IMPLEMENTACIÓN", "—") or "—")
+        sede = _p_esc(row.get("SEDE", "—"))
+        fac_c = _fac_color(row, fac)
+        mod_c = MODALIDAD_CLR.get(mod, "#6e7681")
+        per_c = PERIODO_CLR.get(per, "#94a3b8")
+
+        rows_html += (
+            f'<tr style="background:{rbg}">'
+            f'<td class="td-prog">{prog}</td>'
+            f'<td>{badge_html(fac, fac_c)}</td>'
+            f'<td>{badge_html(mod, mod_c)}</td>'
+            f'<td>{badge_html(per, per_c)}</td>'
+            f'<td class="td-sede">{sede}</td>'
+            f'<td>{badge_html(pendiente, accent_color)}</td>'
+            f"</tr>"
+        )
+
+    html = (
+        _ALERTAS_TABLE_CSS
+        + '<div class="alertas-tabla-wrap"><table class="alertas-tabla">'
+        + "<thead><tr>"
+        + '<th class="th-prog">Programa</th>'
+        + "<th>Facultad</th><th>Modalidad</th><th>Período</th>"
+        + "<th>Sede</th><th>Pendiente</th>"
+        + "</tr></thead><tbody>"
+        + rows_html
+        + "</tbody></table></div>"
+    )
+    st.markdown(html, unsafe_allow_html=True)
 
 
 def render_alertas_tabs(df: pd.DataFrame) -> None:
@@ -197,8 +318,9 @@ def render_alertas_tabs(df: pd.DataFrame) -> None:
                 f"</div>".replace("div", "div"),
                 unsafe_allow_html=True,
             )
-            st.dataframe(
-                _tabla_riesgo(risk_df, cfg["pendiente"]),
-                use_container_width=True,
-                hide_index=True,
+            st.markdown(
+                f'<div style="font-size:12px;font-weight:700;color:{TEXT_PRIMARY};margin:0 0 8px">'
+                f'{phosphor_icon("table", size=14)} {n} programa{"s" if n != 1 else ""} en alerta</div>',
+                unsafe_allow_html=True,
             )
+            _render_tabla_alerta_html(risk_df, cfg["pendiente"], cfg["color"])

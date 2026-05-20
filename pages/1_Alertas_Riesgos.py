@@ -1,5 +1,5 @@
 """
-pages/1_Alertas_Riesgos.py — Fase 2: Alertas y Riesgos
+pages/1_Alertas_Riesgos.py — Fase 2: Alertas
 Dashboard de alertas operativas por pestañas.
 """
 
@@ -17,7 +17,7 @@ from utils.f2_components import (
 from utils.poli_theme import TEXT_PRIMARY, phosphor_icon, streamlit_global_css
 
 st.set_page_config(
-    page_title="Alertas y Riesgos · POLI",
+    page_title="Alertas · POLI",
     page_icon=":material/warning:",
     layout="wide",
     initial_sidebar_state="expanded",
@@ -33,7 +33,7 @@ pers_ops = sorted(df_raw["PERIODO DE IMPLEMENTACIÓN"].dropna().unique().tolist(
 niveles_ops = [n for n in ["Pregrado", "Posgrado"] if n in df_raw.get("NIVEL_HOMOLOGADO", pd.Series(dtype=str)).values]
 
 render_f2_sidebar()
-render_f2_header("Alertas y Riesgos Operativos")
+render_f2_header("Alertas")
 f2_render_filter_bar(
     df_raw, fac_abrev_inv, mods_ops, fac_ops, pers_ops, niveles_ops, key_prefix="alertas"
 )
@@ -45,7 +45,7 @@ if len(df) == 0:
 else:
     st.markdown(
         f'<div style="font-size:18px;font-weight:700;color:{TEXT_PRIMARY};margin:20px 0 12px">'
-        f'{phosphor_icon("warning", size=22)} Alertas y Riesgos</div>',
+        f'{phosphor_icon("warning", size=22)} Alertas</div>',
         unsafe_allow_html=True,
     )
     render_alertas_tabs(df)

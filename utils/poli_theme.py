@@ -74,7 +74,7 @@ STATUS_CLR = {
 }
 
 # ── Nivel de formación (detalle) ──────────────────────────────────────────────
-NIVEL_ORDEN = ["Especialización", "Maestría", "Profesional", "Tecnológico", "Técnico"]
+NIVEL_ORDEN = ["Maestría", "Especialización", "Profesional", "Tecnológico", "Técnico"]
 
 NIVEL_CLR = {
     "Especialización": "#2563eb",
