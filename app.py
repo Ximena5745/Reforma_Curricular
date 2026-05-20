@@ -14,6 +14,7 @@ from utils.data_loader import (
     load_data, enrich_df, apply_filters, ETAPAS_MAP, PROCESOS,
     PROCESO_COLOR, STATUS_LABEL, STATUS_COLOR, color_for_pct,
 )
+from utils.poli_theme import phosphor_icon, streamlit_global_css
 
 st.set_page_config(
     page_title="Reforma Curricular · POLI",
@@ -21,6 +22,8 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+st.markdown(streamlit_global_css(), unsafe_allow_html=True)
 
 # ── CSS modo claro · colores institucionales ───────────────────────────────────
 st.markdown("""
