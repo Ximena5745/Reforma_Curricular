@@ -23,9 +23,6 @@ DATA_SOURCE_NAME = "Control Maestro Reforma Curricular"
 TZ_BOGOTA = ZoneInfo("America/Bogota")
 
 
-_CACHED_EXCEL_MODIFIED: datetime | None = None
-
-
 def _parse_office_datetime(value: str) -> datetime | None:
     """Parsea fecha ISO de metadatos Office (UTC) a datetime con zona."""
     if not value or not str(value).strip():
@@ -59,23 +56,32 @@ def _excel_core_modified(path: Path) -> datetime | None:
         return None
 
 
-def _refresh_excel_modified_cache() -> None:
-    global _CACHED_EXCEL_MODIFIED
-    _CACHED_EXCEL_MODIFIED = _excel_core_modified(DATA_PATH)
+def _data_file_last_modified() -> datetime | None:
+    """Última modificación del archivo: la más reciente entre disco y metadatos Excel."""
+    if not DATA_PATH.is_file():
+        return None
+    mtime_dt = datetime.fromtimestamp(DATA_PATH.stat().st_mtime, tz=TZ_BOGOTA)
+    excel_dt = _excel_core_modified(DATA_PATH)
+    if excel_dt is None:
+        return mtime_dt
+    excel_dt = excel_dt.astimezone(TZ_BOGOTA)
+    return max(mtime_dt, excel_dt)
 
 
 def get_raw_data_updated_label() -> str:
-    """Fecha/hora de última guardada del Excel (metadatos internos), horario Bogotá."""
-    if not DATA_PATH.is_file():
+    """Fecha/hora de última modificación del Excel, horario Bogotá (lectura en cada llamada)."""
+    dt = _data_file_last_modified()
+    if dt is None:
         return "Actualizado: —"
-    dt = _CACHED_EXCEL_MODIFIED
-    if dt is None:
-        dt = _excel_core_modified(DATA_PATH)
-    if dt is None:
-        dt = datetime.fromtimestamp(DATA_PATH.stat().st_mtime, tz=TZ_BOGOTA)
-    else:
-        dt = dt.astimezone(TZ_BOGOTA)
     return dt.strftime("Actualizado: %d/%m/%Y %H:%M")
+
+
+def _data_file_cache_key() -> tuple[int, int]:
+    """Clave para invalidar caché: mtime y tamaño del archivo en disco."""
+    if not DATA_PATH.is_file():
+        return (0, 0)
+    st = DATA_PATH.stat()
+    return (int(st.st_mtime), st.st_size)
 
 
 PHASE_ROW = 7   # fila 8 Excel: fases
@@ -430,7 +436,6 @@ def _build_activities_meta_list(activities_meta: list[dict]) -> list[dict]:
 def _build_etapas_df() -> pd.DataFrame:
     global _ACTIVITIES_META
 
-    _refresh_excel_modified_cache()
     raw = pd.read_excel(DATA_PATH, sheet_name="Etapas", header=None, dtype=str)
     raw = raw.fillna("")
 
@@ -688,13 +693,13 @@ def load_etapas_data() -> pd.DataFrame:
     try:
         import streamlit as st
 
-        mtime = int(DATA_PATH.stat().st_mtime) if DATA_PATH.is_file() else 0
+        cache_key = _data_file_cache_key()
 
         @st.cache_data
-        def _cached(_v: int, _mtime: int):
+        def _cached(_v: int, _mtime: int, _size: int):
             return _build_etapas_df()
 
-        df = _cached(4, mtime)
+        df = _cached(4, cache_key[0], cache_key[1])
     except Exception:
         df = _build_etapas_df()
     if not _ACTIVITIES_META:
