@@ -80,7 +80,3 @@ else:
     st.markdown("<div style='margin:20px 0 8px'></div>".replace("motion.", ""), unsafe_allow_html=True)
     render_etapas_drilldown(df, key_prefix="detalle_etapa")
 
-    st.info(
-        "El detalle programa × actividad está en **Por Programa**.",
-        icon=":material/info:",
-    )
