@@ -338,10 +338,22 @@ def _build_area_by_col(raw: pd.DataFrame) -> dict[int, str]:
     return _forward_fill_area_values(raw_vals)
 
 
+def _etapa_from_header(hname: str) -> str | None:
+    """Detecta la etapa canónica desde el nombre del encabezado de columna."""
+    t = _norm(hname)
+    return next((e for e in ETAPAS_ORDEN if _norm(e) in t), None)
+
+
 def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
     """
     Retorna (phase_by_col_index, activities_list).
     activities_list: [{phase, name, col_idx, is_pct}, ...]
+
+    Estrategia de asignación de etapa (en orden de prioridad):
+    1. Para columnas '% de avance': usa el nombre del encabezado (explícito y fiable).
+    2. Para actividades bajo una fase canónica: usa la fase de la fila de fases.
+    3. Para actividades bajo una fase no canónica: busca la columna '% de avance'
+       inmediatamente posterior y hereda su etapa (límites de sección).
     """
     phase_row = raw.iloc[PHASE_ROW]
     area_by_col = _build_area_by_col(raw)
@@ -355,7 +367,8 @@ def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
             current_phase = _norm_phase_name(str(pv))
         phase_by_col[j] = current_phase
 
-    activities: list[dict] = []
+    # Primera pasada: recopilar todas las entradas sin filtrar por etapa todavía
+    raw_entries: list[dict] = []
     for j in range(raw.shape[1]):
         hv = header_row.iloc[j]
         if pd.isna(hv) or not str(hv).strip():
@@ -370,7 +383,7 @@ def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
             continue
 
         if is_general:
-            activities.append({
+            raw_entries.append({
                 "phase": "General",
                 "name": hname,
                 "col_idx": j,
@@ -380,16 +393,18 @@ def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
             continue
 
         if is_pct:
-            activities.append({
-                "phase": phase,
+            # El nombre del encabezado nombra explícitamente la etapa → más fiable
+            etapa = _etapa_from_header(hname) or phase
+            raw_entries.append({
+                "phase": etapa,
                 "name": hname,
                 "col_idx": j,
                 "is_pct": True,
                 "is_general": False,
             })
-        elif phase in ETAPAS_ORDEN:
+        else:
             resp = area_by_col.get(j, "—")
-            activities.append({
+            raw_entries.append({
                 "phase": phase,
                 "name": hname,
                 "col_idx": j,
@@ -397,6 +412,42 @@ def _build_phase_column_map(raw: pd.DataFrame) -> tuple[dict, list[dict]]:
                 "is_general": False,
                 "responsable": resp,
             })
+
+    # Segunda pasada: corregir etapa de actividades usando columnas % como límites.
+    # Cuando la fila de fases usa nombres agrupadores (ej. "Diseño y verificación"
+    # en lugar de los 4 nombres canónicos), las actividades quedan sin etapa válida.
+    # La columna '% de avance X' cierra la sección de X → la actividad pertenece
+    # a la etapa cuyo % de avance aparece primero DESPUÉS de ella.
+    pct_boundaries = sorted(
+        [
+            (e["col_idx"], e["phase"])
+            for e in raw_entries
+            if e.get("is_pct") and not e.get("is_general") and e["phase"] in ETAPAS_ORDEN
+        ],
+        key=lambda x: x[0],
+    )
+
+    activities: list[dict] = []
+    for act in raw_entries:
+        if act.get("is_pct") or act.get("is_general"):
+            activities.append(act)
+            continue
+
+        # Usar siempre los límites de % de avance para asignar la etapa.
+        # La fila de fases del Excel puede usar nombres agrupadores distintos
+        # a los 4 canónicos, o agrupar varias etapas bajo un mismo bloque.
+        # La columna "% de avance X" cierra la sección de X, por lo que la
+        # actividad pertenece a la etapa cuyo % aparece primero DESPUÉS de ella.
+        if pct_boundaries:
+            col_j = act["col_idx"]
+            for pct_col, etapa in pct_boundaries:
+                if pct_col > col_j and etapa in ETAPAS_ORDEN:
+                    act = dict(act)
+                    act["phase"] = etapa
+                    break
+
+        if act["phase"] in ETAPAS_ORDEN:
+            activities.append(act)
 
     seen_act: dict[tuple[str, str], int] = {}
     for act in activities:
