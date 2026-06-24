@@ -76,12 +76,17 @@ def get_raw_data_updated_label() -> str:
     return dt.strftime("Actualizado: %d/%m/%Y %H:%M")
 
 
-def _data_file_cache_key() -> tuple[int, int]:
-    """Clave para invalidar caché: mtime y tamaño del archivo en disco."""
-    if not DATA_PATH.is_file():
-        return (0, 0)
-    st = DATA_PATH.stat()
-    return (int(st.st_mtime), st.st_size)
+def _data_file_cache_key() -> tuple[int, int, int]:
+    """Clave para invalidar caché: mtime + tamaño del Excel y mtime del loader.
+    Al incluir el mtime de este archivo, cualquier cambio de código invalida
+    el caché automáticamente sin necesidad de bumps manuales de versión.
+    """
+    excel_mtime, excel_size = (0, 0)
+    if DATA_PATH.is_file():
+        s = DATA_PATH.stat()
+        excel_mtime, excel_size = int(s.st_mtime), s.st_size
+    loader_mtime = int(Path(__file__).stat().st_mtime) if Path(__file__).is_file() else 0
+    return (excel_mtime, excel_size, loader_mtime)
 
 
 PHASE_ROW = 7   # fila 8 Excel: fases
@@ -753,10 +758,10 @@ def load_etapas_data() -> pd.DataFrame:
         cache_key = _data_file_cache_key()
 
         @st.cache_data
-        def _cached(_v: int, _mtime: int, _size: int):
+        def _cached(_mtime: int, _size: int, _loader_mtime: int):
             return _build_etapas_df()
 
-        df = _cached(4, cache_key[0], cache_key[1])
+        df = _cached(cache_key[0], cache_key[1], cache_key[2])
     except Exception:
         df = _build_etapas_df()
     if not _ACTIVITIES_META:
