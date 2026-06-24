@@ -62,12 +62,22 @@ def _p_esc(s):
     return str(s).replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
 
 
+_STANDARD_STATUS_VALS = {
+    "finalizado", "si", "sí", "en proceso", "sin iniciar", "no aplica",
+    "devuelto", "devuelta", "no", "informativo", "—", "", "nan", "none",
+}
+
+
 def _vact_act_icon(cl: str, val=None) -> str:
     lbl = STATUS_LABEL.get(cl, cl)
-    if cl == "info" and val and str(val).strip() not in ("—", "", "nan", "None"):
+    val_s = str(val).strip() if val is not None else ""
+
+    # Mostrar texto si el valor es descriptivo (no es un estado estándar)
+    if val_s and val_s.lower() not in _STANDARD_STATUS_VALS and val_s != "—":
         return (
-            f'<span style="font-size:10px;color:{TEXT_SUBTLE};display:inline-block;max-width:90px;'
-            f'line-height:1.2;word-break:break-word" title="{_p_esc(lbl)}">{_p_esc(str(val)[:24])}</span>'
+            f'<span style="font-size:10px;color:{TEXT_SUBTLE};display:inline-block;'
+            f'max-width:130px;line-height:1.3;word-break:break-word;text-align:left;'
+            f'white-space:normal" title="{_p_esc(val_s)}">{_p_esc(val_s[:60])}</span>'
         )
     if cl == "na":
         return f'<span style="color:{TEXT_NA};font-size:13px;font-weight:600" title="{_p_esc(lbl)}">N/A</span>'
