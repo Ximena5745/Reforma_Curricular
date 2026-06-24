@@ -500,7 +500,13 @@ def _build_etapas_df() -> pd.DataFrame:
             continue
 
         if meta["is_pct"]:
-            pct_key = ETAPA_PCT_COL.get(meta["phase"])
+            # Detectar etapa desde el nombre del encabezado (más robusto que
+            # la fila de fases, que puede tener nombres agrupadores distintos)
+            t_header = _norm(meta["name"])
+            pct_key = next(
+                (pk for etapa, pk in ETAPA_PCT_COL.items() if _norm(etapa) in t_header),
+                ETAPA_PCT_COL.get(meta["phase"]),
+            )
             if pct_key:
                 df[pct_key] = series.apply(
                     lambda v: _cls_pct_value(v) if _cls_pct_value(v) is not None else np.nan
