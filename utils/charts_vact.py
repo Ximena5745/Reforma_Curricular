@@ -238,35 +238,71 @@ def _render_panel_etapa(df: pd.DataFrame, etapa: str | None) -> None:
 
     det = get_detalle_etapa(df, etapa)
     color = ETAPA_CLR.get(etapa, "#6e7681")
+    n_prog = det.get("n_programas", len(df))
+    n_acts = det.get("n_actividades", 0)
+    total_cells = det.get("total_act") or 1
 
-    acts_html = ""
-    for act in det.get("actividades", [])[:8]:
-        pct = act["pct_done"]
-        acts_html += (
-            '<motion.div style="margin-bottom:6px">'
-            '<motion.div style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px">'
-            f'<span style="color:#475569;max-width:78%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
-            f'{_short(act["nombre"], 32)}</span>'
-            f'<span style="font-weight:700;color:#0f172a">{pct}%</span>'
-            "</motion.div>"
-            '<motion.div style="height:4px;background:#e2e8f0;border-radius:2px">'
-            f'<motion.div style="width:{min(100, pct)}%;height:100%;background:{color};border-radius:2px;opacity:.85">'
-            "</motion.div></motion.div></motion.div>"
+    # ── Sección "Por estado" ──────────────────────────────────────────────────
+    status_rows = [
+        ("done",    "Finalizado",  STATUS_CLR["done"],    det.get("done", 0)),
+        ("inprog",  "En proceso",  STATUS_CLR["inprog"],  det.get("inprog", 0)),
+        ("nostart", "Sin iniciar", STATUS_CLR["nostart"], det.get("nostart", 0)),
+        ("na",      "No aplica",   STATUS_CLR["na"],      det.get("na", 0)),
+    ]
+    if det.get("devuelto", 0):
+        status_rows.append(("devuelto", "Devuelto", STATUS_CLR["devuelto"], det["devuelto"]))
+
+    estado_html = ""
+    for _, lbl, clr, cnt in status_rows:
+        pct = round(cnt / total_cells * 100, 1) if total_cells else 0
+        bar_w = min(100, pct)
+        estado_html += (
+            f'<D style="margin-bottom:7px">'
+            f'<D style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px">'
+            f'<span style="color:#475569">{lbl}</span>'
+            f'<span style="font-weight:700;color:#0f172a">{cnt} ({pct}%)</span>'
+            f'</D>'
+            f'<D style="height:4px;background:#e2e8f0;border-radius:2px">'
+            f'<D style="width:{bar_w:.1f}%;height:100%;background:{clr};border-radius:2px"></D>'
+            f'</D></D>'
         )
-    acts_html = acts_html.replace("motion.div", "div")
+
+    # ── Sección "Actividades" ─────────────────────────────────────────────────
+    acts_html = ""
+    for act in det.get("actividades", []):
+        pct = act["pct_done"]
+        bar_w = min(100, pct)
+        acts_html += (
+            f'<D style="margin-bottom:7px">'
+            f'<D style="display:flex;justify-content:space-between;font-size:10px;margin-bottom:2px">'
+            f'<span style="color:#475569;max-width:75%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">'
+            f'{_short(act["nombre"], 30)}</span>'
+            f'<span style="font-weight:700;color:#0f172a">{pct}%</span>'
+            f'</D>'
+            f'<D style="height:4px;background:#e2e8f0;border-radius:2px">'
+            f'<D style="width:{bar_w:.1f}%;height:100%;background:{color};border-radius:2px;opacity:.85"></D>'
+            f'</D></D>'
+        )
 
     html = (
-        f'<motion.div style="background:#fff;border:1px solid rgba(15,56,90,.1);border-radius:12px;'
-        f'padding:14px;border-left:4px solid {color}">'
-        f'<motion.div style="font-size:12px;font-weight:700;color:{color}">'
-        f'{ETAPA_SHORT.get(etapa, etapa)}</motion.div>'
-        f'<motion.div style="font-size:28px;font-weight:800;color:{color}">{det["pct_promedio"]}%</motion.div>'
-        f'<motion.div style="font-size:10px;color:{TEXT_MUTED};margin:6px 0 12px">'
-        f'{det.get("n_programas", len(df))} programas · {det.get("n_actividades", 0)} actividades</motion.div>'
-        f'<motion.div style="font-size:10px;font-weight:700;color:{TEXT_MUTED};margin-bottom:6px">Actividades</motion.div>'
-        f"{acts_html}</motion.div>"
+        f'<D style="background:#fff;border:1px solid rgba(15,56,90,.1);border-radius:12px;'
+        f'padding:14px;border-left:4px solid {color};overflow-y:auto;max-height:520px">'
+        # cabecera
+        f'<D style="font-size:12px;font-weight:700;color:{color}">{ETAPA_SHORT.get(etapa, etapa)}</D>'
+        f'<D style="font-size:28px;font-weight:800;color:{color};line-height:1.1">{det["pct_promedio"]}%</D>'
+        f'<D style="font-size:10px;color:{TEXT_MUTED};margin:4px 0 12px">'
+        f'{n_prog} programas · {n_acts} actividades</D>'
+        # por estado
+        f'<D style="font-size:10px;font-weight:700;color:{TEXT_MUTED};text-transform:uppercase;'
+        f'letter-spacing:.4px;margin-bottom:6px">Por estado</D>'
+        f'{estado_html}'
+        # actividades
+        f'<D style="font-size:10px;font-weight:700;color:{TEXT_MUTED};text-transform:uppercase;'
+        f'letter-spacing:.4px;margin:10px 0 6px">Actividades</D>'
+        f'{acts_html}'
+        f'</D>'
     )
-    st.markdown(html.replace("motion.div", "div"), unsafe_allow_html=True)
+    st.markdown(html.replace("<D ", "<div ").replace("</D>", "</div>"), unsafe_allow_html=True)
 
 
 def _fig_programa_donut(pct: float) -> go.Figure:
