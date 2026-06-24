@@ -63,20 +63,50 @@ else:
 
     st.divider()
 
-    programas = sorted(df["NOMBRE DEL PROGRAMA"].dropna().astype(str).unique().tolist())
-    sel = st.selectbox(
+    # Construir etiquetas únicas: Nombre · Modalidad · Sede
+    # Necesario porque puede haber programas con el mismo nombre pero distinta
+    # modalidad o sede (ej. "Contaduría Pública · Presencial · Bogotá" vs
+    # "Contaduría Pública · Virtual · Nacional")
+    def _build_label(row: pd.Series) -> str:
+        nombre = str(row.get("NOMBRE DEL PROGRAMA", "")).strip()
+        mod    = str(row.get("MODALIDAD", "")).strip()
+        sede   = str(row.get("SEDE", "")).strip()
+        partes = [p for p in [mod, sede] if p and p.lower() not in ("", "none", "nan")]
+        return f"{nombre} · {' · '.join(partes)}" if partes else nombre
+
+    df_sel = df.copy().reset_index(drop=True)
+    df_sel["_label"] = df_sel.apply(_build_label, axis=1)
+
+    # Si el label es duplicado (mismo nombre+modalidad+sede), añadir índice
+    seen: dict[str, int] = {}
+    labels_uniq: list[str] = []
+    for lbl in df_sel["_label"]:
+        if lbl in seen:
+            seen[lbl] += 1
+            labels_uniq.append(f"{lbl} ({seen[lbl]})")
+        else:
+            seen[lbl] = 1
+            labels_uniq.append(lbl)
+    df_sel["_label_uniq"] = labels_uniq
+
+    opciones = sorted(df_sel["_label_uniq"].tolist())
+    sel_label = st.selectbox(
         "Buscar programa",
-        programas,
+        opciones,
         index=0,
         placeholder="Seleccione un programa",
         key="programa_sel",
     )
 
-    if sel:
+    if sel_label:
         st.caption(
             "Ficha del programa: avance por etapa, estado y responsable de cada actividad."
         )
-        render_program_ficha_grafica(df, sel)
+        # Filtrar al programa exacto seleccionado (una sola fila)
+        mask = df_sel["_label_uniq"] == sel_label
+        df_prog = df_sel[mask].drop(columns=["_label", "_label_uniq"])
+        nombre_prog = df_prog["NOMBRE DEL PROGRAMA"].iloc[0] if len(df_prog) else sel_label
+        render_program_ficha_grafica(df_prog, nombre_prog)
 
     st.markdown("<div style='margin:24px 0 8px'></div>", unsafe_allow_html=True)
     st.download_button(
